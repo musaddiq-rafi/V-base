@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import StoreUserEffect from "@/components/StoreUserEffect";
+import { Navbar } from "@/components/navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
       >
         <ConvexClientProvider>
           <StoreUserEffect />
+          <Navbar />
           {children}
         </ConvexClientProvider>
       </body>
