@@ -8,7 +8,10 @@
  * @module
  */
 
+import type * as clerk from "../clerk.js";
+import type * as http from "../http.js";
 import type * as users from "../users.js";
+import type * as workspaces from "../workspaces.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +20,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  clerk: typeof clerk;
+  http: typeof http;
   users: typeof users;
+  workspaces: typeof workspaces;
 }>;
 
 /**

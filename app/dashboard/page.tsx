@@ -1,225 +1,284 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { useState, useEffect, useCallback } from "react";
+import { useOrganizationList } from "@clerk/nextjs";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { motion } from "framer-motion";
-import { Plus, FolderOpen, Mail, Sparkles, Users, Bell } from "lucide-react";
+import { Plus, FolderOpen, Users, Crown, Loader2 } from "lucide-react";
+import Link from "next/link";
+
+type FilterType = "all" | "owned" | "joined";
 
 export default function DashboardPage() {
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const { userMemberships, isLoaded, createOrganization } = useOrganizationList(
+    {
+      userMemberships: {
+        infinite: true,
+      },
+    }
+  );
+
+  const createWorkspace = useMutation(api.workspaces.createWorkspace);
+
+  // Revalidate memberships when page becomes visible (handles navigation from other pages)
+  const revalidateMemberships = useCallback(() => {
+    if (userMemberships?.revalidate) {
+      userMemberships.revalidate();
+    }
+  }, [userMemberships]);
+
+  useEffect(() => {
+    // Revalidate on mount (handles redirects and navigation)
+    revalidateMemberships();
+
+    // Also revalidate when the page becomes visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        revalidateMemberships();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [revalidateMemberships]);
+
+  const handleCreateWorkspace = async () => {
+    if (!workspaceName.trim() || !createOrganization) return;
+
+    setIsCreating(true);
+    try {
+      // 1. Create Clerk Organization first
+      const org = await createOrganization({ name: workspaceName.trim() });
+
+      // 2. Immediately sync to Convex (don't wait for webhook)
+      await createWorkspace({
+        name: workspaceName.trim(),
+        clerkOrgId: org.id,
+      });
+
+      // 3. Close modal and revalidate the memberships list
+      setWorkspaceName("");
+      setIsCreateModalOpen(false);
+
+      // 4. Revalidate to refresh the workspace list
+      if (userMemberships?.revalidate) {
+        await userMemberships.revalidate();
+      }
+    } catch (error) {
+      console.error("Error creating workspace:", error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Filter workspaces based on role
+  const filteredMemberships = userMemberships?.data?.filter((membership) => {
+    if (filter === "owned") {
+      return membership.role === "org:admin";
+    }
+    if (filter === "joined") {
+      return membership.role !== "org:admin";
+    }
+    return true;
+  });
+
+  const workspaceCount = userMemberships?.data?.length || 0;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
-      {/* Navbar */}
-      <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50"
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between mb-8"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                VBase
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
-              </button>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-9 h-9 ring-2 ring-gray-200",
-                  },
-                }}
-              />
-            </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            My Workspaces
+          </h1>
+          <p className="text-gray-600">
+            Create, manage, and collaborate in your team workspaces
+          </p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setIsCreateModalOpen(true)}
+          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Create Workspace
+        </motion.button>
+      </motion.div>
+
+      {/* Filter Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="flex gap-2 mb-6"
+      >
+        {[
+          { key: "all", label: "All" },
+          { key: "owned", label: "Owned" },
+          { key: "joined", label: "Joined" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilter(tab.key as FilterType)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              filter === tab.key
+                ? "bg-blue-100 text-blue-700"
+                : "bg-white text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </motion.div>
+
+      {/* Workspaces Grid */}
+      {!isLoaded ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        </div>
+      ) : workspaceCount === 0 ? (
+        /* Empty State */
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-20 bg-white/70 rounded-2xl border border-gray-200/50"
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">
+            <FolderOpen className="w-10 h-10 text-gray-400" />
           </div>
-        </div>
-      </motion.nav>
-
-      {/* Dashboard Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            No workspaces yet
+          </h3>
+          <p className="text-gray-500 mb-6 text-center max-w-md">
+            Create your first workspace to start collaborating with your team
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-xl shadow-lg"
           >
-            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
-              Welcome back!
+            <Plus className="w-5 h-5" />
+            Create your first workspace
+          </motion.button>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {filteredMemberships?.map((membership, index) => (
+            <motion.div
+              key={membership.organization.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * index, duration: 0.4 }}
+            >
+              <Link href={`/workspace/${membership.organization.id}`}>
+                <motion.div
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                  className="group p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                      {membership.organization.name.charAt(0).toUpperCase()}
+                    </div>
+                    {membership.role === "org:admin" && (
+                      <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                        <Crown className="w-3 h-3" />
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                    {membership.organization.name}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Users className="w-4 h-4" />
+                    <span>
+                      {membership.organization.membersCount || 1} member
+                      {(membership.organization.membersCount || 1) !== 1
+                        ? "s"
+                        : ""}
+                    </span>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Create Workspace Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsCreateModalOpen(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative bg-white rounded-2xl p-8 shadow-2xl w-full max-w-md mx-4"
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Create Workspace
             </h2>
-            <p className="text-gray-600 text-lg">
-              Manage your workspaces and collaborate with your team
+            <p className="text-gray-500 mb-6">
+              Give your workspace a name to get started
             </p>
-          </motion.div>
-
-          {/* Quick Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-          >
-            {[
-              {
-                label: "Active Workspaces",
-                value: "0",
-                icon: FolderOpen,
-                color: "blue",
-              },
-              {
-                label: "Team Members",
-                value: "1",
-                icon: Users,
-                color: "green",
-              },
-              {
-                label: "Pending Invites",
-                value: "0",
-                icon: Mail,
-                color: "purple",
-              },
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 + index * 0.1, duration: 0.4 }}
-                className="p-5 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/50"
+            <input
+              type="text"
+              value={workspaceName}
+              onChange={(e) => setWorkspaceName(e.target.value)}
+              placeholder="Workspace name"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-6"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
-                    <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {stat.value}
-                    </p>
-                    <p className="text-sm text-gray-500">{stat.label}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Action Cards */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {/* Create Workspace Card */}
-            <motion.div
-              whileHover={{ y: -4, scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="group p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/20 cursor-pointer"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <Plus className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-white/60 text-xs font-medium uppercase tracking-wider">
-                  New
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                Create Workspace
-              </h3>
-              <p className="text-blue-100 text-sm mb-4">
-                Start a new collaborative workspace for your team
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateWorkspace}
+                disabled={!workspaceName.trim() || isCreating}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-4 h-4" />
-                Coming Soon
-              </motion.button>
-            </motion.div>
-
-            {/* My Workspaces Card */}
-            <motion.div
-              whileHover={{ y: -4, scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="group p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm hover:shadow-md transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 rounded-xl">
-                  <FolderOpen className="w-6 h-6 text-green-600" />
-                </div>
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                  0 workspaces
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                My Workspaces
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Access and manage your existing workspaces
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-all"
-              >
-                Coming Soon
-              </motion.button>
-            </motion.div>
-
-            {/* Invitations Card */}
-            <motion.div
-              whileHover={{ y: -4, scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="group p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm hover:shadow-md transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-100 rounded-xl">
-                  <Mail className="w-6 h-6 text-purple-600" />
-                </div>
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                  0 pending
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Invitations
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                View and respond to workspace invitations
-              </p>
-              <div className="py-3 px-4 bg-gray-50 rounded-lg text-center">
-                <p className="text-sm text-gray-500">No pending invitations</p>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Recent Activity Placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50"
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Recent Activity
-            </h3>
-            <div className="py-8 text-center">
-              <p className="text-gray-500">
-                No recent activity yet. Create your first workspace to get
-                started!
-              </p>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create"
+                )}
+              </button>
             </div>
           </motion.div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
