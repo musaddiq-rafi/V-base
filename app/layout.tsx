@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
+import { LiveblocksProvider } from "@/providers/liveblocks-provider";
 import StoreUserEffect from "@/components/StoreUserEffect";
 
 const geistSans = Geist({
@@ -31,8 +32,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ConvexClientProvider>
-          <StoreUserEffect />
-          {children}
+          <LiveblocksProvider>
+            <StoreUserEffect />
+            {children}
+          </LiveblocksProvider>
         </ConvexClientProvider>
       </body>
     </html>
