@@ -51,6 +51,15 @@ export const createWorkspace = mutation({
       ownerId: clerkId,
     });
 
+    // Automatically create a general channel for the workspace
+    await ctx.db.insert("channels", {
+      workspaceId: workspaceId,
+      name: "general",
+      type: "general",
+      createdAt: Date.now(),
+      createdBy: clerkId,
+    });
+
     return workspaceId;
   },
 });
