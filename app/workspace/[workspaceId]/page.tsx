@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useOrganization,
   useUser,
@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 import { WorkspaceRoom } from "@/components/liveblocks/workspace-room";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
+import { ChatSystem } from "@/components/chat/chat-system";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 interface OrganizationMember {
   id: string;
@@ -51,6 +54,25 @@ export default function WorkspacePage() {
     });
 
   const isAdmin = membership?.role === "org:admin";
+
+  // Get workspace ID from Convex
+  const workspace = useQuery(
+    api.workspaces.getWorkspaceByClerkOrgId,
+    organization ? { clerkOrgId: organization.id } : "skip"
+  );
+
+  const createWorkspace = useMutation(api.workspaces.createWorkspace);
+
+  // Create workspace in Convex if it doesn't exist
+  useEffect(() => {
+    if (organization && workspace === null) {
+      // Workspace doesn't exist, create it
+      createWorkspace({
+        name: organization.name,
+        clerkOrgId: organization.id,
+      }).catch((err: any) => console.error("Error creating workspace:", err));
+    }
+  }, [organization, workspace, createWorkspace]);
 
   if (!isLoaded) {
     return (
@@ -364,6 +386,9 @@ export default function WorkspacePage() {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Chat System */}
+        {workspace && <ChatSystem workspaceId={workspace._id} />}
       </div>
     </WorkspaceRoom>
   );
