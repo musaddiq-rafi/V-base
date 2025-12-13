@@ -193,29 +193,12 @@ export default function WorkspacePage() {
             className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden"
           >
             <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Users className="w-6 h-6 text-blue-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Members
-                  </h2>
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
-                    {organization.membersCount || 1}
-                  </span>
-                </div>
-                {isAdmin && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() =>
-                      router.push(`/workspace/${organization.id}/invite`)
-                    }
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    Invite Members
-                  </motion.button>
-                )}
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Members</h2>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                  {organization.membersCount || 1}
+                </span>
               </div>
             </div>
 

@@ -211,18 +211,67 @@ export const upsertWorkspaceFromWebhook = internalMutation({
   },
 });
 
-// INTERNAL MUTATION: For the Webhook to delete workspaces
+// INTERNAL MUTATION: For the Webhook to delete workspaces (with cascading deletes)
 export const deleteWorkspaceFromWebhook = internalMutation({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
+    console.log(`[Webhook] Deleting workspace data for Org: ${args.clerkOrgId}`);
+
+    // 1. Find the workspace
     const workspace = await ctx.db
       .query("workspaces")
       .withIndex("by_clerk_org", (q) => q.eq("clerkOrgId", args.clerkOrgId))
       .unique();
 
-    if (workspace) {
-        // Optional: Delete related rooms here if you want strict cleanup
-        await ctx.db.delete(workspace._id);
+    if (!workspace) {
+      console.warn(`[Webhook] Workspace not found for Org: ${args.clerkOrgId}`);
+      return;
     }
+
+    // 2. Find and Delete All Channels & Related Data
+    const channels = await ctx.db
+      .query("channels")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+      .collect();
+
+    for (const channel of channels) {
+      // A. Delete all messages in this channel
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      // B. Delete read receipts (lastRead) for this channel
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      // C. Delete the channel itself
+      await ctx.db.delete(channel._id);
+    }
+
+    // 3. Find and Delete All Rooms (Docs/Whiteboards)
+    const rooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+      .collect();
+
+    for (const room of rooms) {
+      await ctx.db.delete(room._id);
+    }
+
+    // 4. Finally, Delete the Workspace
+    await ctx.db.delete(workspace._id);
+
+    console.log(`[Webhook] Successfully deleted workspace and all children.`);
   },
 });

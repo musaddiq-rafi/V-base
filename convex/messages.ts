@@ -102,7 +102,11 @@ export const getChannelMessages = query({
 export const toggleReaction = mutation({
   args: {
     messageId: v.id("messages"),
-    reactionType: v.union(v.literal("like"), v.literal("dislike"), v.literal("haha")),
+    reactionType: v.union(
+      v.literal("like"),
+      v.literal("dislike"),
+      v.literal("haha")
+    ),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -230,89 +234,9 @@ export const editMessage = mutation({
 });
 
 /**
- * Get latest message for a channel (useful for showing previews)
+ * Mark a channel as read (cursor-based - single DB write)
  */
-export const getLatestMessage = query({
-  args: {
-    channelId: v.id("channels"),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return null;
-    }
-
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_channel", (q) => q.eq("channelId", args.channelId))
-      .order("desc")
-      .take(1);
-
-    return messages[0] || null;
-  },
-});
-
-/**
- * Mark a message as seen by the current user
- */
-export const markMessageAsSeen = mutation({
-  args: {
-    messageId: v.id("messages"),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const currentUserId = identity.subject;
-
-    // Get message
-    const message = await ctx.db.get(args.messageId);
-    if (!message) {
-      throw new Error("Message not found");
-    }
-
-    // Don't mark your own messages as seen
-    if (message.authorId === currentUserId) {
-      return { success: true, alreadySeen: true };
-    }
-
-    // Get channel to verify access
-    const channel = await ctx.db.get(message.channelId);
-    if (!channel) {
-      throw new Error("Channel not found");
-    }
-
-    // Check permission for DM channels
-    if (
-      channel.type === "direct" &&
-      !channel.participantIds?.includes(currentUserId)
-    ) {
-      throw new Error("You don't have access to this message");
-    }
-
-    // Check if already seen by this user
-    const seenBy = message.seenBy || [];
-    const alreadySeen = seenBy.some((seen) => seen.userId === currentUserId);
-
-    if (alreadySeen) {
-      return { success: true, alreadySeen: true };
-    }
-
-    // Add user to seenBy list
-    await ctx.db.patch(args.messageId, {
-      seenBy: [...seenBy, { userId: currentUserId, seenAt: Date.now() }],
-    });
-
-    return { success: true, alreadySeen: false };
-  },
-});
-
-/**
- * Mark all messages in a channel as seen (useful when opening a channel)
- */
-export const markChannelMessagesAsSeen = mutation({
+export const markChannelAsRead = mutation({
   args: {
     channelId: v.id("channels"),
   },
@@ -338,43 +262,132 @@ export const markChannelMessagesAsSeen = mutation({
       throw new Error("You don't have access to this channel");
     }
 
-    // Get all messages in channel that user hasn't seen yet
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_channel", (q) => q.eq("channelId", args.channelId))
-      .collect();
+    const now = Date.now();
 
-    let markedCount = 0;
+    // Check if lastRead record exists
+    const existingLastRead = await ctx.db
+      .query("lastRead")
+      .withIndex("by_user_channel", (q) =>
+        q.eq("userId", currentUserId).eq("channelId", args.channelId)
+      )
+      .first();
 
-    // Mark each unseen message
-    for (const message of messages) {
-      // Skip own messages
-      if (message.authorId === currentUserId) {
-        continue;
-      }
-
-      // Check if already seen
-      const seenBy = message.seenBy || [];
-      const alreadySeen = seenBy.some((seen) => seen.userId === currentUserId);
-
-      if (!alreadySeen) {
-        await ctx.db.patch(message._id, {
-          seenBy: [...seenBy, { userId: currentUserId, seenAt: Date.now() }],
-        });
-        markedCount++;
-      }
+    if (existingLastRead) {
+      // Update existing record - single DB write!
+      await ctx.db.patch(existingLastRead._id, { lastReadAt: now });
+    } else {
+      // Create new record - single DB write!
+      await ctx.db.insert("lastRead", {
+        userId: currentUserId,
+        channelId: args.channelId,
+        lastReadAt: now,
+      });
     }
 
-    return { success: true, markedCount };
+    return { success: true };
   },
 });
 
 /**
- * Get users who have seen a specific message (with their details)
+ * Get channel states (unread counts + message previews) for all channels
+ * This replaces N subscriptions with a single query using parallel execution
  */
-export const getMessageSeenBy = query({
+export const getUnreadCounts = query({
   args: {
-    messageId: v.id("messages"),
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { channels: {}, total: 0, previews: {} };
+    }
+
+    const currentUserId = identity.subject;
+
+    // 1. Get all channels in the workspace
+    const allChannels = await ctx.db
+      .query("channels")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    // Filter channels user has access to
+    const accessibleChannels = allChannels.filter((channel) => {
+      if (channel.type === "direct") {
+        return channel.participantIds?.includes(currentUserId);
+      }
+      return true; // General channels are accessible to all
+    });
+
+    // 2. Get all lastRead records for this user
+    const lastReadRecords = await ctx.db
+      .query("lastRead")
+      .withIndex("by_user", (q) => q.eq("userId", currentUserId))
+      .collect();
+
+    const lastReadMap = new Map<string, number>();
+    lastReadRecords.forEach((record) => {
+      lastReadMap.set(record.channelId, record.lastReadAt);
+    });
+
+    // 3. OPTIMIZATION: Run all channel queries in parallel
+    const countPromises = accessibleChannels.map(async (channel) => {
+      const lastReadAt = lastReadMap.get(channel._id) || 0;
+
+      // Count unread messages (parallel execution)
+      const unreadMessages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .filter((q) =>
+          q.and(
+            q.gt(q.field("timestamp"), lastReadAt),
+            q.neq(q.field("authorId"), currentUserId)
+          )
+        )
+        .collect();
+
+      // Get latest message for preview (parallel execution)
+      const latestMsg = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .order("desc")
+        .first();
+
+      return {
+        id: channel._id,
+        count: unreadMessages.length,
+        preview: latestMsg ? latestMsg.content.substring(0, 50) : "",
+      };
+    });
+
+    const results = await Promise.all(countPromises);
+
+    // 4. Aggregate results
+    const channels: Record<string, number> = {};
+    const previews: Record<string, string> = {};
+    let total = 0;
+
+    for (const res of results) {
+      if (res.count > 0) {
+        channels[res.id] = res.count;
+        total += res.count;
+      }
+      if (res.preview) {
+        previews[res.id] = res.preview;
+      }
+    }
+
+    return { channels, total, previews };
+  },
+});
+
+/**
+ * Get messages with author info resolved at query time
+ * This ensures author names are always up-to-date
+ */
+export const getMessagesWithAuthors = query({
+  args: {
+    channelId: v.id("channels"),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -382,29 +395,51 @@ export const getMessageSeenBy = query({
       return [];
     }
 
-    // Get message
-    const message = await ctx.db.get(args.messageId);
-    if (!message || !message.seenBy) {
+    const currentUserId = identity.subject;
+
+    // Get channel to verify access
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) {
       return [];
     }
 
-    // Get user details for each person who saw the message
-    const seenByDetails = await Promise.all(
-      message.seenBy.map(async (seen) => {
+    // Check permission for DM channels
+    if (
+      channel.type === "direct" &&
+      !channel.participantIds?.includes(currentUserId)
+    ) {
+      throw new Error("You don't have access to this channel");
+    }
+
+    // Get messages
+    const limit = args.limit || 100;
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_channel", (q) => q.eq("channelId", args.channelId))
+      .order("desc")
+      .take(limit);
+
+    // Get unique author IDs
+    const authorIds = [...new Set(messages.map((m) => m.authorId))];
+
+    // Batch fetch authors
+    const authors = await Promise.all(
+      authorIds.map(async (authorId) => {
         const user = await ctx.db
           .query("users")
-          .withIndex("by_clerk_id", (q) => q.eq("clerkId", seen.userId))
+          .withIndex("by_clerk_id", (q) => q.eq("clerkId", authorId))
           .first();
-
-        return {
-          userId: seen.userId,
-          userName: user?.name || "Unknown User",
-          userEmail: user?.email || "",
-          seenAt: seen.seenAt,
-        };
+        return { authorId, name: user?.name || "Unknown User" };
       })
     );
 
-    return seenByDetails;
+    const authorMap = new Map(authors.map((a) => [a.authorId, a.name]));
+
+    // Return messages with resolved author names (in chronological order)
+    return messages.reverse().map((msg) => ({
+      ...msg,
+      authorName:
+        authorMap.get(msg.authorId) || msg.authorName || "Unknown User",
+    }));
   },
 });
