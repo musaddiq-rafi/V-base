@@ -1,29 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import dynamic from "next/dynamic";
+import "@excalidraw/excalidraw/index.css";
 
 interface WhiteboardProps {
   roomId: string;
 }
 
+// Dynamically import Excalidraw to avoid SSR issues
+const ExcalidrawWrapper = dynamic(
+  () => import("@excalidraw/excalidraw").then((mod) => mod.Excalidraw),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full flex items-center justify-center bg-white">
+        <div className="animate-pulse text-gray-500">Loading whiteboard...</div>
+      </div>
+    ),
+  }
+);
+
 export function Whiteboard({ roomId }: WhiteboardProps) {
-  const [excalidrawData, setExcalidrawData] = useState<any>(null);
-
-  const handleChange = (elements: any, appState: any) => {
-    // Store data locally for now
-    setExcalidrawData({ elements, appState });
-  };
-
   return (
-    <div className="h-full w-full">
-      <Excalidraw
-        onChange={handleChange}
-        initialData={{
-          elements: [],
-          appState: {},
-        }}
-      />
+    <div className="absolute inset-0">
+      <ExcalidrawWrapper />
     </div>
   );
 }

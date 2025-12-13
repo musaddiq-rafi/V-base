@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
 import { useEffect, Suspense } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
+import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
 
 
 export default function RoomPage() {
@@ -69,12 +70,12 @@ export default function RoomPage() {
         cursor: null,
       }}
     >
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="fixed inset-0 flex flex-col">
         {/* Header */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="sticky top-0 z-40 bg-white border-b border-gray-200"
+          className="flex-shrink-0 z-50 bg-white border-b border-gray-200"
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
@@ -100,15 +101,15 @@ export default function RoomPage() {
         </motion.header>
 
         {/* Whiteboard - Full Screen */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 relative">
           <Suspense
             fallback={
-              <div className="flex items-center justify-center h-full">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               </div>
             }
           >
-           
+            <Whiteboard roomId={roomId} />
           </Suspense>
         </div>
       </div>
