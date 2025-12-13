@@ -24,6 +24,7 @@ import {
 import { WorkspaceRoom } from "@/components/liveblocks/workspace-room";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 import { ChatSystem } from "@/components/chat/chat-system";
+import { RoomList } from "@/components/rooms/room-list";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -166,137 +167,13 @@ export default function WorkspacePage() {
           </div>
         </motion.header>
 
-        <main className="max-w-4xl mx-auto p-8">
-          {/* Page Title */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <Settings className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">
-                Workspace Settings
-              </h1>
-            </div>
-            <p className="text-gray-600">
-              Manage your workspace members and settings
-            </p>
-          </motion.div>
-
-          {/* Members Section */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden"
-          >
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <Users className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-semibold text-gray-900">Members</h2>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
-                  {organization.membersCount || 1}
-                </span>
-              </div>
-            </div>
-
-            {/* Members List */}
-            <div className="divide-y divide-gray-100">
-              {memberships?.data && memberships.data.length > 0 ? (
-                memberships.data.map((member: OrganizationMember) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                      {member.publicUserData?.firstName?.charAt(0) ||
-                        member.publicUserData?.identifier?.charAt(0) ||
-                        "?"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {member.publicUserData?.firstName}{" "}
-                        {member.publicUserData?.lastName}
-                        {member.publicUserData?.userId === user?.id && (
-                          <span className="text-gray-500 text-sm ml-1">
-                            (You)
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {member.publicUserData?.identifier}
-                      </p>
-                    </div>
-                    <span
-                      className={`flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-full ${
-                        member.role === "org:admin"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {member.role === "org:admin" && (
-                        <Crown className="w-3 h-3" />
-                      )}
-                      {member.role === "org:admin" ? "Admin" : "Member"}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  Loading members...
-                </div>
-              )}
-            </div>
-          </motion.section>
-
-          {/* Pending Invitations Section (Admin Only) */}
-          {isAdmin && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="mt-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden"
-            >
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-6 h-6 text-purple-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Pending Invitations
-                  </h2>
-                </div>
-              </div>
-              <div className="p-6">
-                {invitations?.data && invitations.data.length > 0 ? (
-                  <div className="space-y-3">
-                    {invitations.data.map(
-                      (invitation: OrganizationInvitation) => (
-                        <div
-                          key={invitation.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                              <Mail className="w-4 h-4 text-purple-600" />
-                            </div>
-                            <span className="text-gray-700">
-                              {invitation.emailAddress}
-                            </span>
-                          </div>
-                          <span className="text-sm text-gray-500">Pending</span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500 py-4">
-                    No pending invitations
-                  </p>
-                )}
-              </div>
-            </motion.section>
+        <main className="max-w-7xl mx-auto p-8">
+          {/* Room List */}
+          {workspace && organization && (
+            <RoomList
+              workspaceId={workspace._id}
+              clerkOrgId={organization.id}
+            />
           )}
         </main>
 

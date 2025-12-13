@@ -19,6 +19,7 @@ import { CreateRoomModal } from "./create-room-modal";
 
 interface RoomListProps {
   workspaceId: Id<"workspaces">;
+  clerkOrgId: string;
 }
 
 // Icon mapping for room types
@@ -37,7 +38,7 @@ const roomColors = {
   conference: "bg-orange-100 text-orange-600",
 };
 
-export function RoomList({ workspaceId }: RoomListProps) {
+export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -102,7 +103,7 @@ export function RoomList({ workspaceId }: RoomListProps) {
                 transition={{ delay: index * 0.05 }}
                 onClick={() =>
                   router.push(
-                    `/workspace/${workspaceId}/room/${room._id}`
+                    `/workspace/${clerkOrgId}/room/${room._id}`
                   )
                 }
                 className="group bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer"
