@@ -87,5 +87,6 @@ export default defineSchema({
     lastReadAt: v.number(), // Timestamp of when user last read this channel
   })
     .index("by_user_channel", ["userId", "channelId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_channel", ["channelId"]),
 });
