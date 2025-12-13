@@ -12,6 +12,7 @@ import type * as channels from "../channels.js";
 import type * as clerk from "../clerk.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
+import type * as rooms from "../rooms.js";
 import type * as users from "../users.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   clerk: typeof clerk;
   http: typeof http;
   messages: typeof messages;
+  rooms: typeof rooms;
   users: typeof users;
   workspaces: typeof workspaces;
 }>;
