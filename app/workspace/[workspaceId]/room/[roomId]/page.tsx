@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
 import { useEffect, Suspense } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
-import { Whiteboard } from "@/components/whiteboard/tldraw-board";
+
 
 export default function RoomPage() {
   const params = useParams();
@@ -108,7 +108,7 @@ export default function RoomPage() {
               </div>
             }
           >
-            <Whiteboard roomId={roomId} />
+           
           </Suspense>
         </div>
       </div>
