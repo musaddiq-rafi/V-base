@@ -10,7 +10,8 @@ declare global {
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
-      // Will be used for room-specific storage later
+      // Yjs document storage for collaborative editing
+      // The Y.Doc state is automatically synced by Liveblocks
     };
 
     // Custom user info set when authenticating with a secret key
