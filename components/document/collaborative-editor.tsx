@@ -23,7 +23,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
       liveblocks,
       StarterKit.configure({
         // The Liveblocks extension comes with its own history handling
-        history: false,
+        undoRedo: false,
       }),
       Placeholder.configure({
         placeholder: "Start typing your document...",
@@ -32,7 +32,8 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none focus:outline-none min-h-full p-8",
+          "prose prose-base max-w-none focus:outline-none outline-none",
+        style: "font-family: Arial, sans-serif; line-height: 1.6; color: #202124;",
       },
     },
   });
@@ -46,16 +47,20 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-[#f9fbfd]">
       {/* Document Header */}
       <DocumentHeader documentId={documentId} />
       
       {/* Toolbar */}
       <EditorToolbar editor={editor} />
       
-      {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto">
-        <EditorContent editor={editor} className="h-full" />
+      {/* Editor Content - Google Docs style */}
+      <div className="flex-1 overflow-y-auto bg-[#f9fbfd]">
+        <div className="max-w-[850px] mx-auto py-12 px-6">
+          <div className="bg-white shadow-lg min-h-[1056px] p-24">
+            <EditorContent editor={editor} />
+          </div>
+        </div>
       </div>
     </div>
   );

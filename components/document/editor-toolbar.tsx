@@ -41,8 +41,8 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-2 rounded hover:bg-gray-100 transition-colors ${
-        isActive ? "bg-blue-100 text-blue-600" : "text-gray-700"
+      className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+        isActive ? "bg-gray-300 text-gray-900" : "text-gray-600"
       } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       {children}
@@ -51,12 +51,12 @@ function ToolbarButton({
 }
 
 function ToolbarDivider() {
-  return <div className="w-px h-6 bg-gray-200 mx-1" />;
+  return <div className="w-px h-5 bg-gray-300 mx-0.5" />;
 }
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-1 p-2 bg-white border-b border-gray-200 shadow-sm flex-wrap">
+    <div className="sticky top-0 z-10 flex items-center gap-0.5 px-3 py-1.5 bg-[#f9fbfd] border-b border-gray-200 flex-wrap">
       {/* Text Formatting */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
