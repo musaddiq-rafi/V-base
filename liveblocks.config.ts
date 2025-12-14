@@ -10,8 +10,7 @@ declare global {
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
-      // Yjs document storage for collaborative editing
-      // The Y.Doc state is automatically synced by Liveblocks
+      // Empty for Yjs documents - managed by @liveblocks/react-tiptap
     };
 
     // Custom user info set when authenticating with a secret key

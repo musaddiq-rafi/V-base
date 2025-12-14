@@ -10,13 +10,15 @@ import { useRouter } from "next/navigation";
 
 interface CreateDocumentModalProps {
   roomId: Id<"rooms">;
-  workspaceId: Id<"workspaces">;
+  workspaceId: Id<"workspaces">; // Convex workspace ID
+  clerkOrgId: string; // Clerk org ID for navigation
   onClose: () => void;
 }
 
 export function CreateDocumentModal({
   roomId,
   workspaceId,
+  clerkOrgId,
   onClose,
 }: CreateDocumentModalProps) {
   const [name, setName] = useState("");
@@ -39,7 +41,7 @@ export function CreateDocumentModal({
 
       // Navigate to the new document
       router.push(
-        `/workspace/${workspaceId}/room/${roomId}/document/${documentId}`
+        `/workspace/${clerkOrgId}/room/${roomId}/document/${documentId}`
       );
     } catch (error) {
       console.error("Failed to create document:", error);

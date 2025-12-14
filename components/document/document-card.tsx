@@ -10,7 +10,7 @@ interface DocumentCardProps {
   creatorName: string;
   lastEditorName: string | null;
   updatedAt: number;
-  workspaceId: string;
+  workspaceId: string; // Clerk org ID for navigation
   roomId: string;
 }
 

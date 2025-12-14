@@ -11,10 +11,11 @@ import { motion } from "framer-motion";
 
 interface DocumentListProps {
   roomId: Id<"rooms">;
-  workspaceId: Id<"workspaces">;
+  workspaceId: string; // Clerk org ID for navigation
+  convexWorkspaceId: Id<"workspaces">; // Convex workspace ID for mutations
 }
 
-export function DocumentList({ roomId, workspaceId }: DocumentListProps) {
+export function DocumentList({ roomId, workspaceId, convexWorkspaceId }: DocumentListProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const documents = useQuery(api.documents.getDocumentsByRoom, { roomId });
 
@@ -99,7 +100,8 @@ export function DocumentList({ roomId, workspaceId }: DocumentListProps) {
       {showCreateModal && (
         <CreateDocumentModal
           roomId={roomId}
-          workspaceId={workspaceId}
+          workspaceId={convexWorkspaceId}
+          clerkOrgId={workspaceId}
           onClose={() => setShowCreateModal(false)}
         />
       )}

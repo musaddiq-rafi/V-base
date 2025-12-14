@@ -89,4 +89,17 @@ export default defineSchema({
     .index("by_user_channel", ["userId", "channelId"])
     .index("by_user", ["userId"])
     .index("by_channel", ["channelId"]),
+
+  // Documents within document rooms
+  documents: defineTable({
+    roomId: v.id("rooms"), // Parent document room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Document name (e.g., "Project Proposal")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
 });

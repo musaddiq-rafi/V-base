@@ -99,7 +99,11 @@ export default function RoomPage() {
 
         {/* Document List */}
         <div className="flex-1 relative">
-          <DocumentList roomId={roomId} workspaceId={workspace._id} />
+          <DocumentList 
+            roomId={roomId} 
+            workspaceId={organization.id}
+            convexWorkspaceId={workspace._id}
+          />
         </div>
       </div>
     );

@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useOthers, useSelf } from "@liveblocks/react/suspense";
-import { Check, Edit2, Clock } from "lucide-react";
+import { Edit2, Clock } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 
 interface DocumentHeaderProps {
   documentId: Id<"documents">;
@@ -21,10 +21,6 @@ export function DocumentHeader({ documentId }: DocumentHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Get active users from Liveblocks
-  const others = useOthers();
-  const self = useSelf();
 
   useEffect(() => {
     if (document) {
@@ -87,11 +83,6 @@ export function DocumentHeader({ documentId }: DocumentHeaderProps) {
     return null;
   }
 
-  const activeUsers = [
-    ...(self ? [{ id: self.id, info: self.info }] : []),
-    ...others.map(other => ({ id: other.id, info: other.info }))
-  ];
-
   return (
     <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
       {/* Document Name */}
@@ -132,33 +123,7 @@ export function DocumentHeader({ documentId }: DocumentHeaderProps) {
         </div>
 
         {/* Active Collaborators */}
-        {activeUsers.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">
-              {activeUsers.length} {activeUsers.length === 1 ? "user" : "users"}
-            </span>
-            <div className="flex -space-x-2">
-              {activeUsers.slice(0, 5).map((user, index) => (
-                <div
-                  key={user.id}
-                  className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold"
-                  style={{ zIndex: activeUsers.length - index }}
-                  title={user.info?.name || "Anonymous"}
-                >
-                  {user.info?.name?.charAt(0).toUpperCase() || "?"}
-                </div>
-              ))}
-              {activeUsers.length > 5 && (
-                <div
-                  className="w-8 h-8 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold"
-                  style={{ zIndex: 0 }}
-                >
-                  +{activeUsers.length - 5}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <ActiveUsersAvatars />
       </div>
     </div>
   );
