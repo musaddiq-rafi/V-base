@@ -11,6 +11,9 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import type { editor } from "monaco-editor";
 import { Awareness } from "y-protocols/awareness";
+import { Play, Loader2 } from "lucide-react";
+import { Terminal } from "./terminal";
+import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
 
 // User colors for cursor presence
 const USER_COLORS = [
@@ -68,6 +71,15 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
   const [provider, setProvider] = useState<LiveblocksYjsProvider | null>(null);
   const [synced, setSynced] = useState(false);
   const bindingRef = useRef<MonacoBinding | null>(null);
+
+  // Execution State
+  const [isRunning, setIsRunning] = useState(false);
+  const [output, setOutput] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+
+  // Check if language is supported for execution
+  const isExecutionSupported = language in LANGUAGE_VERSIONS;
 
   const updateLastEdited = useMutation(api.codeFiles.updateLastEdited);
 
@@ -157,60 +169,133 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
     }
   }, [provider]);
 
+  // Handle Run Code
+  const handleRun = async () => {
+    if (!editorRef) return;
+
+    setIsRunning(true);
+    setIsTerminalOpen(true); // Auto-open terminal
+    setOutput(null);
+    setIsError(false);
+
+    try {
+      const sourceCode = editorRef.getValue();
+      const result = await executeCode(language, sourceCode);
+
+      // Piston returns separate stdout and stderr, but also a combined 'output'
+      // If code !== 0, it means the process failed (compilation error or runtime error)
+      if (result.run.code !== 0) {
+        setIsError(true);
+      }
+
+      setOutput(result.run.output);
+    } catch (error: unknown) {
+      setIsError(true);
+      setOutput(
+        error instanceof Error ? error.message : "Failed to execute code"
+      );
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   // Get Monaco language from our language value
   const monacoLanguage = LANGUAGE_MAP[language] || "plaintext";
 
   return (
-    <div className="h-full w-full relative">
-      {/* Sync Status Indicator */}
-      {!synced && (
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 text-sm rounded-full">
-          <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-          Syncing...
+    <div className="h-full w-full flex flex-col relative bg-[#1e1e1e]">
+      {/* Editor Toolbar */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <span className="font-mono text-xs bg-[#3c3c3c] px-2 py-1 rounded uppercase">
+            {language}
+          </span>
+          {!isExecutionSupported && (
+            <span className="text-xs text-gray-500">
+              (Execution not supported)
+            </span>
+          )}
         </div>
-      )}
-      {synced && (
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded-full opacity-0 hover:opacity-100 transition-opacity">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
-          Synced
-        </div>
-      )}
 
-      {/* Monaco Editor */}
-      <Editor
-        height="100%"
-        defaultLanguage={monacoLanguage}
-        theme="vs-dark"
-        onMount={handleEditorMount}
-        options={{
-          readOnly: false,
-          minimap: { enabled: true },
-          fontSize: 14,
-          lineNumbers: "on",
-          wordWrap: "on",
-          automaticLayout: true,
-          scrollBeyondLastLine: false,
-          padding: { top: 16, bottom: 16 },
-          cursorBlinking: "smooth",
-          cursorSmoothCaretAnimation: "on",
-          smoothScrolling: true,
-          tabSize: 2,
-          insertSpaces: true,
-          formatOnPaste: true,
-          formatOnType: true,
-          renderWhitespace: "selection",
-          bracketPairColorization: { enabled: true },
-          guides: {
-            bracketPairs: true,
-            indentation: true,
-          },
-        }}
-        loading={
-          <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
-            <div className="text-gray-400">Loading editor...</div>
-          </div>
-        }
-      />
+        <div className="flex items-center gap-3">
+          {/* Sync Status */}
+          {!synced && (
+            <div className="flex items-center gap-2 px-2 py-1 text-amber-500 text-xs">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              Syncing...
+            </div>
+          )}
+          {synced && (
+            <div className="flex items-center gap-2 px-2 py-1 text-green-500 text-xs opacity-60">
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              Synced
+            </div>
+          )}
+
+          {/* Run Button */}
+          {isExecutionSupported && (
+            <button
+              onClick={handleRun}
+              disabled={isRunning}
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRunning ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Play className="w-3 h-3 fill-current" />
+              )}
+              Run
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Monaco Editor Container */}
+      <div className="flex-1 relative min-h-0">
+        <Editor
+          height="100%"
+          defaultLanguage={monacoLanguage}
+          theme="vs-dark"
+          onMount={handleEditorMount}
+          options={{
+            readOnly: false,
+            minimap: { enabled: true },
+            fontSize: 14,
+            lineNumbers: "on",
+            wordWrap: "on",
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            padding: { top: 16, bottom: 16 },
+            cursorBlinking: "smooth",
+            cursorSmoothCaretAnimation: "on",
+            smoothScrolling: true,
+            tabSize: 2,
+            insertSpaces: true,
+            formatOnPaste: true,
+            formatOnType: true,
+            renderWhitespace: "selection",
+            bracketPairColorization: { enabled: true },
+            guides: {
+              bracketPairs: true,
+              indentation: true,
+            },
+          }}
+          loading={
+            <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
+              <div className="text-gray-400">Loading editor...</div>
+            </div>
+          }
+        />
+
+        {/* Terminal Panel */}
+        <Terminal
+          isOpen={isTerminalOpen}
+          onToggle={() => setIsTerminalOpen(!isTerminalOpen)}
+          output={output}
+          isError={isError}
+          isRunning={isRunning}
+        />
+      </div>
     </div>
   );
 }

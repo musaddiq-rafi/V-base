@@ -7,7 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { motion } from "framer-motion";
 import { X, FileCode, Folder, Loader2 } from "lucide-react";
 
-// Supported languages for code files
+// Supported languages for code files (only languages supported by Piston API for execution)
 const LANGUAGES = [
   { value: "javascript", label: "JavaScript", extension: ".js" },
   { value: "typescript", label: "TypeScript", extension: ".ts" },
@@ -15,20 +15,6 @@ const LANGUAGES = [
   { value: "java", label: "Java", extension: ".java" },
   { value: "cpp", label: "C++", extension: ".cpp" },
   { value: "c", label: "C", extension: ".c" },
-  { value: "csharp", label: "C#", extension: ".cs" },
-  { value: "go", label: "Go", extension: ".go" },
-  { value: "rust", label: "Rust", extension: ".rs" },
-  { value: "ruby", label: "Ruby", extension: ".rb" },
-  { value: "php", label: "PHP", extension: ".php" },
-  { value: "swift", label: "Swift", extension: ".swift" },
-  { value: "kotlin", label: "Kotlin", extension: ".kt" },
-  { value: "html", label: "HTML", extension: ".html" },
-  { value: "css", label: "CSS", extension: ".css" },
-  { value: "json", label: "JSON", extension: ".json" },
-  { value: "markdown", label: "Markdown", extension: ".md" },
-  { value: "sql", label: "SQL", extension: ".sql" },
-  { value: "yaml", label: "YAML", extension: ".yaml" },
-  { value: "shell", label: "Shell/Bash", extension: ".sh" },
 ];
 
 interface CreateCodeFileModalProps {
