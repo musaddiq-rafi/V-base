@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, FileCode, Users } from "lucide-react";
+import { ArrowLeft, Loader2, FileCode } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
@@ -12,6 +12,7 @@ import { Suspense } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
 import { CodeEditor } from "@/components/code/code-editor";
 import { ClientSideSuspense } from "@liveblocks/react";
+import { CodeEditorAvatars } from "@/components/code/code-editor-avatars";
 
 export default function CodeFilePage() {
   const params = useParams();
@@ -89,11 +90,14 @@ export default function CodeFilePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Active Users Placeholder */}
-              <div className="flex items-center gap-1 text-gray-400">
-                <Users className="w-4 h-4" />
-                <span className="text-xs">Collaborating</span>
-              </div>
+              {/* Active Users in this file */}
+              <ClientSideSuspense
+                fallback={
+                  <div className="text-xs text-gray-400">Loading...</div>
+                }
+              >
+                <CodeEditorAvatars />
+              </ClientSideSuspense>
             </div>
           </div>
         </motion.header>

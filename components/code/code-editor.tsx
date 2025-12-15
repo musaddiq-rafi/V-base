@@ -12,6 +12,24 @@ import { Id } from "@/convex/_generated/dataModel";
 import type { editor } from "monaco-editor";
 import { Awareness } from "y-protocols/awareness";
 
+// User colors for cursor presence
+const USER_COLORS = [
+  "#FF6B6B", // Red
+  "#4ECDC4", // Teal
+  "#45B7D1", // Blue
+  "#FFA07A", // Light Salmon
+  "#98D8C8", // Mint
+  "#F7DC6F", // Yellow
+  "#BB8FCE", // Purple
+  "#85C1E2", // Sky Blue
+  "#F8B739", // Orange
+  "#52B788", // Green
+];
+
+function getUserColor(connectionId: number): string {
+  return USER_COLORS[connectionId % USER_COLORS.length];
+}
+
 // Map our language values to Monaco language IDs
 const LANGUAGE_MAP: Record<string, string> = {
   javascript: "javascript",
@@ -43,6 +61,7 @@ interface CodeEditorProps {
 
 export function CodeEditor({ fileId, language }: CodeEditorProps) {
   const room = useRoom();
+  const self = useSelf();
   const userInfo = useSelf((me) => me.info);
   const [editorRef, setEditorRef] =
     useState<editor.IStandaloneCodeEditor | null>(null);
@@ -87,7 +106,7 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
 
     yProvider.on("sync", handleSync);
 
-    // Create Monaco binding
+    // Create Monaco binding with awareness
     const model = editorRef.getModel();
     if (model) {
       bindingRef.current = new MonacoBinding(
@@ -111,6 +130,32 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
       yDoc.destroy();
     };
   }, [editorRef, room, updateLastEditedDebounced]);
+
+  // Track if awareness has been set up to avoid infinite loops
+  const awarenessSetRef = useRef(false);
+
+  // Set user awareness for cursor presence (only once when provider is ready)
+  useEffect(() => {
+    if (!provider || !userInfo || !self || awarenessSetRef.current) return;
+
+    // Mark as set to prevent re-running
+    awarenessSetRef.current = true;
+
+    const awareness = provider.awareness as unknown as Awareness;
+    const userColor = getUserColor(self.connectionId);
+    awareness.setLocalStateField("user", {
+      name: userInfo.name || "Anonymous",
+      color: userColor,
+      colorLight: userColor + "40", // 25% opacity for selection
+    });
+  }, [provider, userInfo, self]);
+
+  // Reset awareness flag when provider changes
+  useEffect(() => {
+    if (!provider) {
+      awarenessSetRef.current = false;
+    }
+  }, [provider]);
 
   // Get Monaco language from our language value
   const monacoLanguage = LANGUAGE_MAP[language] || "plaintext";
