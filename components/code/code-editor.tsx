@@ -1,19 +1,27 @@
 "use client";
 
-import { useRoom, useSelf } from "@liveblocks/react/suspense";
-import Editor, { OnMount } from "@monaco-editor/react";
 import * as Y from "yjs";
-import { LiveblocksYjsProvider } from "@liveblocks/yjs";
-import { MonacoBinding } from "y-monaco";
+import { yCollab } from "y-codemirror.next";
+import { EditorView, basicSetup } from "codemirror";
+import { EditorState } from "@codemirror/state";
+import { javascript } from "@codemirror/lang-javascript";
+import { python } from "@codemirror/lang-python";
+import { cpp } from "@codemirror/lang-cpp";
+import { java } from "@codemirror/lang-java";
+import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getYjsProviderForRoom } from "@liveblocks/yjs";
+import { useRoom, useSelf } from "@liveblocks/react/suspense";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import type { editor } from "monaco-editor";
-import { Awareness } from "y-protocols/awareness";
-import { Play, Loader2 } from "lucide-react";
+import { Play, Loader2, Settings } from "lucide-react";
 import { Terminal } from "./terminal";
 import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
+import {
+  EditorSettingsModal,
+  EditorTheme,
+} from "./editor-settings-modal";
 
 // User colors for cursor presence
 const USER_COLORS = [
@@ -29,33 +37,33 @@ const USER_COLORS = [
   "#52B788", // Green
 ];
 
-function getUserColor(connectionId: number): string {
-  return USER_COLORS[connectionId % USER_COLORS.length];
+// Generate a consistent color based on user name
+function getUserColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
 }
 
-// Map our language values to Monaco language IDs
-const LANGUAGE_MAP: Record<string, string> = {
-  javascript: "javascript",
-  typescript: "typescript",
-  python: "python",
-  java: "java",
-  cpp: "cpp",
-  c: "c",
-  csharp: "csharp",
-  go: "go",
-  rust: "rust",
-  ruby: "ruby",
-  php: "php",
-  swift: "swift",
-  kotlin: "kotlin",
-  html: "html",
-  css: "css",
-  json: "json",
-  markdown: "markdown",
-  sql: "sql",
-  yaml: "yaml",
-  shell: "shell",
-};
+// Get CodeMirror language extension based on language string
+function getLanguageExtension(language: string) {
+  switch (language) {
+    case "javascript":
+      return javascript();
+    case "typescript":
+      return javascript({ typescript: true });
+    case "python":
+      return python();
+    case "java":
+      return java();
+    case "c":
+    case "cpp":
+      return cpp();
+    default:
+      return javascript();
+  }
+}
 
 interface CodeEditorProps {
   fileId: Id<"codeFiles">;
@@ -64,13 +72,17 @@ interface CodeEditorProps {
 
 export function CodeEditor({ fileId, language }: CodeEditorProps) {
   const room = useRoom();
-  const self = useSelf();
-  const userInfo = useSelf((me) => me.info);
-  const [editorRef, setEditorRef] =
-    useState<editor.IStandaloneCodeEditor | null>(null);
-  const [provider, setProvider] = useState<LiveblocksYjsProvider | null>(null);
+  const [element, setElement] = useState<HTMLElement>();
   const [synced, setSynced] = useState(false);
-  const bindingRef = useRef<MonacoBinding | null>(null);
+  const editorViewRef = useRef<EditorView | null>(null);
+
+  // Get user info from Liveblocks authentication endpoint
+  const userInfo = useSelf((me) => me.info);
+
+  // Editor Settings State
+  const [theme, setTheme] = useState<EditorTheme>("dark");
+  const [fontSize, setFontSize] = useState(14);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Execution State
   const [isRunning, setIsRunning] = useState(false);
@@ -87,103 +99,102 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
   const lastUpdateRef = useRef<number>(0);
   const updateLastEditedDebounced = useCallback(() => {
     const now = Date.now();
-    // Only update every 30 seconds to avoid too many writes
     if (now - lastUpdateRef.current > 30000) {
       lastUpdateRef.current = now;
       updateLastEdited({ fileId });
     }
   }, [fileId, updateLastEdited]);
 
-  // Handle editor mount
-  const handleEditorMount: OnMount = useCallback((editor) => {
-    setEditorRef(editor);
+  // Ref callback for the editor container
+  const ref = useCallback((node: HTMLElement | null) => {
+    if (!node) return;
+    setElement(node);
   }, []);
 
-  // Set up Yjs and Liveblocks provider
+  // Set up Liveblocks Yjs provider and attach CodeMirror editor
   useEffect(() => {
-    if (!editorRef || !room) return;
+    if (!element || !room || !userInfo) {
+      return;
+    }
 
-    // Create Yjs document and Liveblocks provider
-    const yDoc = new Y.Doc();
-    const yProvider = new LiveblocksYjsProvider(room, yDoc);
-    setProvider(yProvider);
+    // Get the singleton Yjs provider for this room
+    const provider = getYjsProviderForRoom(room);
+    const ydoc = provider.getYDoc();
+    const ytext = ydoc.getText("codemirror");
+    const undoManager = new Y.UndoManager(ytext);
 
-    // Get the shared text type
-    const yText = yDoc.getText("monaco");
-
-    // Set up sync status
+    // Listen for sync status
     const handleSync = (isSynced: boolean) => {
       setSynced(isSynced);
     };
+    provider.on("sync", handleSync);
 
-    yProvider.on("sync", handleSync);
-
-    // Create Monaco binding with awareness
-    const model = editorRef.getModel();
-    if (model) {
-      bindingRef.current = new MonacoBinding(
-        yText,
-        model,
-        new Set([editorRef]),
-        yProvider.awareness as unknown as Awareness
-      );
-    }
-
-    // Track edits
-    const disposable = editorRef.onDidChangeModelContent(() => {
-      updateLastEditedDebounced();
-    });
-
-    return () => {
-      disposable.dispose();
-      bindingRef.current?.destroy();
-      yProvider.off("sync", handleSync);
-      yProvider.destroy();
-      yDoc.destroy();
-    };
-  }, [editorRef, room, updateLastEditedDebounced]);
-
-  // Track if awareness has been set up to avoid infinite loops
-  const awarenessSetRef = useRef(false);
-
-  // Set user awareness for cursor presence (only once when provider is ready)
-  useEffect(() => {
-    if (!provider || !userInfo || !self || awarenessSetRef.current) return;
-
-    // Mark as set to prevent re-running
-    awarenessSetRef.current = true;
-
-    const awareness = provider.awareness as unknown as Awareness;
-    const userColor = getUserColor(self.connectionId);
-    awareness.setLocalStateField("user", {
+    // Attach user info to Yjs awareness for cursor presence
+    const userColor = getUserColor(userInfo.name || "Anonymous");
+    provider.awareness.setLocalStateField("user", {
       name: userInfo.name || "Anonymous",
       color: userColor,
-      colorLight: userColor + "40", // 25% opacity for selection
+      colorLight: userColor + "80",
     });
-  }, [provider, userInfo, self]);
 
-  // Reset awareness flag when provider changes
-  useEffect(() => {
-    if (!provider) {
-      awarenessSetRef.current = false;
-    }
-  }, [provider]);
+    // Set up CodeMirror with extensions
+    const state = EditorState.create({
+      doc: ytext.toString(),
+      extensions: [
+        basicSetup,
+        getLanguageExtension(language),
+        theme === "dark" ? vscodeDark : vscodeLight,
+        EditorView.lineWrapping,
+        EditorView.theme({
+          "&": {
+            height: "100%",
+            fontSize: `${fontSize}px`,
+          },
+          ".cm-scroller": {
+            overflow: "auto",
+          },
+          ".cm-content": {
+            fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
+          },
+          ".cm-gutters": {
+            fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
+          },
+        }),
+        yCollab(ytext, provider.awareness, { undoManager }),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            updateLastEditedDebounced();
+          }
+        }),
+      ],
+    });
+
+    // Attach CodeMirror to element
+    const view = new EditorView({
+      state,
+      parent: element,
+    });
+    editorViewRef.current = view;
+
+    return () => {
+      provider.off("sync", handleSync);
+      view?.destroy();
+    };
+  }, [element, room, userInfo, language, updateLastEditedDebounced, theme, fontSize]);
 
   // Handle Run Code
   const handleRun = async () => {
-    if (!editorRef) return;
+    if (!editorViewRef.current) return;
 
     setIsRunning(true);
-    setIsTerminalOpen(true); // Auto-open terminal
+    setIsTerminalOpen(true);
     setOutput(null);
     setIsError(false);
 
     try {
-      const sourceCode = editorRef.getValue();
+      const sourceCode = editorViewRef.current.state.doc.toString();
       const result = await executeCode(language, sourceCode);
 
-      // Piston returns separate stdout and stderr, but also a combined 'output'
-      // If code !== 0, it means the process failed (compilation error or runtime error)
       if (result.run.code !== 0) {
         setIsError(true);
       }
@@ -199,13 +210,10 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
     }
   };
 
-  // Get Monaco language from our language value
-  const monacoLanguage = LANGUAGE_MAP[language] || "plaintext";
-
   return (
     <div className="h-full w-full flex flex-col relative bg-[#1e1e1e]">
       {/* Editor Toolbar */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
+      <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <span className="font-mono text-xs bg-[#3c3c3c] px-2 py-1 rounded uppercase">
             {language}
@@ -232,6 +240,15 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
             </div>
           )}
 
+          {/* Settings Button */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-1.5 rounded-md hover:bg-[#3c3c3c] text-gray-400 hover:text-gray-200 transition-colors"
+            title="Editor Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
           {/* Run Button */}
           {isExecutionSupported && (
             <button
@@ -250,42 +267,9 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
         </div>
       </div>
 
-      {/* Monaco Editor Container */}
-      <div className="flex-1 relative min-h-0">
-        <Editor
-          height="100%"
-          defaultLanguage={monacoLanguage}
-          theme="vs-dark"
-          onMount={handleEditorMount}
-          options={{
-            readOnly: false,
-            minimap: { enabled: true },
-            fontSize: 14,
-            lineNumbers: "on",
-            wordWrap: "on",
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            padding: { top: 16, bottom: 16 },
-            cursorBlinking: "smooth",
-            cursorSmoothCaretAnimation: "on",
-            smoothScrolling: true,
-            tabSize: 2,
-            insertSpaces: true,
-            formatOnPaste: true,
-            formatOnType: true,
-            renderWhitespace: "selection",
-            bracketPairColorization: { enabled: true },
-            guides: {
-              bracketPairs: true,
-              indentation: true,
-            },
-          }}
-          loading={
-            <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
-              <div className="text-gray-400">Loading editor...</div>
-            </div>
-          }
-        />
+      {/* CodeMirror Editor Container */}
+      <div className="flex-1 relative min-h-0 overflow-hidden">
+        <div ref={ref} className="h-full w-full" />
 
         {/* Terminal Panel */}
         <Terminal
@@ -296,6 +280,16 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
           isRunning={isRunning}
         />
       </div>
+
+      {/* Settings Modal */}
+      <EditorSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        theme={theme}
+        onThemeChange={setTheme}
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
+      />
     </div>
   );
 }
