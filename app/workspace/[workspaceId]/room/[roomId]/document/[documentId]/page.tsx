@@ -8,8 +8,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
-import { Suspense } from "react";
-import { RoomProvider } from "@liveblocks/react/suspense";
+import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { CollaborativeEditor } from "@/components/document/collaborative-editor";
 
 export default function DocumentPage() {
@@ -51,6 +50,8 @@ export default function DocumentPage() {
 
   // Create unique Liveblocks room ID for this document
   const liveblocksRoomId = `doc:${documentId}`;
+  
+  console.log("🏠 Liveblocks Room ID:", liveblocksRoomId);
 
   return (
     <RoomProvider
@@ -58,7 +59,6 @@ export default function DocumentPage() {
       initialPresence={{
         cursor: null,
       }}
-      initialStorage={{}}
     >
       <div className="fixed inset-0 flex flex-col">
         {/* Header */}
@@ -88,7 +88,7 @@ export default function DocumentPage() {
 
         {/* Editor Content */}
         <div className="flex-1 relative">
-          <Suspense
+          <ClientSideSuspense
             fallback={
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
@@ -96,7 +96,7 @@ export default function DocumentPage() {
             }
           >
             <CollaborativeEditor documentId={documentId} />
-          </Suspense>
+          </ClientSideSuspense>
         </div>
       </div>
     </RoomProvider>

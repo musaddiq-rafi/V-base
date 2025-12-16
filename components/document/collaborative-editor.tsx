@@ -1,24 +1,39 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useLiveblocksExtension } from "@liveblocks/react-tiptap";
+import { useErrorListener, useStatus, useSyncStatus } from "@liveblocks/react/suspense";
 import { EditorToolbar } from "./editor-toolbar";
 import { DocumentHeader } from "./document-header";
 import { Id } from "@/convex/_generated/dataModel";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface CollaborativeEditorProps {
   documentId: Id<"documents">;
 }
 
 export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
+  // Connection status (WebSocket) and sync status (storage)
+  const status = useStatus();
+  const syncStatus = useSyncStatus({ smooth: true });
+
+  useErrorListener((err) => {
+    console.error("❌ Liveblocks error:", err);
+  });
+
+  useEffect(() => {
+    console.log("📡 Liveblocks:", { status, syncStatus });
+  }, [status, syncStatus]);
+
   // Set up Liveblocks collaborative extension
   const liveblocks = useLiveblocksExtension();
 
   // Initialize Tiptap editor with collaboration
   const editor = useEditor({
-    immediatelyRender: false,
+    immediatelyRender: false, // Required for Next.js SSR to avoid hydration mismatches
     extensions: [
       liveblocks,
       StarterKit.configure({
@@ -37,7 +52,6 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
       },
     },
   });
-
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -47,7 +61,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f9fbfd]">
+    <div className="relative flex flex-col h-full bg-[#f9fbfd]">
       {/* Document Header */}
       <DocumentHeader documentId={documentId} />
       
