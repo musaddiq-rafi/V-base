@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 // Maximum number of files allowed per room (applies to all file-producing rooms)
 const MAX_FILES_PER_ROOM = 10;
@@ -281,7 +282,8 @@ export const rename = mutation({
 
 /**
  * Delete a file or folder
- * For folders: blocks deletion if not empty (safe delete)
+ * For folders: recursively deletes all contents
+ * Returns list of file IDs that were deleted (for Liveblocks cleanup)
  */
 export const deleteNode = mutation({
   args: {
@@ -298,24 +300,77 @@ export const deleteNode = mutation({
       throw new Error("Item not found");
     }
 
-    // If it's a folder, check if it's empty
-    if (item.type === "folder") {
-      const children = await ctx.db
-        .query("codeFiles")
-        .withIndex("by_room_parent", (q) =>
-          q.eq("roomId", item.roomId).eq("parentId", args.id)
-        )
-        .first();
+    const deletedFileIds: string[] = [];
 
-      if (children) {
-        throw new Error(
-          "Cannot delete non-empty folder. Delete contents first."
-        );
+    // Helper function to recursively collect and delete items
+    const deleteRecursively = async (itemId: Id<"codeFiles">) => {
+      const currentItem = await ctx.db.get(itemId);
+      if (!currentItem) return;
+
+      // If it's a folder, first delete all children
+      if (currentItem.type === "folder") {
+        const children = await ctx.db
+          .query("codeFiles")
+          .withIndex("by_room_parent", (q) =>
+            q.eq("roomId", currentItem.roomId).eq("parentId", itemId)
+          )
+          .collect();
+
+        for (const child of children) {
+          await deleteRecursively(child._id);
+        }
+      }
+
+      // If it's a file, add to the list for Liveblocks cleanup
+      if (currentItem.type === "file") {
+        deletedFileIds.push(currentItem._id);
+      }
+
+      // Delete the item itself
+      await ctx.db.delete(itemId);
+    };
+
+    await deleteRecursively(args.id);
+
+    return { success: true, deletedFileIds };
+  },
+});
+
+/**
+ * Delete all code files for a room (used when deleting a room)
+ * Returns list of file IDs that were deleted (for Liveblocks cleanup)
+ */
+export const deleteAllFilesForRoom = mutation({
+  args: {
+    roomId: v.id("rooms"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get all files in this room
+    const allItems = await ctx.db
+      .query("codeFiles")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const deletedFileIds: string[] = [];
+
+    // Collect file IDs for Liveblocks cleanup
+    for (const item of allItems) {
+      if (item.type === "file") {
+        deletedFileIds.push(item._id);
       }
     }
 
-    await ctx.db.delete(args.id);
-    return { success: true };
+    // Delete all items
+    for (const item of allItems) {
+      await ctx.db.delete(item._id);
+    }
+
+    return { success: true, deletedFileIds };
   },
 });
 

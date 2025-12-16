@@ -11,7 +11,7 @@ export const createDocument = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     const documentId = await ctx.db.insert("documents", {
       roomId: args.roomId,
       workspaceId: args.workspaceId,
@@ -75,7 +75,7 @@ export const getDocumentById = query({
   },
   handler: async (ctx, args) => {
     const document = await ctx.db.get(args.documentId);
-    
+
     if (!document) {
       return null;
     }
@@ -124,6 +124,36 @@ export const deleteDocument = mutation({
   },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.documentId);
+    return { success: true, deletedDocumentId: args.documentId };
+  },
+});
+
+// Delete all documents for a room (used when deleting a room)
+export const deleteAllDocumentsForRoom = mutation({
+  args: {
+    roomId: v.id("rooms"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get all documents in this room
+    const documents = await ctx.db
+      .query("documents")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const deletedDocumentIds: string[] = [];
+
+    // Delete all documents
+    for (const doc of documents) {
+      deletedDocumentIds.push(doc._id);
+      await ctx.db.delete(doc._id);
+    }
+
+    return { success: true, deletedDocumentIds };
   },
 });
 

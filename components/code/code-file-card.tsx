@@ -93,8 +93,27 @@ export function CodeFileCard({
     e.stopPropagation();
     setIsDeleting(true);
     try {
-      await deleteNode({ id });
+      // Delete from Convex and get list of deleted file IDs
+      const result = await deleteNode({ id });
+
+      // Delete corresponding Liveblocks rooms for the deleted files
+      if (result.deletedFileIds && result.deletedFileIds.length > 0) {
+        const roomIds = result.deletedFileIds.map(
+          (fileId: string) => `code:${fileId}`
+        );
+
+        const response = await fetch("/api/liveblocks-delete-room", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roomIds }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to delete Liveblocks rooms");
+        }
+      }
     } catch (error: any) {
+      console.error("Delete error:", error);
       alert(error.message);
     } finally {
       setIsDeleting(false);
