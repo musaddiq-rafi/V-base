@@ -12,7 +12,7 @@ import { Suspense } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
 import { CodeEditor } from "@/components/code/code-editor";
 import { ClientSideSuspense } from "@liveblocks/react";
-import { CodeEditorAvatars } from "@/components/code/code-editor-avatars";
+import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 
 export default function CodeFilePage() {
   const params = useParams();
@@ -96,7 +96,7 @@ export default function CodeFilePage() {
                   <div className="text-xs text-gray-400">Loading...</div>
                 }
               >
-                <CodeEditorAvatars />
+                <ActiveUsersAvatars variant="dark" label="editing" />
               </ClientSideSuspense>
             </div>
           </div>
