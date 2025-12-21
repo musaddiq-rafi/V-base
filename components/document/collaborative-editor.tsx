@@ -9,7 +9,6 @@ import { useErrorListener, useStatus, useSyncStatus } from "@liveblocks/react/su
 import { EditorToolbar } from "./editor-toolbar";
 import { DocumentHeader } from "./document-header";
 import { Id } from "@/convex/_generated/dataModel";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface CollaborativeEditorProps {
   documentId: Id<"documents">;
@@ -48,7 +47,6 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
       attributes: {
         class:
           "prose prose-base max-w-none focus:outline-none outline-none",
-        style: "font-family: Arial, sans-serif; line-height: 1.6; color: #202124;",
       },
     },
   });
@@ -61,18 +59,18 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
   }
 
   return (
-    <div className="relative flex flex-col h-full bg-[#f9fbfd]">
-      {/* Document Header */}
-      <DocumentHeader documentId={documentId} />
-      
-      {/* Toolbar */}
-      <EditorToolbar editor={editor} />
-      
-      {/* Editor Content - Google Docs style */}
-      <div className="flex-1 overflow-y-auto bg-[#f9fbfd]">
-        <div className="max-w-[850px] mx-auto py-12 px-6">
-          <div className="bg-white shadow-lg min-h-[1056px] p-24">
-            <EditorContent editor={editor} />
+    <div className="relative flex h-full flex-col bg-muted/30">
+      <div className="sticky top-0 z-20 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <DocumentHeader documentId={documentId} />
+        <EditorToolbar editor={editor} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-[900px] px-4 py-10 sm:px-6">
+          <div className="rounded-md border bg-card shadow-sm">
+            <div className="min-h-[1056px] px-10 py-12 sm:px-16 sm:py-14">
+              <EditorContent editor={editor} />
+            </div>
           </div>
         </div>
       </div>
