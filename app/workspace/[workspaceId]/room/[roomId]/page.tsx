@@ -4,14 +4,15 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, Presentation } from "lucide-react";
+import { ArrowLeft, Loader2, Presentation, FileCode } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
 import { useEffect, Suspense } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
 import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
-
+import { DocumentList } from "@/components/document/document-list";
+import { FileExplorer } from "@/components/code/file-explorer";
 
 export default function RoomPage() {
   const params = useParams();
@@ -60,8 +61,94 @@ export default function RoomPage() {
     );
   }
 
-  // Create unique room ID for Liveblocks
+  // Create unique room ID for Liveblocks (only for whiteboard)
   const liveblocksRoomId = `room:${roomId}`;
+
+  // For document rooms, show document list instead of editor
+  if (room.type === "document") {
+    return (
+      <div className="fixed inset-0 flex flex-col">
+        {/* Header */}
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="flex-shrink-0 z-50 bg-white border-b border-gray-200"
+        >
+          <div className="flex items-center justify-between h-14 px-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/workspace/${organization.id}`}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back</span>
+              </Link>
+              <div className="h-6 w-px bg-gray-200" />
+              <div className="flex items-center gap-2">
+                <Presentation className="w-5 h-5 text-purple-600" />
+                <span className="font-semibold text-gray-900">{room.name}</span>
+                <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
+                  {room.type}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.header>
+
+        {/* Document List */}
+        <div className="flex-1 relative">
+          <DocumentList
+            roomId={roomId}
+            workspaceId={organization.id}
+            convexWorkspaceId={workspace._id}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // For code rooms, show file explorer instead of editor
+  if (room.type === "code") {
+    return (
+      <div className="fixed inset-0 flex flex-col">
+        {/* Header */}
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="flex-shrink-0 z-50 bg-white border-b border-gray-200"
+        >
+          <div className="flex items-center justify-between h-14 px-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/workspace/${organization.id}`}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back</span>
+              </Link>
+              <div className="h-6 w-px bg-gray-200" />
+              <div className="flex items-center gap-2">
+                <FileCode className="w-5 h-5 text-emerald-600" />
+                <span className="font-semibold text-gray-900">{room.name}</span>
+                <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
+                  {room.type}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.header>
+
+        {/* File Explorer */}
+        <div className="flex-1 relative">
+          <FileExplorer
+            roomId={roomId}
+            workspaceId={organization.id}
+            convexWorkspaceId={workspace._id}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <RoomProvider
@@ -69,6 +156,7 @@ export default function RoomPage() {
       initialPresence={{
         cursor: null,
       }}
+      initialStorage={{}}
     >
       <div className="fixed inset-0 flex flex-col">
         {/* Header */}
@@ -89,9 +177,7 @@ export default function RoomPage() {
               <div className="h-6 w-px bg-gray-200" />
               <div className="flex items-center gap-2">
                 <Presentation className="w-5 h-5 text-purple-600" />
-                <span className="font-semibold text-gray-900">
-                  {room.name}
-                </span>
+                <span className="font-semibold text-gray-900">{room.name}</span>
                 <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
                   {room.type}
                 </span>
@@ -100,7 +186,7 @@ export default function RoomPage() {
           </div>
         </motion.header>
 
-        {/* Whiteboard - Full Screen */}
+        {/* Room Content - Conditional based on type */}
         <div className="flex-1 relative">
           <Suspense
             fallback={
@@ -109,7 +195,15 @@ export default function RoomPage() {
               </div>
             }
           >
-            <Whiteboard roomId={roomId} />
+            {room.type === "whiteboard" && <Whiteboard roomId={roomId} />}
+            {room.type === "conference" && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-gray-500">
+                  <p className="text-lg font-medium mb-2">Conference Room</p>
+                  <p className="text-sm">Coming soon...</p>
+                </div>
+              </div>
+            )}
           </Suspense>
         </div>
       </div>

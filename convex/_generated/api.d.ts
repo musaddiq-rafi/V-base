@@ -10,6 +10,8 @@
 
 import type * as channels from "../channels.js";
 import type * as clerk from "../clerk.js";
+import type * as codeFiles from "../codeFiles.js";
+import type * as documents from "../documents.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as rooms from "../rooms.js";
@@ -25,6 +27,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   channels: typeof channels;
   clerk: typeof clerk;
+  codeFiles: typeof codeFiles;
+  documents: typeof documents;
   http: typeof http;
   messages: typeof messages;
   rooms: typeof rooms;
