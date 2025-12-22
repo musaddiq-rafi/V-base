@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Liveblocks styles for collaborative features */
+@import "@liveblocks/react-ui/styles.css";
+@import "@liveblocks/react-tiptap/styles.css";
+
 :root {
   --background: 0 0% 100%;
   --foreground: 0 0% 3.9%;
