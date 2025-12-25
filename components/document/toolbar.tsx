@@ -346,7 +346,13 @@ export function Toolbar({ editor, onExport }: ToolbarProps) {
           {TEXT_COLORS.map((color) => (
             <DropdownMenuItem
               key={color.value}
-              onClick={() => editor.chain().focus().setColor(color.value).run()}
+              onClick={() => {
+                try {
+                  editor.chain().focus().setColor(color.value).run();
+                } catch (e) {
+                  console.error('Error setting color:', e);
+                }
+              }}
               className="cursor-pointer gap-2"
             >
               <div className="w-4 h-4 rounded border" style={{ backgroundColor: color.value }} />
@@ -355,7 +361,13 @@ export function Toolbar({ editor, onExport }: ToolbarProps) {
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => editor.chain().focus().unsetColor().run()}
+            onClick={() => {
+              try {
+                editor.chain().focus().unsetColor().run();
+              } catch (e) {
+                console.error('Error unsetting color:', e);
+              }
+            }}
             className="cursor-pointer"
           >
             Remove color
@@ -374,7 +386,13 @@ export function Toolbar({ editor, onExport }: ToolbarProps) {
           {HIGHLIGHT_COLORS.map((color) => (
             <DropdownMenuItem
               key={color.value}
-              onClick={() => editor.chain().focus().toggleHighlight({ color: color.value }).run()}
+              onClick={() => {
+                try {
+                  editor.chain().focus().toggleHighlight({ color: color.value }).run();
+                } catch (e) {
+                  console.error('Error setting highlight:', e);
+                }
+              }}
               className="cursor-pointer gap-2"
             >
               <div className="w-4 h-4 rounded border" style={{ backgroundColor: color.value }} />
@@ -383,7 +401,13 @@ export function Toolbar({ editor, onExport }: ToolbarProps) {
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => editor.chain().focus().unsetHighlight().run()}
+            onClick={() => {
+              try {
+                editor.chain().focus().unsetHighlight().run();
+              } catch (e) {
+                console.error('Error unsetting highlight:', e);
+              }
+            }}
             className="cursor-pointer"
           >
             Remove highlight

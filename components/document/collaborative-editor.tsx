@@ -96,20 +96,21 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
       Placeholder.configure({
         placeholder: "Start typing your document...",
       }),
-      Underline,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
+      // TextStyle must come before Color and FontFamily
+      TextStyle.configure({
+        HTMLAttributes: {},
       }),
+      FontSize,
       FontFamily.configure({
         types: ['textStyle'],
       }),
-      TextStyle,
-      FontSize,
-      Color.configure({
-        types: ['textStyle'],
-      }),
+      Color,
       Highlight.configure({
         multicolor: true,
+      }),
+      Underline,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
       }),
       Link.configure({
         openOnClick: true,
