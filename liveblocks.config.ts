@@ -1,17 +1,15 @@
 // Define Liveblocks types for your application
 // https://liveblocks.io/docs/api-reference/liveblocks-react#Typing-your-data
+
 declare global {
   interface Liveblocks {
     // Each user's Presence, for useMyPresence, useOthers, etc.
     Presence: {
-      // Cursor position (optional, for future use)
-      cursor?: { x: number; y: number } | null;
+      cursor: { x: number; y: number } | null;
     };
 
-    // The Storage tree for the room, for useMutation, useStorage, etc.
-    Storage: {
-      // Will be used for room-specific storage later
-    };
+    // The Storage tree for the room (not used for whiteboard)
+    Storage: {};
 
     // Custom user info set when authenticating with a secret key
     UserMeta: {
@@ -23,8 +21,11 @@ declare global {
       };
     };
 
-    // Custom events, for useBroadcastEvent, useEventListener
-    RoomEvent: {};
+    // Custom events for broadcasting drawing updates
+    RoomEvent: {
+      type: "DRAW";
+      elements: any[];
+    };
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.
     ThreadMetadata: {};

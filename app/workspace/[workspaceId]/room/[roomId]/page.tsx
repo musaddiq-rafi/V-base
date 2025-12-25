@@ -11,6 +11,7 @@ import { useOrganization } from "@clerk/nextjs";
 import { useEffect, Suspense } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
 import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
+import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 
 
 export default function RoomPage() {
@@ -97,6 +98,9 @@ export default function RoomPage() {
                 </span>
               </div>
             </div>
+            <Suspense fallback={<div className="text-sm text-gray-500">Loading...</div>}>
+              <ActiveUsersAvatars />
+            </Suspense>
           </div>
         </motion.header>
 
