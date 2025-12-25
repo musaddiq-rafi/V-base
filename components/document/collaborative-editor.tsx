@@ -304,71 +304,64 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
       </div>
 
       {/* Editor Container - A4 Paper Pages */}
-      <div className="flex flex-col items-center pb-10 gap-4 print:p-0 print:gap-0">
-        {/* Render pages dynamically based on content */}
-        {Array.from({ length: pageCount }, (_, index) => (
+      <div className="flex flex-col items-center py-6 gap-0 print:p-0">
+        {/* Pages wrapper - creates visual separation between pages */}
+        <div 
+          className="relative"
+          style={{ width: `${PAGE_WIDTH}px` }}
+        >
+          {/* Page backgrounds - visually separate white cards */}
+          {Array.from({ length: pageCount }, (_, index) => (
+            <div
+              key={`page-${index}`}
+              className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] print:shadow-none pointer-events-none"
+              style={{
+                width: `${PAGE_WIDTH}px`,
+                height: `${PAGE_HEIGHT}px`,
+                marginBottom: index < pageCount - 1 ? '24px' : '0',
+              }}
+            />
+          ))}
+          
+          {/* Editor overlay - positioned absolutely over the pages */}
           <div 
-            key={index}
-            className="page-container bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] print:shadow-none print:break-after-page"
+            ref={editorContainerRef}
+            className="absolute top-0 left-0 right-0"
             style={{
-              width: `${PAGE_WIDTH}px`,
-              minHeight: `${PAGE_HEIGHT}px`,
-              ...(index > 0 && { display: 'none' }), // Hide additional page containers, content flows naturally
+              paddingTop: `${PAGE_PADDING_TOP}px`,
+              paddingLeft: `${leftMargin}px`,
+              paddingRight: `${rightMargin}px`,
             }}
           >
-            {/* Only render editor in first page container - content flows naturally */}
-            {index === 0 && (
-              <div 
-                ref={editorContainerRef}
-                className="print:py-0"
-                style={{
-                  paddingTop: `${PAGE_PADDING_TOP}px`,
-                  paddingBottom: `${PAGE_PADDING_BOTTOM}px`,
-                }}
-              >
-                <EditorContent 
-                  editor={editor} 
-                  className="prose prose-sm sm:prose max-w-none [&_.ProseMirror]:min-h-[calc(1123px-192px)]"
-                />
-              </div>
-            )}
+            <EditorContent 
+              editor={editor} 
+              className="prose prose-sm sm:prose max-w-none [&_.ProseMirror]:min-h-[calc(1123px-192px)]"
+            />
           </div>
-        ))}
+          
+          {/* Page number indicators */}
+          {Array.from({ length: pageCount }, (_, index) => (
+            <div
+              key={`page-num-${index}`}
+              className="absolute text-xs text-gray-400 print:hidden pointer-events-none"
+              style={{
+                top: `${index * (PAGE_HEIGHT + 24) + PAGE_HEIGHT + 4}px`,
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+            >
+              {index + 1}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Page break indicator lines and Print Styles */}
+      {/* Print Styles */}
       <style jsx global>{`
         /* A4 page sizing */
         @page {
           size: A4;
           margin: 25.4mm;
-        }
-        
-        /* Page break styling for visual indication */
-        .page-container {
-          position: relative;
-        }
-        
-        /* Visual page break indicator */
-        .page-container::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 5px,
-            #ccc 5px,
-            #ccc 10px
-          );
-          pointer-events: none;
-        }
-        
-        .page-container:last-child::after {
-          display: none;
         }
         
         @media print {
@@ -380,15 +373,6 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
           }
           .ProseMirror {
             padding: 0 !important;
-          }
-          .page-container {
-            width: 100% !important;
-            min-height: auto !important;
-            box-shadow: none !important;
-            break-after: page;
-          }
-          .page-container::after {
-            display: none !important;
           }
         }
         
