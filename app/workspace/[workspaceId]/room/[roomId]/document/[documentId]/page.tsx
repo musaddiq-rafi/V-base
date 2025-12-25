@@ -87,7 +87,7 @@ export default function DocumentPage() {
         </motion.header>
 
         {/* Editor Content */}
-        <div className="flex-1 relative">
+        <div className="flex-1 overflow-auto">
           <ClientSideSuspense
             fallback={
               <div className="absolute inset-0 flex items-center justify-center">
