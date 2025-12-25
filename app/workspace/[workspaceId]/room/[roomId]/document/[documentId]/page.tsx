@@ -60,12 +60,12 @@ export default function DocumentPage() {
         cursor: null,
       }}
     >
-      <div className="fixed inset-0 flex flex-col">
+      <div className="fixed inset-0 flex flex-col print:static print:block">
         {/* Header */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex-shrink-0 z-50 bg-white border-b border-gray-200"
+          className="flex-shrink-0 z-50 bg-white border-b border-gray-200 print:hidden"
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
@@ -87,7 +87,7 @@ export default function DocumentPage() {
         </motion.header>
 
         {/* Editor Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto print:overflow-visible print:flex-none print:h-auto">
           <ClientSideSuspense
             fallback={
               <div className="absolute inset-0 flex items-center justify-center">

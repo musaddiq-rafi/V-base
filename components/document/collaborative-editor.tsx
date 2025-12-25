@@ -69,6 +69,13 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
   const [rightMargin, setRightMargin] = useState(56);
   const [pageCount, setPageCount] = useState(1);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const [showRuler, setShowRuler] = useState(true);
+  const [showPageBreaks, setShowPageBreaks] = useState(true);
+  const [showPageNumbers, setShowPageNumbers] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Connection status (WebSocket) and sync status (storage)
   const status = useStatus();
@@ -152,6 +159,19 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
     }
   }, [editor, calculatePageCount]);
 
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullScreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    onFullscreenChange();
+
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, []);
+
   // Update editor padding when margins change
   useEffect(() => {
     if (editor) {
@@ -166,113 +186,6 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
     }
   }, [editor, leftMargin, rightMargin]);
 
-  // Export handler
-  const handleExport = useCallback(async (format: "pdf" | "html" | "txt" | "docx") => {
-    if (!editor) return;
-
-    const html = editor.getHTML();
-    const text = editor.getText();
-    const fileName = `document-${documentId}`;
-
-    switch (format) {
-      case "pdf": {
-        // Dynamic import for html2pdf
-        const html2pdf = (await import("html2pdf.js")).default;
-        const element = document.createElement("div");
-        element.innerHTML = html;
-        element.style.fontFamily = "Arial, sans-serif";
-        element.style.padding = "20px";
-        element.style.width = `${PAGE_WIDTH - leftMargin - rightMargin}px`;
-        
-        const opt = {
-          margin: [25.4, 25.4, 25.4, 25.4] as [number, number, number, number], // 1 inch margins in mm
-          filename: `${fileName}.pdf`,
-          image: { type: "jpeg" as const, quality: 0.98 },
-          html2canvas: { 
-            scale: 2,
-            useCORS: true,
-          },
-          jsPDF: { 
-            unit: "mm" as const, 
-            format: "a4" as const, 
-            orientation: "portrait" as const 
-          },
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] as const },
-        };
-        
-        html2pdf().set(opt).from(element).save();
-        break;
-      }
-      
-      case "html": {
-        const fullHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${fileName}</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: ${PAGE_WIDTH}px; margin: 0 auto; padding: 20px; }
-  </style>
-</head>
-<body>${html}</body>
-</html>`;
-        const blob = new Blob([fullHtml], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${fileName}.html`;
-        a.click();
-        URL.revokeObjectURL(url);
-        break;
-      }
-      
-      case "txt": {
-        const blob = new Blob([text], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${fileName}.txt`;
-        a.click();
-        URL.revokeObjectURL(url);
-        break;
-      }
-      
-      case "docx": {
-        // For DOCX, we'll create an HTML file that Word can open
-        // A full DOCX would require a library like docx-js
-        const wordHtml = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" 
-      xmlns:w="urn:schemas-microsoft-com:office:word" 
-      xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-  <meta charset="utf-8">
-  <title>${fileName}</title>
-  <!--[if gte mso 9]>
-  <xml>
-    <w:WordDocument>
-      <w:View>Print</w:View>
-    </w:WordDocument>
-  </xml>
-  <![endif]-->
-  <style>
-    body { font-family: Arial, sans-serif; }
-    @page { size: A4; margin: 2.54cm; }
-  </style>
-</head>
-<body>${html}</body>
-</html>`;
-        const blob = new Blob([wordHtml], { type: "application/msword" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${fileName}.doc`;
-        a.click();
-        URL.revokeObjectURL(url);
-        break;
-      }
-    }
-  }, [editor, documentId, leftMargin, rightMargin]);
-
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-full bg-[#F9FBFD]">
@@ -281,45 +194,80 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
     );
   }
 
+  const handleToggleFullScreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+
+      if (!rootRef.current?.requestFullscreen) return;
+      await rootRef.current.requestFullscreen();
+    } catch {
+      // Ignore (fullscreen may be blocked)
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F9FBFD] print:bg-white">
+    <div ref={rootRef} className="min-h-screen bg-[#F9FBFD] print:bg-white">
       {/* Header - sticky at top */}
       <div className="sticky top-0 z-20 bg-[#F9FBFD] print:hidden">
-        <DocumentHeader documentId={documentId} />
+        <DocumentHeader
+          documentId={documentId}
+          editor={editor}
+          showRuler={showRuler}
+          onShowRulerChange={setShowRuler}
+          showPageBreaks={showPageBreaks}
+          onShowPageBreaksChange={setShowPageBreaks}
+          showPageNumbers={showPageNumbers}
+          onShowPageNumbersChange={setShowPageNumbers}
+          isFullScreen={isFullScreen}
+          onToggleFullScreen={handleToggleFullScreen}
+          zoom={zoom}
+          onZoomChange={setZoom}
+        />
         
         {/* Toolbar Container */}
         <div className="flex justify-center px-4 pb-2">
-          <Toolbar editor={editor} onExport={handleExport} />
+          <Toolbar editor={editor} />
         </div>
       </div>
 
       {/* Ruler */}
-      <div className="sticky top-[104px] z-10 bg-[#F9FBFD] print:hidden">
-        <Ruler
-          leftMargin={leftMargin}
-          rightMargin={rightMargin}
-          onLeftMarginChange={setLeftMargin}
-          onRightMarginChange={setRightMargin}
-          pageWidth={PAGE_WIDTH}
-        />
-      </div>
+      {showRuler && (
+        <div className="sticky top-[104px] z-10 bg-[#F9FBFD] print:hidden">
+          <Ruler
+            leftMargin={leftMargin}
+            rightMargin={rightMargin}
+            onLeftMarginChange={setLeftMargin}
+            onRightMarginChange={setRightMargin}
+            pageWidth={PAGE_WIDTH}
+          />
+        </div>
+      )}
 
       {/* Editor Container - A4 Paper Pages */}
-      <div className="flex flex-col items-center py-6 gap-0 print:p-0">
+      <div className="flex flex-col items-center py-6 gap-0 print:p-0 print:py-0">
         {/* Pages wrapper - creates visual separation between pages */}
         <div 
-          className="relative"
-          style={{ width: `${PAGE_WIDTH}px` }}
+          className="relative editor-zoom-wrapper"
+          style={{
+            width: `${PAGE_WIDTH}px`,
+            ...(zoom !== 1 ? ({ zoom } as any) : {}),
+          }}
         >
           {/* Page backgrounds - visually separate white cards */}
           {Array.from({ length: pageCount }, (_, index) => (
             <div
               key={`page-${index}`}
-              className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] print:shadow-none pointer-events-none"
+              className={
+                showPageBreaks
+                  ? "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)] mb-6 last:mb-0 print:shadow-none print:mb-0 pointer-events-none print:hidden"
+                  : "bg-white shadow-none mb-0 pointer-events-none print:hidden"
+              }
               style={{
                 width: `${PAGE_WIDTH}px`,
                 height: `${PAGE_HEIGHT}px`,
-                marginBottom: index < pageCount - 1 ? '24px' : '0',
               }}
             />
           ))}
@@ -327,7 +275,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
           {/* Editor overlay - positioned absolutely over the pages */}
           <div 
             ref={editorContainerRef}
-            className="absolute top-0 left-0 right-0"
+            className="absolute top-0 left-0 right-0 print:static print:m-0 print:h-auto print:overflow-visible"
             style={{
               paddingTop: `${PAGE_PADDING_TOP}px`,
               paddingLeft: `${leftMargin}px`,
@@ -341,19 +289,20 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
           </div>
           
           {/* Page number indicators */}
-          {Array.from({ length: pageCount }, (_, index) => (
-            <div
-              key={`page-num-${index}`}
-              className="absolute text-xs text-gray-400 print:hidden pointer-events-none"
-              style={{
-                top: `${index * (PAGE_HEIGHT + 24) + PAGE_HEIGHT + 4}px`,
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
-            >
-              {index + 1}
-            </div>
-          ))}
+          {showPageNumbers &&
+            Array.from({ length: pageCount }, (_, index) => (
+              <div
+                key={`page-num-${index}`}
+                className="absolute text-xs text-gray-400 print:hidden pointer-events-none"
+                style={{
+                  top: `${index * (PAGE_HEIGHT + 24) + PAGE_HEIGHT + 4}px`,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                }}
+              >
+                {index + 1}
+              </div>
+            ))}
         </div>
       </div>
 
@@ -368,6 +317,9 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
         @media print {
           body {
             background: white !important;
+          }
+          .editor-zoom-wrapper {
+            zoom: 1 !important;
           }
           .print\\:hidden {
             display: none !important;

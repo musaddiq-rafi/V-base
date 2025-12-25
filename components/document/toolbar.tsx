@@ -21,16 +21,9 @@ import {
   ChevronDown,
   Link2,
   Image,
-  MessageSquare,
   Highlighter,
-  Download,
-  FileText,
-  FileType,
   RemoveFormatting,
-  Superscript,
-  Subscript,
   Minus,
-  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -40,14 +33,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 
 interface ToolbarProps {
   editor: Editor;
-  onExport?: (format: "pdf" | "html" | "txt" | "docx") => void;
 }
 
 interface ToolbarButtonProps {
@@ -134,7 +123,7 @@ const TEXT_COLORS = [
   { label: "Purple", value: "#9900ff" },
 ];
 
-export function Toolbar({ editor, onExport }: ToolbarProps) {
+export function Toolbar({ editor }: ToolbarProps) {
   const [currentFont, setCurrentFont] = useState("Arial");
   const [currentFontSize, setCurrentFontSize] = useState("11");
 
@@ -188,35 +177,6 @@ export function Toolbar({ editor, onExport }: ToolbarProps) {
       <ToolbarButton onClick={() => {}} title="Spelling and grammar check">
         <SpellCheck className="h-4 w-4" />
       </ToolbarButton>
-
-      {/* Export Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center justify-center h-7 min-w-7 px-1.5 rounded-sm hover:bg-neutral-200/80 transition-colors" title="Download">
-            <Download className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[200px]">
-          <DropdownMenuItem onClick={() => onExport?.("pdf")} className="cursor-pointer gap-2">
-            <FileText className="h-4 w-4" />
-            Download as PDF
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onExport?.("docx")} className="cursor-pointer gap-2">
-            <FileType className="h-4 w-4" />
-            Download as Word (.docx)
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onExport?.("html")} className="cursor-pointer gap-2">
-            <Code className="h-4 w-4" />
-            Download as HTML
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onExport?.("txt")} className="cursor-pointer gap-2">
-            <FileText className="h-4 w-4" />
-            Download as Plain Text
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
 
       {/* Heading Level Dropdown */}
       <DropdownMenu>
