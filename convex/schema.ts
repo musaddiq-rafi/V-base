@@ -89,4 +89,33 @@ export default defineSchema({
     .index("by_user_channel", ["userId", "channelId"])
     .index("by_user", ["userId"])
     .index("by_channel", ["channelId"]),
+
+  // Documents within document rooms
+  documents: defineTable({
+    roomId: v.id("rooms"), // Parent document room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Document name (e.g., "Project Proposal")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  // Code files and folders within code rooms
+  codeFiles: defineTable({
+    workspaceId: v.id("workspaces"),
+    roomId: v.id("rooms"),
+    name: v.string(), // File or folder name
+    type: v.union(v.literal("file"), v.literal("folder")),
+    parentId: v.optional(v.id("codeFiles")), // For nesting (undefined = root level)
+    language: v.optional(v.string()), // Only for files (e.g., "javascript", "python")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room_parent", ["roomId", "parentId"]) // Efficient folder navigation
+    .index("by_room", ["roomId"]), // For counting total files
 });

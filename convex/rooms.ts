@@ -51,13 +51,62 @@ export const getRoomById = query({
   },
 });
 
-// Delete a room
+// Delete a room and all its contents
+// Returns information about what was deleted for Liveblocks cleanup
 export const deleteRoom = mutation({
   args: {
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const room = await ctx.db.get(args.roomId);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    const liveblocksRoomIdsToDelete: string[] = [];
+
+    // Handle different room types
+    if (room.type === "code") {
+      // Delete all code files in this room and collect their IDs
+      const codeFiles = await ctx.db
+        .query("codeFiles")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const file of codeFiles) {
+        if (file.type === "file") {
+          liveblocksRoomIdsToDelete.push(`code:${file._id}`);
+        }
+        await ctx.db.delete(file._id);
+      }
+    } else if (room.type === "document") {
+      // Delete all documents in this room and collect their IDs
+      const documents = await ctx.db
+        .query("documents")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const doc of documents) {
+        liveblocksRoomIdsToDelete.push(`doc:${doc._id}`);
+        await ctx.db.delete(doc._id);
+      }
+    } else if (room.type === "whiteboard" || room.type === "conference") {
+      // These room types have their own Liveblocks room
+      liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
+    }
+
+    // Delete the room itself
     await ctx.db.delete(args.roomId);
-    return { success: true };
+
+    return {
+      success: true,
+      roomType: room.type,
+      liveblocksRoomIdsToDelete,
+    };
   },
 });

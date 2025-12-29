@@ -8,8 +8,10 @@ declare global {
       cursor: { x: number; y: number } | null;
     };
 
-    // The Storage tree for the room (not used for whiteboard)
-    Storage: {};
+    // The Storage tree for the room, for useMutation, useStorage, etc.
+    Storage: {
+      // Empty for Yjs documents - managed by @liveblocks/react-tiptap
+    };
 
     // Custom user info set when authenticating with a secret key
     UserMeta: {
@@ -18,6 +20,7 @@ declare global {
         name: string;
         email: string;
         avatar: string;
+        color: string;
       };
     };
 

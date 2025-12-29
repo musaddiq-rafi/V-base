@@ -184,7 +184,6 @@ export const getCurrentWorkspace = query({
   },
 });
 
-
 // INTERNAL MUTATION: For the Webhook to create/update workspaces
 export const upsertWorkspaceFromWebhook = internalMutation({
   args: {
@@ -215,7 +214,9 @@ export const upsertWorkspaceFromWebhook = internalMutation({
 export const deleteWorkspaceFromWebhook = internalMutation({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
-    console.log(`[Webhook] Deleting workspace data for Org: ${args.clerkOrgId}`);
+    console.log(
+      `[Webhook] Deleting workspace data for Org: ${args.clerkOrgId}`
+    );
 
     // 1. Find the workspace
     const workspace = await ctx.db
@@ -259,13 +260,34 @@ export const deleteWorkspaceFromWebhook = internalMutation({
       await ctx.db.delete(channel._id);
     }
 
-    // 3. Find and Delete All Rooms (Docs/Whiteboards)
+    // 3. Find and Delete All Rooms and their contents
     const rooms = await ctx.db
       .query("rooms")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
       .collect();
 
     for (const room of rooms) {
+      // A. Delete all documents in document rooms
+      const documents = await ctx.db
+        .query("documents")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const doc of documents) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // B. Delete all code files in code rooms
+      const codeFiles = await ctx.db
+        .query("codeFiles")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const file of codeFiles) {
+        await ctx.db.delete(file._id);
+      }
+
+      // C. Delete the room itself
       await ctx.db.delete(room._id);
     }
 
