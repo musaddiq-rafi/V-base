@@ -4,7 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, Presentation, FileCode } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Presentation,
+  FileCode,
+  Video,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
@@ -15,6 +21,7 @@ import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 
 import { DocumentList } from "@/components/document/document-list";
 import { FileExplorer } from "@/components/code/file-explorer";
+import { MeetingRoom } from "@/components/meeting/meeting-room";
 
 export default function RoomPage() {
   const params = useParams();
@@ -152,6 +159,17 @@ export default function RoomPage() {
     );
   }
 
+  // For conference rooms, show the meeting room
+  if (room.type === "conference") {
+    return (
+      <MeetingRoom
+        roomId={roomId}
+        roomName={room.name}
+        workspaceId={organization.id}
+      />
+    );
+  }
+
   return (
     <RoomProvider
       id={liveblocksRoomId}
@@ -185,13 +203,15 @@ export default function RoomPage() {
                 </span>
               </div>
             </div>
-            <Suspense fallback={<div className="text-sm text-gray-500">Loading...</div>}>
+            <Suspense
+              fallback={<div className="text-sm text-gray-500">Loading...</div>}
+            >
               <ActiveUsersAvatars />
             </Suspense>
           </div>
         </motion.header>
 
-        {/* Room Content - Conditional based on type */}
+        {/* Room Content - Whiteboard only (conference is handled above) */}
         <div className="flex-1 relative">
           <Suspense
             fallback={
@@ -201,14 +221,6 @@ export default function RoomPage() {
             }
           >
             {room.type === "whiteboard" && <Whiteboard roomId={roomId} />}
-            {room.type === "conference" && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <p className="text-lg font-medium mb-2">Conference Room</p>
-                  <p className="text-sm">Coming soon...</p>
-                </div>
-              </div>
-            )}
           </Suspense>
         </div>
       </div>

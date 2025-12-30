@@ -31,6 +31,18 @@ export const createRoom = mutation({
       );
     }
 
+    // Check if trying to create a conference room when one already exists
+    if (args.type === "conference") {
+      const existingConferenceRoom = existingRooms.find(
+        (room) => room.type === "conference"
+      );
+      if (existingConferenceRoom) {
+        throw new Error(
+          "This workspace already has a meeting room. Only one meeting room is allowed per workspace."
+        );
+      }
+    }
+
     // Create the room
     const roomId = await ctx.db.insert("rooms", {
       workspaceId: args.workspaceId,
@@ -139,6 +151,8 @@ export const getRoomStats = query({
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .collect();
 
-    return { count: rooms.length, maxLimit: 10 };
+    const hasMeetingRoom = rooms.some((room) => room.type === "conference");
+
+    return { count: rooms.length, maxLimit: 10, hasMeetingRoom };
   },
 });
