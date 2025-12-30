@@ -14,7 +14,9 @@ export default defineSchema({
     clerkOrgId: v.string(), // Clerk Organization ID
     name: v.string(),
     ownerId: v.string(), // Clerk User ID of the owner
-  }).index("by_clerk_org", ["clerkOrgId"]),
+  })
+    .index("by_clerk_org", ["clerkOrgId"])
+    .index("by_owner", ["ownerId"]),
 
   // Rooms within workspaces
   rooms: defineTable({

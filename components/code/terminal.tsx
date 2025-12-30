@@ -5,7 +5,10 @@ import {
   ChevronUp,
   ChevronDown,
   Loader2,
-  GripHorizontal,
+  X,
+  Maximize2,
+  Minimize2,
+  Circle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useRef, useState, useEffect } from "react";
@@ -81,11 +84,11 @@ export function Terminal({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="absolute bottom-0 right-4 bg-gray-900 text-white px-4 py-2 rounded-t-lg flex items-center gap-2 text-sm font-medium hover:bg-gray-800 transition-colors z-10"
+          className="absolute bottom-0 left-4 bg-[#252526] border border-[#3c3c3c] border-b-0 text-gray-400 px-3 py-1.5 rounded-t-lg flex items-center gap-2 text-xs font-medium hover:text-white hover:bg-[#2d2d2d] transition-colors z-10"
         >
-          <TerminalIcon className="w-4 h-4" />
-          Console
-          <ChevronUp className="w-4 h-4" />
+          <TerminalIcon className="w-3.5 h-3.5" />
+          Terminal
+          <ChevronUp className="w-3.5 h-3.5" />
         </button>
       )}
 
@@ -98,26 +101,28 @@ export function Terminal({
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             style={{ height }}
-            className="absolute bottom-0 left-0 right-0 bg-[#1e1e1e] border-t border-gray-700 shadow-2xl flex flex-col z-20"
+            className="absolute bottom-0 left-0 right-0 bg-[#1e1e1e] border-t border-[#3c3c3c] shadow-2xl flex flex-col z-20"
           >
             {/* Resize Handle */}
             <div
               onMouseDown={handleMouseDown}
-              className="absolute -top-1 left-0 right-0 h-2 cursor-ns-resize group flex items-center justify-center"
-            >
-              <div className="w-12 h-1 bg-gray-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
+              className="absolute -top-0.5 left-0 right-0 h-1 cursor-ns-resize group hover:bg-emerald-500/50 transition-colors"
+            />
 
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-gray-700">
-              <div className="flex items-center gap-2 text-gray-300">
-                <TerminalIcon className="w-4 h-4" />
-                <span className="text-sm font-medium">Output</span>
+            {/* Header - VS Code style */}
+            <div className="flex items-center justify-between h-9 px-2 bg-[#252526] border-b border-[#3c3c3c]">
+              <div className="flex items-center">
+                {/* Terminal Tab */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e1e1e] text-gray-300 text-xs font-medium border-t border-t-emerald-500 -mb-px">
+                  <TerminalIcon className="w-3.5 h-3.5" />
+                  Output
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={onToggle}
-                  className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
+                  className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-500 hover:text-white transition-colors"
+                  title="Close Terminal"
                 >
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -125,21 +130,22 @@ export function Terminal({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-auto p-4 font-mono text-sm">
+            <div className="flex-1 overflow-auto p-3 font-mono text-sm bg-[#1e1e1e]">
               {isRunning ? (
-                <div className="flex items-center gap-2 text-blue-400">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Running code...</span>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                  <span>Executing...</span>
                 </div>
               ) : output ? (
                 <pre
-                  className={`whitespace-pre-wrap ${isError ? "text-red-400" : "text-gray-300"}`}
+                  className={`whitespace-pre-wrap leading-relaxed ${isError ? "text-red-400" : "text-gray-300"}`}
                 >
                   {output}
                 </pre>
               ) : (
-                <div className="text-gray-500 italic">
-                  Run your code to see output here...
+                <div className="text-gray-600 flex items-center gap-2">
+                  <Circle className="w-2 h-2 fill-gray-600" />
+                  Ready. Click Run to execute your code.
                 </div>
               )}
             </div>

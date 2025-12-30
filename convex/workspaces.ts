@@ -44,6 +44,18 @@ export const createWorkspace = mutation({
       return existingWorkspace._id;
     }
 
+    // Check if user has reached the maximum workspace limit (5)
+    const userWorkspaces = await ctx.db
+      .query("workspaces")
+      .withIndex("by_owner", (q) => q.eq("ownerId", clerkId))
+      .collect();
+
+    if (userWorkspaces.length >= 5) {
+      throw new Error(
+        "You have reached the maximum limit of 5 workspaces. Please delete an existing workspace to create a new one."
+      );
+    }
+
     // Create workspace
     const workspaceId = await ctx.db.insert("workspaces", {
       name: args.name,
@@ -72,6 +84,25 @@ export const getWorkspaceByClerkOrgId = query({
       .query("workspaces")
       .withIndex("by_clerk_org", (q) => q.eq("clerkOrgId", args.clerkOrgId))
       .unique();
+  },
+});
+
+// Get count of workspaces owned by the current user
+export const getOwnedWorkspaceCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { count: 0, maxLimit: 5 };
+    }
+
+    const clerkId = identity.subject;
+    const userWorkspaces = await ctx.db
+      .query("workspaces")
+      .withIndex("by_owner", (q) => q.eq("ownerId", clerkId))
+      .collect();
+
+    return { count: userWorkspaces.length, maxLimit: 5 };
   },
 });
 

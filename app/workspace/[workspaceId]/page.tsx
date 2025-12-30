@@ -8,7 +8,15 @@ import {
 } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Settings, Users, Crown, Loader2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Settings,
+  Users,
+  Crown,
+  Loader2,
+  X,
+  DoorOpen,
+} from "lucide-react";
 import { ChatSystem } from "@/components/chat/chat-system";
 import { RoomList } from "@/components/rooms/room-list";
 import { useQuery, useMutation } from "convex/react";
@@ -28,6 +36,12 @@ export default function WorkspacePage() {
   const workspace = useQuery(
     api.workspaces.getWorkspaceByClerkOrgId,
     organization ? { clerkOrgId: organization.id } : "skip"
+  );
+
+  // Get room stats
+  const roomStats = useQuery(
+    api.rooms.getRoomStats,
+    workspace ? { workspaceId: workspace._id } : "skip"
   );
 
   const createWorkspace = useMutation(api.workspaces.createWorkspace);
@@ -127,6 +141,41 @@ export default function WorkspacePage() {
       </motion.header>
 
       <main className="max-w-7xl mx-auto p-8">
+        {/* Workspace Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 gap-4 mb-8"
+        >
+          {/* Rooms Stat */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+              <DoorOpen className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Rooms</p>
+              <p className="text-xl font-bold text-gray-900">
+                {roomStats ? `${roomStats.count}/${roomStats.maxLimit}` : "--"}
+              </p>
+            </div>
+          </div>
+
+          {/* Members Stat */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+              <Users className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Members</p>
+              <p className="text-xl font-bold text-gray-900">
+                {memberships?.count !== undefined
+                  ? `${memberships.count}/10`
+                  : "--"}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Room List */}
         {workspace && organization && (
           <RoomList workspaceId={workspace._id} clerkOrgId={organization.id} />
