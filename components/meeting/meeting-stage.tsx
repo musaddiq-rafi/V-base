@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
+import {
+  useParticipants,
+  useLocalParticipant,
+  useRoomContext,
+} from "@livekit/components-react";
 import { MeetingControls } from "./meeting-controls";
-import { ParticipantGrid } from "./participant-grid";
+import { LiveKitParticipantGrid } from "./livekit-participant-grid";
 import { MeetingChat } from "./meeting-chat";
 import { ParticipantsList } from "./participants-list";
-import { MessageSquare, Users, X } from "lucide-react";
+import { MessageSquare, Users, X, Loader2 } from "lucide-react";
 
 interface MeetingStageProps {
   roomId: Id<"rooms">;
@@ -25,7 +30,8 @@ interface MeetingStageProps {
 
 type SidePanel = "chat" | "participants" | null;
 
-export function MeetingStage({
+// LiveKit-enabled meeting stage
+export function MeetingStageWithLiveKit({
   roomId,
   roomName,
   meetingId,
@@ -38,6 +44,9 @@ export function MeetingStage({
   onLeave,
 }: MeetingStageProps) {
   const { user } = useUser();
+  const room = useRoomContext();
+  const participants = useParticipants();
+  const { localParticipant } = useLocalParticipant();
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
@@ -45,18 +54,55 @@ export function MeetingStage({
     setSidePanel((current) => (current === panel ? null : panel));
   };
 
-  // Mock participants for UI demonstration
-  const mockParticipants = [
-    {
-      id: user?.id || "1",
-      name: user?.fullName || user?.username || "You",
-      avatar: user?.imageUrl,
-      isVideoEnabled,
-      isAudioEnabled,
-      isScreenSharing: false,
-      isSelf: true,
-    },
-  ];
+  const handleToggleScreenShare = useCallback(async () => {
+    if (!localParticipant) return;
+
+    try {
+      if (isScreenSharing) {
+        await localParticipant.setScreenShareEnabled(false);
+      } else {
+        await localParticipant.setScreenShareEnabled(true);
+      }
+      setIsScreenSharing(!isScreenSharing);
+    } catch (error) {
+      console.error("Failed to toggle screen share:", error);
+    }
+  }, [localParticipant, isScreenSharing]);
+
+  const handleToggleVideo = useCallback(async () => {
+    if (!localParticipant) return;
+
+    try {
+      await localParticipant.setCameraEnabled(!isVideoEnabled);
+      onToggleVideo();
+    } catch (error) {
+      console.error("Failed to toggle video:", error);
+    }
+  }, [localParticipant, isVideoEnabled, onToggleVideo]);
+
+  const handleToggleAudio = useCallback(async () => {
+    if (!localParticipant) return;
+
+    try {
+      await localParticipant.setMicrophoneEnabled(!isAudioEnabled);
+      onToggleAudio();
+    } catch (error) {
+      console.error("Failed to toggle audio:", error);
+    }
+  }, [localParticipant, isAudioEnabled, onToggleAudio]);
+
+  // Convert LiveKit participants to our format
+  const formattedParticipants = participants.map((p) => ({
+    id: p.identity,
+    name: p.name || p.identity,
+    avatar: undefined,
+    isVideoEnabled: p.isCameraEnabled,
+    isAudioEnabled: p.isMicrophoneEnabled,
+    isScreenSharing: p.isScreenShareEnabled,
+    isSelf: p.isLocal,
+  }));
+
+  const participantCount = participants.length;
 
   return (
     <div className="h-screen bg-[#1a1a1a] flex flex-col">
@@ -73,8 +119,8 @@ export function MeetingStage({
           <div>
             <h1 className="font-semibold text-white text-sm">{meetingName}</h1>
             <p className="text-xs text-gray-400">
-              {roomName} • {mockParticipants.length} participant
-              {mockParticipants.length !== 1 ? "s" : ""}
+              {roomName} • {participantCount} participant
+              {participantCount !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -89,7 +135,7 @@ export function MeetingStage({
             }`}
           >
             <Users className="w-4 h-4" />
-            <span className="text-sm">{mockParticipants.length}</span>
+            <span className="text-sm">{participantCount}</span>
           </button>
           <button
             onClick={() => toggleSidePanel("chat")}
@@ -108,10 +154,7 @@ export function MeetingStage({
       <div className="flex-1 flex overflow-hidden">
         {/* Video Grid */}
         <div className="flex-1 p-4">
-          <ParticipantGrid
-            participants={mockParticipants}
-            isScreenSharing={isScreenSharing}
-          />
+          <LiveKitParticipantGrid />
         </div>
 
         {/* Side Panel */}
@@ -136,7 +179,7 @@ export function MeetingStage({
             <div className="flex-1 overflow-hidden">
               {sidePanel === "chat" && <MeetingChat roomId={roomId} />}
               {sidePanel === "participants" && (
-                <ParticipantsList participants={mockParticipants} />
+                <ParticipantsList participants={formattedParticipants} />
               )}
             </div>
           </motion.div>
@@ -148,11 +191,34 @@ export function MeetingStage({
         isVideoEnabled={isVideoEnabled}
         isAudioEnabled={isAudioEnabled}
         isScreenSharing={isScreenSharing}
-        onToggleVideo={onToggleVideo}
-        onToggleAudio={onToggleAudio}
-        onToggleScreenShare={() => setIsScreenSharing(!isScreenSharing)}
+        onToggleVideo={handleToggleVideo}
+        onToggleAudio={handleToggleAudio}
+        onToggleScreenShare={handleToggleScreenShare}
         onLeave={onLeave}
       />
+    </div>
+  );
+}
+
+// Fallback/loading stage (shown briefly while connecting)
+export function MeetingStage({
+  roomId,
+  roomName,
+  meetingId,
+  meetingName,
+  workspaceId,
+  isVideoEnabled,
+  isAudioEnabled,
+  onToggleVideo,
+  onToggleAudio,
+  onLeave,
+}: MeetingStageProps) {
+  return (
+    <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
+        <p className="text-gray-400">Connecting to meeting...</p>
+      </div>
     </div>
   );
 }

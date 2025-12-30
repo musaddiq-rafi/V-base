@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { LiveKitProvider } from "@/providers/livekit-provider";
 import { MeetingSelector } from "./meeting-selector";
 import { MeetingLobby } from "./meeting-lobby";
-import { MeetingStage } from "./meeting-stage";
+import { MeetingStageWithLiveKit } from "./meeting-stage";
 
 interface MeetingRoomProps {
   roomId: Id<"rooms">;
@@ -21,10 +23,12 @@ export function MeetingRoom({
   roomName,
   workspaceId,
 }: MeetingRoomProps) {
+  const { user } = useUser();
   const [meetingState, setMeetingState] = useState<MeetingState>("selecting");
   const [selectedMeetingId, setSelectedMeetingId] =
     useState<Id<"meetings"> | null>(null);
   const [selectedMeetingName, setSelectedMeetingName] = useState<string>("");
+  const [livekitRoomName, setLivekitRoomName] = useState<string>("");
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
 
@@ -33,10 +37,12 @@ export function MeetingRoom({
 
   const handleSelectMeeting = (
     meetingId: Id<"meetings">,
-    meetingName: string
+    meetingName: string,
+    meetingLivekitRoomName: string
   ) => {
     setSelectedMeetingId(meetingId);
     setSelectedMeetingName(meetingName);
+    setLivekitRoomName(meetingLivekitRoomName);
     setMeetingState("lobby");
   };
 
@@ -141,18 +147,36 @@ export function MeetingRoom({
     );
   }
 
+  // Generate participant identity from user ID
+  const participantIdentity = user?.id || `guest-${Date.now()}`;
+  const participantName = user?.fullName || user?.username || "Anonymous User";
+
   return (
-    <MeetingStage
-      roomId={roomId}
-      roomName={roomName}
-      meetingId={selectedMeetingId!}
-      meetingName={selectedMeetingName}
-      workspaceId={workspaceId}
-      isVideoEnabled={isVideoEnabled}
-      isAudioEnabled={isAudioEnabled}
-      onToggleVideo={() => setIsVideoEnabled(!isVideoEnabled)}
-      onToggleAudio={() => setIsAudioEnabled(!isAudioEnabled)}
-      onLeave={handleLeaveMeeting}
-    />
+    <LiveKitProvider
+      roomName={livekitRoomName}
+      participantName={participantName}
+      participantIdentity={participantIdentity}
+      videoEnabled={isVideoEnabled}
+      audioEnabled={isAudioEnabled}
+      onDisconnected={() => {
+        console.log("Disconnected from LiveKit room");
+      }}
+      onError={(error) => {
+        console.error("LiveKit error:", error);
+      }}
+    >
+      <MeetingStageWithLiveKit
+        roomId={roomId}
+        roomName={roomName}
+        meetingId={selectedMeetingId!}
+        meetingName={selectedMeetingName}
+        workspaceId={workspaceId}
+        isVideoEnabled={isVideoEnabled}
+        isAudioEnabled={isAudioEnabled}
+        onToggleVideo={() => setIsVideoEnabled(!isVideoEnabled)}
+        onToggleAudio={() => setIsAudioEnabled(!isAudioEnabled)}
+        onLeave={handleLeaveMeeting}
+      />
+    </LiveKitProvider>
   );
 }

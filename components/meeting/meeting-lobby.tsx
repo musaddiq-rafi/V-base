@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import {
   Video,
@@ -36,6 +37,82 @@ export function MeetingLobby({
   onBack,
 }: MeetingLobbyProps) {
   const { user } = useUser();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0);
+
+  // Initialize camera preview
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let audioContext: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let animationId: number;
+
+    const initMedia = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: isVideoEnabled,
+          audio: isAudioEnabled,
+        });
+        setMediaStream(stream);
+        setHasPermission(true);
+
+        if (videoRef.current && isVideoEnabled) {
+          videoRef.current.srcObject = stream;
+        }
+
+        // Set up audio level monitoring
+        if (isAudioEnabled && stream.getAudioTracks().length > 0) {
+          audioContext = new AudioContext();
+          analyser = audioContext.createAnalyser();
+          const source = audioContext.createMediaStreamSource(stream);
+          source.connect(analyser);
+          analyser.fftSize = 256;
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+          const updateAudioLevel = () => {
+            if (analyser) {
+              analyser.getByteFrequencyData(dataArray);
+              const average =
+                dataArray.reduce((a, b) => a + b) / dataArray.length;
+              setAudioLevel(average / 128); // Normalize to 0-1
+            }
+            animationId = requestAnimationFrame(updateAudioLevel);
+          };
+          updateAudioLevel();
+        }
+      } catch (error) {
+        console.error("Failed to get media:", error);
+        setHasPermission(false);
+      }
+    };
+
+    initMedia();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      if (audioContext) {
+        audioContext.close();
+      }
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [isVideoEnabled, isAudioEnabled]);
+
+  // Update video element when stream or video state changes
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      if (isVideoEnabled) {
+        videoRef.current.srcObject = mediaStream;
+      } else {
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [isVideoEnabled, mediaStream]);
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col">
@@ -76,28 +153,48 @@ export function MeetingLobby({
             transition={{ delay: 0.1 }}
             className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden"
           >
-            {isVideoEnabled ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                {/* Placeholder for camera preview - will be replaced with actual video stream */}
-                <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl font-bold text-white">
-                      {user?.firstName?.charAt(0) ||
-                        user?.username?.charAt(0) ||
-                        "U"}
-                    </span>
-                  </div>
-                  <p className="text-gray-400 text-sm">Camera preview</p>
-                </div>
-              </div>
+            {isVideoEnabled && hasPermission ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
+              />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                 <div className="text-center">
                   <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center mx-auto mb-4">
-                    <VideoOff className="w-10 h-10 text-gray-500" />
+                    {hasPermission === false ? (
+                      <Video className="w-10 h-10 text-red-500" />
+                    ) : (
+                      <VideoOff className="w-10 h-10 text-gray-500" />
+                    )}
                   </div>
-                  <p className="text-gray-400 text-sm">Camera is off</p>
+                  <p className="text-gray-400 text-sm">
+                    {hasPermission === false
+                      ? "Camera permission denied"
+                      : "Camera is off"}
+                  </p>
                 </div>
+              </div>
+            )}
+
+            {/* Audio Level Indicator */}
+            {isAudioEnabled && audioLevel > 0.1 && (
+              <div className="absolute top-4 right-4 flex items-center gap-1">
+                <div
+                  className="w-1 bg-green-500 rounded-full transition-all"
+                  style={{ height: `${8 + audioLevel * 16}px` }}
+                />
+                <div
+                  className="w-1 bg-green-500 rounded-full transition-all"
+                  style={{ height: `${12 + audioLevel * 20}px` }}
+                />
+                <div
+                  className="w-1 bg-green-500 rounded-full transition-all"
+                  style={{ height: `${8 + audioLevel * 16}px` }}
+                />
               </div>
             )}
 

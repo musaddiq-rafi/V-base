@@ -22,7 +22,11 @@ interface MeetingSelectorProps {
   roomId: Id<"rooms">;
   roomName: string;
   workspaceId: string;
-  onSelectMeeting: (meetingId: Id<"meetings">, meetingName: string) => void;
+  onSelectMeeting: (
+    meetingId: Id<"meetings">,
+    meetingName: string,
+    livekitRoomName: string
+  ) => void;
 }
 
 export function MeetingSelector({
@@ -49,9 +53,13 @@ export function MeetingSelector({
         roomId,
         name: newMeetingName.trim(),
       });
+      // Fetch the created meeting to get livekitRoomName
+      const newMeeting = activeMeetings?.find((m) => m._id === meetingId);
+      const livekitRoomName =
+        newMeeting?.livekitRoomName || `${roomId}_${Date.now()}`;
       setNewMeetingName("");
       setIsCreateModalOpen(false);
-      onSelectMeeting(meetingId, newMeetingName.trim());
+      onSelectMeeting(meetingId, newMeetingName.trim(), livekitRoomName);
     } catch (error: any) {
       console.error("Failed to create meeting:", error);
       alert(error.message || "Failed to create meeting");
@@ -151,7 +159,13 @@ export function MeetingSelector({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className="bg-gray-800/50 hover:bg-gray-800/70 rounded-xl p-4 cursor-pointer transition-colors group"
-                  onClick={() => onSelectMeeting(meeting._id, meeting.name)}
+                  onClick={() =>
+                    onSelectMeeting(
+                      meeting._id,
+                      meeting.name,
+                      meeting.livekitRoomName
+                    )
+                  }
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
