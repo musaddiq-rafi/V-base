@@ -15,13 +15,20 @@ import { useRoom, useSelf } from "@liveblocks/react/suspense";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Play, Loader2, Settings } from "lucide-react";
+import {
+  Play,
+  Loader2,
+  Settings,
+  Copy,
+  Check,
+  Download,
+  Circle,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { Terminal } from "./terminal";
 import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
-import {
-  EditorSettingsModal,
-  EditorTheme,
-} from "./editor-settings-modal";
+import { EditorSettingsModal, EditorTheme } from "./editor-settings-modal";
 
 // User colors for cursor presence
 const USER_COLORS = [
@@ -68,9 +75,27 @@ function getLanguageExtension(language: string) {
 interface CodeEditorProps {
   fileId: Id<"codeFiles">;
   language: string;
+  fileName: string;
+  closeUrl: string;
 }
 
-export function CodeEditor({ fileId, language }: CodeEditorProps) {
+// Language icon colors mapping
+const languageColors: Record<string, string> = {
+  javascript: "#f7df1e",
+  typescript: "#3178c6",
+  python: "#3776ab",
+  java: "#ed8b00",
+  c: "#555555",
+  cpp: "#00599c",
+};
+
+export function CodeEditor({
+  fileId,
+  language,
+  fileName,
+  closeUrl,
+}: CodeEditorProps) {
+  const languageColor = languageColors[language] || "#6b7280";
   const room = useRoom();
   const [element, setElement] = useState<HTMLElement>();
   const [synced, setSynced] = useState(false);
@@ -180,7 +205,15 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
       provider.off("sync", handleSync);
       view?.destroy();
     };
-  }, [element, room, userInfo, language, updateLastEditedDebounced, theme, fontSize]);
+  }, [
+    element,
+    room,
+    userInfo,
+    language,
+    updateLastEditedDebounced,
+    theme,
+    fontSize,
+  ]);
 
   // Handle Run Code
   const handleRun = async () => {
@@ -210,40 +243,109 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
     }
   };
 
+  // Copy code to clipboard
+  const [copied, setCopied] = useState(false);
+  const handleCopyCode = async () => {
+    if (!editorViewRef.current) return;
+    const code = editorViewRef.current.state.doc.toString();
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Download code as file
+  const handleDownload = () => {
+    if (!editorViewRef.current) return;
+    const code = editorViewRef.current.state.doc.toString();
+    const extension =
+      language === "javascript"
+        ? "js"
+        : language === "typescript"
+          ? "ts"
+          : language === "python"
+            ? "py"
+            : language === "java"
+              ? "java"
+              : language === "cpp"
+                ? "cpp"
+                : language === "c"
+                  ? "c"
+                  : "txt";
+    const blob = new Blob([code], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `code.${extension}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-full w-full flex flex-col relative bg-[#1e1e1e]">
-      {/* Editor Toolbar */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <span className="font-mono text-xs bg-[#3c3c3c] px-2 py-1 rounded uppercase">
-            {language}
-          </span>
-          {!isExecutionSupported && (
-            <span className="text-xs text-gray-500">
-              (Execution not supported)
-            </span>
-          )}
+      {/* Combined File Tab + Toolbar Bar */}
+      <div className="shrink-0 h-9 flex items-center bg-[#252526] border-b border-[#3c3c3c]">
+        {/* File Tab */}
+        <div className="h-full flex items-center gap-2 px-3 bg-[#1e1e1e] border-t-2 border-t-emerald-500 text-gray-200 text-sm min-w-0 max-w-[200px]">
+          <Circle
+            className="w-3 h-3 shrink-0"
+            fill={languageColor}
+            stroke={languageColor}
+          />
+          <span className="truncate">{fileName}</span>
+          <Link
+            href={closeUrl}
+            className="ml-auto p-0.5 hover:bg-[#3c3c3c] rounded opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Toolbar Buttons */}
+        <div className="flex items-center gap-1 px-3">
           {/* Sync Status */}
-          {!synced && (
-            <div className="flex items-center gap-2 px-2 py-1 text-amber-500 text-xs">
-              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-              Syncing...
+          {!synced ? (
+            <div className="flex items-center gap-1.5 px-2 py-1 text-amber-500 text-xs">
+              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+              <span>Syncing</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-2 py-1 text-emerald-500 text-xs">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+              <span className="opacity-70">Synced</span>
             </div>
           )}
-          {synced && (
-            <div className="flex items-center gap-2 px-2 py-1 text-green-500 text-xs opacity-60">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              Synced
-            </div>
-          )}
+
+          <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+
+          {/* Copy Button */}
+          <button
+            onClick={handleCopyCode}
+            className="p-1.5 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
+            title="Copy code"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </button>
+
+          {/* Download Button */}
+          <button
+            onClick={handleDownload}
+            className="p-1.5 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
+            title="Download file"
+          >
+            <Download className="w-4 h-4" />
+          </button>
 
           {/* Settings Button */}
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="p-1.5 rounded-md hover:bg-[#3c3c3c] text-gray-400 hover:text-gray-200 transition-colors"
+            className="p-1.5 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
             title="Editor Settings"
           >
             <Settings className="w-4 h-4" />
@@ -251,18 +353,21 @@ export function CodeEditor({ fileId, language }: CodeEditorProps) {
 
           {/* Run Button */}
           {isExecutionSupported && (
-            <button
-              onClick={handleRun}
-              disabled={isRunning}
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isRunning ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Play className="w-3 h-3 fill-current" />
-              )}
-              Run
-            </button>
+            <>
+              <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+              <button
+                onClick={handleRun}
+                disabled={isRunning}
+                className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRunning ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                )}
+                Run
+              </button>
+            </>
           )}
         </div>
       </div>
