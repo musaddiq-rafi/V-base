@@ -125,7 +125,7 @@ export function CreateRoomModal({
                     { value: "whiteboard", label: "Whiteboard", icon: PenTool },
                     { value: "document", label: "Document", icon: FileText },
                     { value: "code", label: "Code", icon: Code2 },
-                    { value: "conference", label: "Conference", icon: Video },
+                    { value: "conference", label: "Meeting", icon: Video },
                   ].map((option) => (
                     <button
                       key={option.value}

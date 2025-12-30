@@ -20,9 +20,11 @@ export default function InvitePage() {
   const router = useRouter();
   const workspaceId = params.workspaceId as string;
 
-  const { organization, membership, isLoaded, invitations } = useOrganization({
-    invitations: { pageSize: 20 },
-  });
+  const { organization, membership, memberships, isLoaded, invitations } =
+    useOrganization({
+      invitations: { pageSize: 20 },
+      memberships: { pageSize: 50 },
+    });
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"org:admin" | "org:member">("org:member");
   const [isInviting, setIsInviting] = useState(false);
@@ -31,8 +33,22 @@ export default function InvitePage() {
 
   const isAdmin = membership?.role === "org:admin";
 
+  const maxMembers = 10;
+  const currentMemberCount = memberships?.count ?? 0;
+  const pendingInvitationsCount = invitations?.count ?? 0;
+  const totalCount = currentMemberCount + pendingInvitationsCount;
+  const isAtLimit = totalCount >= maxMembers;
+
   const handleInvite = async () => {
     if (!email.trim() || !organization) return;
+
+    // Check member limit
+    if (isAtLimit) {
+      setError(
+        `This workspace has reached the maximum limit of ${maxMembers} members (including pending invitations).`
+      );
+      return;
+    }
 
     setIsInviting(true);
     setError(null);

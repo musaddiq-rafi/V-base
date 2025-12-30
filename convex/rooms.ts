@@ -14,6 +14,23 @@ export const createRoom = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if workspace has reached the maximum room limit (10)
+    const existingRooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    if (existingRooms.length >= 10) {
+      throw new Error(
+        "This workspace has reached the maximum limit of 10 rooms. Please delete an existing room to create a new one."
+      );
+    }
+
     // Create the room
     const roomId = await ctx.db.insert("rooms", {
       workspaceId: args.workspaceId,
@@ -108,5 +125,20 @@ export const deleteRoom = mutation({
       roomType: room.type,
       liveblocksRoomIdsToDelete,
     };
+  },
+});
+
+// Get room count stats for a workspace
+export const getRoomStats = query({
+  args: {
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const rooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    return { count: rooms.length, maxLimit: 10 };
   },
 });

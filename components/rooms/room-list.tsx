@@ -101,6 +101,9 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
     );
   }
 
+  const maxRooms = 10;
+  const isAtRoomLimit = rooms.length >= maxRooms;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -108,15 +111,16 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Rooms</h2>
           <p className="text-gray-600 mt-1">
-            {rooms.length} {rooms.length === 1 ? "room" : "rooms"} available
+            {rooms.length}/{maxRooms} rooms used
           </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md"
+          disabled={isAtRoomLimit}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-5 h-5" />
-          Create Room
+          {isAtRoomLimit ? "Limit Reached" : "Create Room"}
         </button>
       </div>
 
