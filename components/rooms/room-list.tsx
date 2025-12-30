@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Presentation,
@@ -16,6 +16,7 @@ import {
   Users,
   Trash2,
   MoreVertical,
+  AlertTriangle,
 } from "lucide-react";
 import { CreateRoomModal } from "./create-room-modal";
 
@@ -47,22 +48,17 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
   const [deletingRoomId, setDeletingRoomId] = useState<Id<"rooms"> | null>(
     null
   );
+  const [deleteConfirmRoom, setDeleteConfirmRoom] = useState<{
+    id: Id<"rooms">;
+    name: string;
+  } | null>(null);
 
   const rooms = useQuery(api.rooms.getRoomsByWorkspace, { workspaceId });
   const deleteRoomMutation = useMutation(api.rooms.deleteRoom);
 
-  const handleDeleteRoom = async (roomId: Id<"rooms">, e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (
-      !confirm(
-        "Are you sure you want to delete this room? This will delete all files, documents, and data inside it."
-      )
-    ) {
-      return;
-    }
-
+  const handleDeleteRoom = async (roomId: Id<"rooms">) => {
     setDeletingRoomId(roomId);
+    setDeleteConfirmRoom(null);
     setMenuOpenId(null);
 
     try {
@@ -85,6 +81,16 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
     } finally {
       setDeletingRoomId(null);
     }
+  };
+
+  const openDeleteConfirm = (
+    roomId: Id<"rooms">,
+    roomName: string,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    setDeleteConfirmRoom({ id: roomId, name: roomName });
+    setMenuOpenId(null);
   };
 
   if (rooms === undefined) {
@@ -182,7 +188,9 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
-                            onClick={(e) => handleDeleteRoom(room._id, e)}
+                            onClick={(e) =>
+                              openDeleteConfirm(room._id, room.name, e)
+                            }
                             disabled={isDeleting}
                             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                           >
@@ -224,6 +232,68 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
         onClose={() => setIsModalOpen(false)}
         workspaceId={workspaceId}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmRoom && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirmRoom(null)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 mx-4"
+            >
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Delete Room
+              </h3>
+
+              {/* Message */}
+              <p className="text-gray-600 text-center text-sm mb-6">
+                Are you sure you want to delete{" "}
+                <span className="font-medium text-gray-900">
+                  &quot;{deleteConfirmRoom.name}&quot;
+                </span>
+                ? This will delete all files, documents, and data inside it.
+                This action cannot be undone.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirmRoom(null)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteRoom(deleteConfirmRoom.id)}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

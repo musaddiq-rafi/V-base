@@ -99,13 +99,13 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex items-center justify-between mb-8"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
             My Workspaces
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm lg:text-base text-gray-600">
             Create, manage, and collaborate in your team workspaces
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 lg:px-5 lg:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm lg:text-base w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
           Create Workspace
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
-        className="flex gap-2 mb-6"
+        className="flex gap-2 mb-4 lg:mb-6 overflow-x-auto"
       >
         {[
           { key: "all", label: "All" },
