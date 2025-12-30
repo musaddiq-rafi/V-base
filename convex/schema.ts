@@ -120,4 +120,18 @@ export default defineSchema({
   })
     .index("by_room_parent", ["roomId", "parentId"]) // Efficient folder navigation
     .index("by_room", ["roomId"]), // For counting total files
+
+  // Active meetings within conference rooms (max 3 per room)
+  meetings: defineTable({
+    roomId: v.id("rooms"), // Parent conference room
+    name: v.string(), // Meeting name (e.g., "Code Base Updates")
+    livekitRoomName: v.string(), // Unique LiveKit room identifier
+    createdBy: v.string(), // Clerk User ID of creator
+    createdByName: v.string(), // Name of creator (cached)
+    createdAt: v.number(),
+    status: v.union(v.literal("active"), v.literal("ended")),
+    participantCount: v.number(), // Current number of participants
+  })
+    .index("by_room", ["roomId"])
+    .index("by_room_status", ["roomId", "status"]),
 });

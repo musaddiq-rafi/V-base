@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { MeetingSelector } from "./meeting-selector";
 import { MeetingLobby } from "./meeting-lobby";
 import { MeetingStage } from "./meeting-stage";
 
@@ -11,35 +14,87 @@ interface MeetingRoomProps {
   workspaceId: string;
 }
 
-export type MeetingState = "lobby" | "in-meeting" | "ended";
+export type MeetingState = "selecting" | "lobby" | "in-meeting" | "ended";
 
 export function MeetingRoom({
   roomId,
   roomName,
   workspaceId,
 }: MeetingRoomProps) {
-  const [meetingState, setMeetingState] = useState<MeetingState>("lobby");
+  const [meetingState, setMeetingState] = useState<MeetingState>("selecting");
+  const [selectedMeetingId, setSelectedMeetingId] =
+    useState<Id<"meetings"> | null>(null);
+  const [selectedMeetingName, setSelectedMeetingName] = useState<string>("");
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
 
-  const handleJoinMeeting = () => {
-    setMeetingState("in-meeting");
+  const joinMeeting = useMutation(api.meetings.joinMeeting);
+  const leaveMeeting = useMutation(api.meetings.leaveMeeting);
+
+  const handleSelectMeeting = (
+    meetingId: Id<"meetings">,
+    meetingName: string
+  ) => {
+    setSelectedMeetingId(meetingId);
+    setSelectedMeetingName(meetingName);
+    setMeetingState("lobby");
   };
 
-  const handleLeaveMeeting = () => {
+  const handleJoinMeeting = async () => {
+    if (!selectedMeetingId) return;
+
+    try {
+      await joinMeeting({ meetingId: selectedMeetingId });
+      setMeetingState("in-meeting");
+    } catch (error: any) {
+      console.error("Failed to join meeting:", error);
+      alert(error.message || "Failed to join meeting");
+      // Go back to selector if meeting ended
+      setMeetingState("selecting");
+      setSelectedMeetingId(null);
+    }
+  };
+
+  const handleLeaveMeeting = async () => {
+    if (selectedMeetingId) {
+      try {
+        await leaveMeeting({ meetingId: selectedMeetingId });
+      } catch (error) {
+        console.error("Failed to leave meeting:", error);
+      }
+    }
     setMeetingState("ended");
   };
+
+  const handleBackToSelector = () => {
+    setMeetingState("selecting");
+    setSelectedMeetingId(null);
+    setSelectedMeetingName("");
+  };
+
+  if (meetingState === "selecting") {
+    return (
+      <MeetingSelector
+        roomId={roomId}
+        roomName={roomName}
+        workspaceId={workspaceId}
+        onSelectMeeting={handleSelectMeeting}
+      />
+    );
+  }
 
   if (meetingState === "lobby") {
     return (
       <MeetingLobby
         roomName={roomName}
+        meetingName={selectedMeetingName}
         workspaceId={workspaceId}
         isVideoEnabled={isVideoEnabled}
         isAudioEnabled={isAudioEnabled}
         onToggleVideo={() => setIsVideoEnabled(!isVideoEnabled)}
         onToggleAudio={() => setIsAudioEnabled(!isAudioEnabled)}
         onJoin={handleJoinMeeting}
+        onBack={handleBackToSelector}
       />
     );
   }
@@ -69,10 +124,10 @@ export function MeetingRoom({
           <p className="text-gray-400 mb-8">Thanks for joining!</p>
           <div className="flex items-center justify-center gap-4">
             <button
-              onClick={() => setMeetingState("lobby")}
+              onClick={handleBackToSelector}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
             >
-              Rejoin Meeting
+              Join Another Meeting
             </button>
             <a
               href={`/workspace/${workspaceId}`}
@@ -90,6 +145,8 @@ export function MeetingRoom({
     <MeetingStage
       roomId={roomId}
       roomName={roomName}
+      meetingId={selectedMeetingId!}
+      meetingName={selectedMeetingName}
       workspaceId={workspaceId}
       isVideoEnabled={isVideoEnabled}
       isAudioEnabled={isAudioEnabled}

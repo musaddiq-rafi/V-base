@@ -10,27 +10,30 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 
 interface MeetingLobbyProps {
   roomName: string;
+  meetingName: string;
   workspaceId: string;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
   onToggleVideo: () => void;
   onToggleAudio: () => void;
   onJoin: () => void;
+  onBack: () => void;
 }
 
 export function MeetingLobby({
   roomName,
+  meetingName,
   workspaceId,
   isVideoEnabled,
   isAudioEnabled,
   onToggleVideo,
   onToggleAudio,
   onJoin,
+  onBack,
 }: MeetingLobbyProps) {
   const { user } = useUser();
 
@@ -43,13 +46,13 @@ export function MeetingLobby({
         className="flex items-center justify-between h-16 px-6 border-b border-gray-800"
       >
         <div className="flex items-center gap-4">
-          <Link
-            href={`/workspace/${workspaceId}`}
+          <button
+            onClick={onBack}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
-          </Link>
+          </button>
           <div className="h-6 w-px bg-gray-700" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
@@ -159,13 +162,13 @@ export function MeetingLobby({
                   <Video className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white">{roomName}</h3>
-                  <p className="text-sm text-gray-400">Conference Room</p>
+                  <h3 className="font-semibold text-white">{meetingName}</h3>
+                  <p className="text-sm text-gray-400">{roomName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Users className="w-4 h-4" />
-                <span>0 participants in the meeting</span>
+                <span>Joining meeting...</span>
               </div>
             </div>
 

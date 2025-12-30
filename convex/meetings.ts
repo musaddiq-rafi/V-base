@@ -1,0 +1,196 @@
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
+
+const MAX_MEETINGS_PER_ROOM = 3;
+
+// Get all active meetings in a conference room
+export const getActiveMeetings = query({
+  args: {
+    roomId: v.id("rooms"),
+  },
+  handler: async (ctx, args) => {
+    const meetings = await ctx.db
+      .query("meetings")
+      .withIndex("by_room_status", (q) =>
+        q.eq("roomId", args.roomId).eq("status", "active")
+      )
+      .collect();
+
+    return meetings;
+  },
+});
+
+// Get a specific meeting by ID
+export const getMeetingById = query({
+  args: {
+    meetingId: v.id("meetings"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.meetingId);
+  },
+});
+
+// Create a new meeting in a conference room
+export const createMeeting = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if room exists and is a conference room
+    const room = await ctx.db.get(args.roomId);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+    if (room.type !== "conference") {
+      throw new Error("This room is not a conference room");
+    }
+
+    // Check active meetings count
+    const activeMeetings = await ctx.db
+      .query("meetings")
+      .withIndex("by_room_status", (q) =>
+        q.eq("roomId", args.roomId).eq("status", "active")
+      )
+      .collect();
+
+    if (activeMeetings.length >= MAX_MEETINGS_PER_ROOM) {
+      throw new Error(
+        `This room already has ${MAX_MEETINGS_PER_ROOM} active meetings. Please wait for one to end or join an existing meeting.`
+      );
+    }
+
+    // Create unique LiveKit room name
+    const livekitRoomName = `${args.roomId}_${Date.now()}`;
+
+    const meetingId = await ctx.db.insert("meetings", {
+      roomId: args.roomId,
+      name: args.name.trim(),
+      livekitRoomName,
+      createdBy: identity.subject,
+      createdByName: identity.name || "Unknown",
+      createdAt: Date.now(),
+      status: "active",
+      participantCount: 0,
+    });
+
+    return meetingId;
+  },
+});
+
+// Join a meeting (increment participant count)
+export const joinMeeting = mutation({
+  args: {
+    meetingId: v.id("meetings"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const meeting = await ctx.db.get(args.meetingId);
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+    if (meeting.status !== "active") {
+      throw new Error("This meeting has ended");
+    }
+
+    await ctx.db.patch(args.meetingId, {
+      participantCount: meeting.participantCount + 1,
+    });
+
+    return meeting.livekitRoomName;
+  },
+});
+
+// Leave a meeting (decrement participant count, end if 0)
+export const leaveMeeting = mutation({
+  args: {
+    meetingId: v.id("meetings"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const meeting = await ctx.db.get(args.meetingId);
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+
+    const newCount = Math.max(0, meeting.participantCount - 1);
+
+    if (newCount === 0) {
+      // End the meeting when last person leaves
+      await ctx.db.patch(args.meetingId, {
+        status: "ended",
+        participantCount: 0,
+      });
+    } else {
+      await ctx.db.patch(args.meetingId, {
+        participantCount: newCount,
+      });
+    }
+
+    return { ended: newCount === 0 };
+  },
+});
+
+// Manually end a meeting (for host/admin)
+export const endMeeting = mutation({
+  args: {
+    meetingId: v.id("meetings"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const meeting = await ctx.db.get(args.meetingId);
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+
+    // Only the creator can end the meeting
+    if (meeting.createdBy !== identity.subject) {
+      throw new Error("Only the meeting creator can end this meeting");
+    }
+
+    await ctx.db.patch(args.meetingId, {
+      status: "ended",
+      participantCount: 0,
+    });
+
+    return { success: true };
+  },
+});
+
+// Get meeting stats for a room
+export const getMeetingStats = query({
+  args: {
+    roomId: v.id("rooms"),
+  },
+  handler: async (ctx, args) => {
+    const activeMeetings = await ctx.db
+      .query("meetings")
+      .withIndex("by_room_status", (q) =>
+        q.eq("roomId", args.roomId).eq("status", "active")
+      )
+      .collect();
+
+    return {
+      activeCount: activeMeetings.length,
+      maxLimit: MAX_MEETINGS_PER_ROOM,
+      canCreateMore: activeMeetings.length < MAX_MEETINGS_PER_ROOM,
+    };
+  },
+});

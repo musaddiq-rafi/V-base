@@ -13,6 +13,8 @@ import { MessageSquare, Users, X } from "lucide-react";
 interface MeetingStageProps {
   roomId: Id<"rooms">;
   roomName: string;
+  meetingId: Id<"meetings">;
+  meetingName: string;
   workspaceId: string;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
@@ -26,6 +28,8 @@ type SidePanel = "chat" | "participants" | null;
 export function MeetingStage({
   roomId,
   roomName,
+  meetingId,
+  meetingName,
   workspaceId,
   isVideoEnabled,
   isAudioEnabled,
@@ -67,9 +71,9 @@ export function MeetingStage({
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           </div>
           <div>
-            <h1 className="font-semibold text-white text-sm">{roomName}</h1>
+            <h1 className="font-semibold text-white text-sm">{meetingName}</h1>
             <p className="text-xs text-gray-400">
-              {mockParticipants.length} participant
+              {roomName} • {mockParticipants.length} participant
               {mockParticipants.length !== 1 ? "s" : ""}
             </p>
           </div>
