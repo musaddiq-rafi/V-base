@@ -120,4 +120,18 @@ export default defineSchema({
   })
     .index("by_room_parent", ["roomId", "parentId"]) // Efficient folder navigation
     .index("by_room", ["roomId"]), // For counting total files
+
+  // Whiteboards within whiteboard rooms
+  whiteboards: defineTable({
+    roomId: v.id("rooms"), // Parent whiteboard room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Whiteboard name
+    content: v.optional(v.string()), // Serialized Excalidraw elements (JSON string)
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
 });

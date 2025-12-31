@@ -16,6 +16,7 @@ import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as rooms from "../rooms.js";
 import type * as users from "../users.js";
+import type * as whiteboards from "../whiteboards.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   messages: typeof messages;
   rooms: typeof rooms;
   users: typeof users;
+  whiteboards: typeof whiteboards;
   workspaces: typeof workspaces;
 }>;
 

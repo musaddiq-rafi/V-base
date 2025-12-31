@@ -15,6 +15,7 @@ import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 
 import { DocumentList } from "@/components/document/document-list";
 import { FileExplorer } from "@/components/code/file-explorer";
+import { WhiteboardList } from "@/components/whiteboard/whiteboard-list";
 
 export default function RoomPage() {
   const params = useParams();
@@ -152,14 +153,9 @@ export default function RoomPage() {
     );
   }
 
-  return (
-    <RoomProvider
-      id={liveblocksRoomId}
-      initialPresence={{
-        cursor: null,
-      }}
-      initialStorage={{}}
-    >
+  // For whiteboard rooms, show whiteboard list instead of single whiteboard
+  if (room.type === "whiteboard") {
+    return (
       <div className="fixed inset-0 flex flex-col">
         {/* Header */}
         <motion.header
@@ -178,40 +174,63 @@ export default function RoomPage() {
               </Link>
               <div className="h-6 w-px bg-gray-200" />
               <div className="flex items-center gap-2">
-                <Presentation className="w-5 h-5 text-purple-600" />
+                <Presentation className="w-5 h-5 text-orange-600" />
                 <span className="font-semibold text-gray-900">{room.name}</span>
                 <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
                   {room.type}
                 </span>
               </div>
             </div>
-            <Suspense fallback={<div className="text-sm text-gray-500">Loading...</div>}>
-              <ActiveUsersAvatars />
-            </Suspense>
           </div>
         </motion.header>
 
-        {/* Room Content - Conditional based on type */}
+        {/* Whiteboard List */}
         <div className="flex-1 relative">
-          <Suspense
-            fallback={
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              </div>
-            }
-          >
-            {room.type === "whiteboard" && <Whiteboard roomId={roomId} />}
-            {room.type === "conference" && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <p className="text-lg font-medium mb-2">Conference Room</p>
-                  <p className="text-sm">Coming soon...</p>
-                </div>
-              </div>
-            )}
-          </Suspense>
+          <WhiteboardList
+            roomId={roomId}
+            workspaceId={organization.id}
+            convexWorkspaceId={workspace._id}
+          />
         </div>
       </div>
-    </RoomProvider>
+    );
+  }
+
+  // Conference room - placeholder
+  return (
+    <div className="fixed inset-0 flex flex-col">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex-shrink-0 z-50 bg-white border-b border-gray-200"
+      >
+        <div className="flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/workspace/${organization.id}`}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back</span>
+            </Link>
+            <div className="h-6 w-px bg-gray-200" />
+            <div className="flex items-center gap-2">
+              <Presentation className="w-5 h-5 text-purple-600" />
+              <span className="font-semibold text-gray-900">{room.name}</span>
+              <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
+                {room.type}
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <p className="text-lg font-medium mb-2">Conference Room</p>
+          <p className="text-sm">Coming soon...</p>
+        </div>
+      </div>
+    </div>
   );
 }
