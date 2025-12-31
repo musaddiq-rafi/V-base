@@ -3,10 +3,15 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useBroadcastEvent, useEventListener, useOthers, useUpdateMyPresence } from "@liveblocks/react/suspense";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { useUser } from "@clerk/nextjs";
 import "@excalidraw/excalidraw/index.css";
 
 interface WhiteboardProps {
   roomId: string;
+  whiteboardId?: Id<"whiteboards">;
 }
 
 // Dynamically import Excalidraw to avoid SSR issues
@@ -22,12 +27,22 @@ const ExcalidrawWrapper = dynamic(
   }
 );
 
-export function Whiteboard({ roomId }: WhiteboardProps) {
+export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const updateMyPresence = useUpdateMyPresence();
   const others = useOthers();
   const broadcast = useBroadcastEvent();
   const isReceivingUpdate = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useUser();
+  
+  // Fetch whiteboard content from database
+  const whiteboard = useQuery(
+    api.whiteboards.getWhiteboardById,
+    whiteboardId ? { whiteboardId } : "skip"
+  );
+  const saveContent = useMutation(api.whiteboards.saveWhiteboardContent);
+  const [hasLoadedInitialContent, setHasLoadedInitialContent] = useState(false);
 
   // Listen for drawing events from other users
   useEventListener(({ event }: any) => {
@@ -53,17 +68,61 @@ export function Whiteboard({ roomId }: WhiteboardProps) {
     }
   });
 
-  // Handle drawing changes - broadcast to others
+  // Load initial content from database
+  useEffect(() => {
+    if (excalidrawAPI && whiteboard && whiteboard.content && !hasLoadedInitialContent) {
+      try {
+        console.log("Loading whiteboard content from database...");
+        const elements = JSON.parse(whiteboard.content);
+        excalidrawAPI.updateScene({ elements });
+        setHasLoadedInitialContent(true);
+        console.log("Loaded", elements.length, "elements");
+      } catch (error) {
+        console.error("Failed to load whiteboard content:", error);
+        setHasLoadedInitialContent(true); // Set true even on error to prevent infinite retries
+      }
+    } else if (excalidrawAPI && !whiteboard?.content && !hasLoadedInitialContent) {
+      // No saved content, mark as loaded
+      setHasLoadedInitialContent(true);
+    }
+  }, [excalidrawAPI, whiteboard, hasLoadedInitialContent]);
+
+  // Handle drawing changes - broadcast to others and save to database
   const onChange = useCallback(
     (elements: readonly any[], appState: any) => {
       if (isReceivingUpdate.current) return;
+      if (!hasLoadedInitialContent) return; // Don't save during initial load
       
+      // Broadcast to other users in real-time
       broadcast({
         type: "DRAW",
         elements: elements,
       } as any);
+
+      // Auto-save to database (debounced)
+      if (whiteboardId && user && elements.length > 0) {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        
+        saveTimeoutRef.current = setTimeout(() => {
+          const content = JSON.stringify(elements);
+          console.log("Saving whiteboard content...", elements.length, "elements");
+          saveContent({
+            whiteboardId,
+            content,
+            userId: user.id,
+          })
+            .then(() => {
+              console.log("Whiteboard saved successfully");
+            })
+            .catch((error) => {
+              console.error("Failed to save whiteboard:", error);
+            });
+        }, 2000); // Save 2 seconds after last change
+      }
     },
-    [broadcast]
+    [broadcast, whiteboardId, user, saveContent, hasLoadedInitialContent]
   );
 
   // Handle cursor updates
@@ -101,6 +160,15 @@ export function Whiteboard({ roomId }: WhiteboardProps) {
 
     excalidrawAPI.updateScene({ collaborators });
   }, [others, excalidrawAPI]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="absolute inset-0">
