@@ -31,20 +31,31 @@ export function Whiteboard({ roomId }: WhiteboardProps) {
 
   // Listen for drawing events from other users
   useEventListener(({ event }: any) => {
-    if (event.type === "DRAW" && excalidrawAPI) {
+    if (event.type === "DRAW" && excalidrawAPI && !isReceivingUpdate.current) {
       isReceivingUpdate.current = true;
-      excalidrawAPI.updateScene({
-        elements: event.elements,
+      
+      const sceneData = excalidrawAPI.getSceneElements();
+      const newElements = event.elements || [];
+      
+      // Merge elements properly
+      const elementMap = new Map(sceneData.map((el: any) => [el.id, el]));
+      newElements.forEach((el: any) => {
+        elementMap.set(el.id, el);
       });
+      
+      excalidrawAPI.updateScene({
+        elements: Array.from(elementMap.values()),
+      });
+      
       setTimeout(() => {
         isReceivingUpdate.current = false;
-      }, 50);
+      }, 100);
     }
   });
 
   // Handle drawing changes - broadcast to others
   const onChange = useCallback(
-    (elements: readonly any[]) => {
+    (elements: readonly any[], appState: any) => {
       if (isReceivingUpdate.current) return;
       
       broadcast({
