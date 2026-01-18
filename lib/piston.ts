@@ -2,7 +2,6 @@
 // You can check available runtimes at: https://emkc.org/api/v2/piston/runtimes
 export const LANGUAGE_VERSIONS: Record<string, string> = {
   javascript: "18.15.0",
-  typescript: "5.0.3",
   python: "3.10.0",
   java: "15.0.2",
   c: "10.2.0",
@@ -11,7 +10,6 @@ export const LANGUAGE_VERSIONS: Record<string, string> = {
 
 export const RUNTIME_ALIASES: Record<string, string> = {
   javascript: "javascript", // or 'node'
-  typescript: "typescript",
   python: "python",
   java: "java",
   c: "gcc",
@@ -31,7 +29,7 @@ export interface ExecutionResult {
 
 export async function executeCode(
   language: string,
-  code: string
+  code: string,
 ): Promise<ExecutionResult> {
   const runtime = RUNTIME_ALIASES[language];
   const version = LANGUAGE_VERSIONS[language];

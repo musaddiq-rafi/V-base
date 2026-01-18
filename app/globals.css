@@ -209,10 +209,10 @@ body {
   pointer-events: none;
 }
 
-/* Collaboration cursor styles */
+/* Collaboration cursor styles - Matching Excalidraw/Whiteboard style */
 .collaboration-cursor__caret {
   border-left: 2px solid;
-  border-right: 2px solid;
+  border-right: none;
   margin-left: -1px;
   margin-right: -1px;
   pointer-events: none;
@@ -221,44 +221,56 @@ body {
 }
 
 .collaboration-cursor__label {
-  border-radius: 0.25rem;
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: 6px;
+  color: #000;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   left: -1px;
-  line-height: 1;
-  padding: 0.125rem 0.25rem;
+  line-height: 1.3;
+  padding: 2px 8px;
   position: absolute;
   top: -1.4rem;
   user-select: none;
   white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
-/* CodeMirror Yjs Cursor Styles */
+/* CodeMirror Yjs Cursor Styles - Matching Excalidraw/Whiteboard style */
 .cm-editor .cm-ySelectionInfo {
   position: absolute;
-  top: -1.6em;
-  left: -1px;
-  padding: 2px 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1;
+  top: -1.4em;
+  left: 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.3;
   white-space: nowrap;
-  color: #fff;
-  border-radius: 4px 4px 4px 0;
+  color: #000;
+  border-radius: 6px;
   opacity: 1;
-  transition: opacity 150ms ease-in-out;
   pointer-events: none;
   z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .cm-editor .cm-ySelectionCaretDot {
   display: none;
 }
 
-/* Remote cursor caret */
+/* Remote cursor selection highlight */
 .cm-editor .cm-ySelection {
-  opacity: 0.4;
+  opacity: 0.35;
+  border-radius: 2px;
+}
+
+/* Remote cursor caret line */
+.cm-editor .cm-yLineSelection {
+  opacity: 0.2;
 }
 
 /* Make sure line numbers and gutters are visible */
