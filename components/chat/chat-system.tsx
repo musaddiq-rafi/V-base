@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Edit2, Send } from "lucide-react";
+import { MessageCircle, X, Edit2, Send, FileText } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -551,7 +551,7 @@ function ChatBubbleWithPreview({
         {bubble.type === "general"
           ? "#G"
           : bubble.type === "file"
-            ? "#F"
+            ? <FileText className="w-5 h-5" />
             : bubble.name.charAt(0).toUpperCase()}
       </ChatBubbleComponent>
     </motion.div>
@@ -635,11 +635,16 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
               {chat.type === "general"
                 ? "#"
                 : chat.type === "file"
-                  ? "#F"
+                  ? "F"
                   : chat.name.charAt(0).toUpperCase()}
             </div>
           )}
           <span className="font-medium">{chat.name}</span>
+          {chat.type === "file" && (
+            <span className="ml-1 text-[10px] uppercase tracking-wide bg-white/20 px-2 py-0.5 rounded-full">
+              File
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
