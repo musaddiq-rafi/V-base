@@ -24,11 +24,24 @@ import {
   Download,
   Circle,
   X,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { Terminal } from "./terminal";
 import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
+import { executeCodeVBase, VBASE_LANGUAGE_VERSIONS } from "@/lib/vbase-rce";
 import { EditorSettingsModal, EditorTheme } from "./editor-settings-modal";
+
+// RCE Engine types
+type RCEEngine = "piston" | "vbase";
+
+const RCE_ENGINE_INFO: Record<
+  RCEEngine,
+  { label: string; description: string }
+> = {
+  piston: { label: "Piston", description: "Public API" },
+  vbase: { label: "VBase RCE", description: "Custom Engine" },
+};
 
 // User colors for cursor presence
 const USER_COLORS = [
@@ -58,8 +71,6 @@ function getLanguageExtension(language: string) {
   switch (language) {
     case "javascript":
       return javascript();
-    case "typescript":
-      return javascript({ typescript: true });
     case "python":
       return python();
     case "java":
@@ -82,7 +93,6 @@ interface CodeEditorProps {
 // Language icon colors mapping
 const languageColors: Record<string, string> = {
   javascript: "#f7df1e",
-  typescript: "#3178c6",
   python: "#3776ab",
   java: "#ed8b00",
   c: "#555555",
@@ -109,14 +119,19 @@ export function CodeEditor({
   const [fontSize, setFontSize] = useState(14);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // RCE Engine State
+  const [rceEngine, setRceEngine] = useState<RCEEngine>("vbase");
+  const [isEngineDropdownOpen, setIsEngineDropdownOpen] = useState(false);
+
   // Execution State
   const [isRunning, setIsRunning] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
-  // Check if language is supported for execution
-  const isExecutionSupported = language in LANGUAGE_VERSIONS;
+  // Check if language is supported for execution (must be supported by both engines)
+  const isExecutionSupported =
+    language in LANGUAGE_VERSIONS && language in VBASE_LANGUAGE_VERSIONS;
 
   const updateLastEdited = useMutation(api.codeFiles.updateLastEdited);
 
@@ -226,9 +241,16 @@ export function CodeEditor({
 
     try {
       const sourceCode = editorViewRef.current.state.doc.toString();
-      const result = await executeCode(language, sourceCode);
 
-      if (result.run.code !== 0) {
+      // Execute using selected RCE engine
+      let result;
+      if (rceEngine === "vbase") {
+        result = await executeCodeVBase(language, sourceCode);
+      } else {
+        result = await executeCode(language, sourceCode);
+      }
+
+      if (result.run.code !== 0 && result.run.code !== null) {
         setIsError(true);
       }
 
@@ -236,7 +258,7 @@ export function CodeEditor({
     } catch (error: unknown) {
       setIsError(true);
       setOutput(
-        error instanceof Error ? error.message : "Failed to execute code"
+        error instanceof Error ? error.message : "Failed to execute code",
       );
     } finally {
       setIsRunning(false);
@@ -260,17 +282,15 @@ export function CodeEditor({
     const extension =
       language === "javascript"
         ? "js"
-        : language === "typescript"
-          ? "ts"
-          : language === "python"
-            ? "py"
-            : language === "java"
-              ? "java"
-              : language === "cpp"
-                ? "cpp"
-                : language === "c"
-                  ? "c"
-                  : "txt";
+        : language === "python"
+          ? "py"
+          : language === "java"
+            ? "java"
+            : language === "cpp"
+              ? "cpp"
+              : language === "c"
+                ? "c"
+                : "txt";
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -351,14 +371,68 @@ export function CodeEditor({
             <Settings className="w-4 h-4" />
           </button>
 
-          {/* Run Button */}
+          {/* Run Button with RCE Engine Selector */}
           {isExecutionSupported && (
             <>
               <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+
+              {/* RCE Engine Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsEngineDropdownOpen(!isEngineDropdownOpen)}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-gray-300 text-xs font-medium rounded-l border-r border-[#2c2c2c] transition-colors"
+                  title="Select execution engine"
+                >
+                  <span>{RCE_ENGINE_INFO[rceEngine].label}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isEngineDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsEngineDropdownOpen(false)}
+                    />
+                    <div className="absolute top-full right-0 mt-1 w-44 bg-[#252526] border border-[#3c3c3c] rounded-lg shadow-xl z-20 overflow-hidden">
+                      {(Object.keys(RCE_ENGINE_INFO) as RCEEngine[]).map(
+                        (engine) => (
+                          <button
+                            key={engine}
+                            onClick={() => {
+                              setRceEngine(engine);
+                              setIsEngineDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs hover:bg-[#3c3c3c] transition-colors ${
+                              rceEngine === engine
+                                ? "bg-[#3c3c3c] text-emerald-400"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            <div>
+                              <div className="font-medium">
+                                {RCE_ENGINE_INFO[engine].label}
+                              </div>
+                              <div className="text-gray-500 text-[10px]">
+                                {RCE_ENGINE_INFO[engine].description}
+                              </div>
+                            </div>
+                            {rceEngine === engine && (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            )}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Run Button */}
               <button
                 onClick={handleRun}
                 disabled={isRunning}
-                className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-r transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isRunning ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
