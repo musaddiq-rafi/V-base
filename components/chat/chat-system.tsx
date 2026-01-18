@@ -11,18 +11,23 @@ import Image from "next/image";
 
 interface ChatSystemProps {
   workspaceId: Id<"workspaces">;
+  activeFileChat?: {
+    channelId: Id<"channels">;
+    name: string;
+    fileType: "code" | "document" | "whiteboard";
+  };
 }
 
 interface ChatBubble {
   channelId: Id<"channels">;
   name: string;
-  type: "general" | "direct";
+  type: "general" | "direct" | "file";
   otherUserId?: string;
   avatarUrl?: string;
+  fileType?: "code" | "document" | "whiteboard";
 }
 
-export function ChatSystem({ workspaceId }: ChatSystemProps) {
-  const { user } = useUser();
+export function ChatSystem({ workspaceId, activeFileChat }: ChatSystemProps) {
   const [chatBubbles, setChatBubbles] = useState<ChatBubble[]>([]);
   const [openChatWindow, setOpenChatWindow] = useState<Id<"channels"> | null>(
     null
@@ -38,6 +43,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
   } | null>(null);
   const hasInitializedGeneral = useRef(false);
   const closedBubblesRef = useRef<Set<Id<"channels">>>(new Set());
+  const hasAutoOpenedRef = useRef(false);
 
   // Get all channels
   const workspaceChannels = useQuery(api.channels.getWorkspaceChannels, {
@@ -84,14 +90,15 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
         if (hasGeneral) return prev;
 
         hasInitializedGeneral.current = true;
-        return [
-          {
-            channelId: generalChannel._id,
-            name: "General",
-            type: "general",
-          },
-          ...prev,
-        ];
+        const next = [...prev];
+        const fileIndex = next.findIndex((b) => b.type === "file");
+        const insertIndex = fileIndex === -1 ? 0 : fileIndex + 1;
+        next.splice(insertIndex, 0, {
+          channelId: generalChannel._id,
+          name: "General",
+          type: "general",
+        });
+        return next;
       });
     }
 
@@ -99,6 +106,77 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
       hasInitializedGeneral.current = false;
     }
   }, [generalChannel, showBubbles]);
+
+  // Ensure file chat bubble is present when viewing a file
+  useEffect(() => {
+    setChatBubbles((prev) => {
+      const withoutFile = prev.filter((b) => b.type !== "file");
+
+      if (!activeFileChat) {
+        return withoutFile;
+      }
+
+      const fileBubble: ChatBubble = {
+        channelId: activeFileChat.channelId,
+        name: activeFileChat.name,
+        type: "file",
+        fileType: activeFileChat.fileType,
+      };
+
+      const generalIndex = withoutFile.findIndex((b) => b.type === "general");
+      if (generalIndex === -1) {
+        return [fileBubble, ...withoutFile];
+      }
+
+      const next = [...withoutFile];
+      next.splice(generalIndex, 0, fileBubble);
+      return next;
+    });
+  }, [activeFileChat]);
+
+  // Auto-select default chat when bubbles open
+  useEffect(() => {
+    if (!showBubbles) {
+      hasAutoOpenedRef.current = false;
+      return;
+    }
+
+    if (hasAutoOpenedRef.current) return;
+
+    if (activeFileChat) {
+      setOpenChatWindow(activeFileChat.channelId);
+      hasAutoOpenedRef.current = true;
+      return;
+    }
+
+    if (generalChannel) {
+      setOpenChatWindow(generalChannel._id);
+      hasAutoOpenedRef.current = true;
+    }
+  }, [showBubbles, activeFileChat, generalChannel]);
+
+  // If a file chat is open and the file changes, switch to the new file chat
+  useEffect(() => {
+    if (!activeFileChat || !openChatWindow) return;
+
+    const openBubble = chatBubbles.find((b) => b.channelId === openChatWindow);
+    if (
+      openBubble?.type === "file" &&
+      openChatWindow !== activeFileChat.channelId
+    ) {
+      setOpenChatWindow(activeFileChat.channelId);
+    }
+  }, [activeFileChat, openChatWindow, chatBubbles]);
+
+  // If leaving a file, close file chat window
+  useEffect(() => {
+    if (activeFileChat) return;
+
+    const openBubble = chatBubbles.find((b) => b.channelId === openChatWindow);
+    if (openBubble?.type === "file") {
+      setOpenChatWindow(null);
+    }
+  }, [activeFileChat, openChatWindow, chatBubbles]);
 
   // Auto-add DM bubbles when new messages arrive (but not if user closed them without new messages)
   useEffect(() => {
@@ -449,7 +527,11 @@ function ChatBubbleWithPreview({
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
-        onRemove={bubble.type !== "general" ? onRemove : undefined}
+        onRemove={
+          bubble.type !== "general" && bubble.type !== "file"
+            ? onRemove
+            : undefined
+        }
         isHovered={isHovered}
         label={previewLabel}
         unreadCount={unreadCount}
@@ -457,10 +539,20 @@ function ChatBubbleWithPreview({
         bgColor={
           bubble.type === "general"
             ? "from-blue-500 to-indigo-600"
-            : "from-purple-500 to-pink-600"
+            : bubble.type === "file"
+              ? bubble.fileType === "whiteboard"
+                ? "from-orange-500 to-amber-600"
+                : bubble.fileType === "document"
+                  ? "from-blue-500 to-cyan-600"
+                  : "from-emerald-500 to-teal-600"
+              : "from-purple-500 to-pink-600"
         }
       >
-        {bubble.type === "general" ? "#G" : bubble.name.charAt(0).toUpperCase()}
+        {bubble.type === "general"
+          ? "#G"
+          : bubble.type === "file"
+            ? "#F"
+            : bubble.name.charAt(0).toUpperCase()}
       </ChatBubbleComponent>
     </motion.div>
   );
@@ -542,7 +634,9 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold">
               {chat.type === "general"
                 ? "#"
-                : chat.name.charAt(0).toUpperCase()}
+                : chat.type === "file"
+                  ? "#F"
+                  : chat.name.charAt(0).toUpperCase()}
             </div>
           )}
           <span className="font-medium">{chat.name}</span>

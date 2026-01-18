@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useParams } from "next/navigation";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
@@ -17,23 +17,36 @@ import { RoomProvider } from "@liveblocks/react/suspense";
 import { CodeEditor } from "@/components/code/code-editor";
 import { ClientSideSuspense } from "@liveblocks/react";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
+import { useEffect } from "react";
 
 export default function CodeFilePage() {
   const params = useParams();
-  const router = useRouter();
-  const workspaceId = params.workspaceId as string;
   const roomId = params.roomId as Id<"rooms">;
   const fileId = params.fileId as Id<"codeFiles">;
   const { organization } = useOrganization();
 
   const file = useQuery(api.codeFiles.getFileById, { fileId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
+  const getOrCreateFileChannel = useMutation(
+    api.channels.getOrCreateFileChannel
+  );
 
   // Fetch parent folder name if file is in a folder
   const parentFolder = useQuery(
     api.codeFiles.getFileById,
     file?.parentId ? { fileId: file.parentId } : "skip"
   );
+
+  useEffect(() => {
+    if (!file) return;
+
+    getOrCreateFileChannel({
+      workspaceId: file.workspaceId,
+      roomId: file.roomId,
+      fileId,
+      fileType: "code",
+    }).catch(console.error);
+  }, [file, fileId, getOrCreateFileChannel]);
 
   if (!organization || file === undefined || room === undefined) {
     return (

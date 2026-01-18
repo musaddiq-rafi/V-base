@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { DatabaseReader } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Create a general channel for a workspace
@@ -115,7 +117,12 @@ export const getWorkspaceChannels = query({
     const channels = await ctx.db
       .query("channels")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
-      .filter((q) => q.neq(q.field("type"), "direct"))
+      .filter((q) =>
+        q.and(
+          q.neq(q.field("type"), "direct"),
+          q.neq(q.field("type"), "file")
+        )
+      )
       .order("asc")
       .collect();
 
@@ -210,5 +217,85 @@ export const getChannel = query({
     }
 
     return channel;
+  },
+});
+
+type FileChannelType = "code" | "document" | "whiteboard";
+
+type FileChannelKey = {
+  roomId: Id<"rooms">;
+  fileId: Id<"codeFiles"> | Id<"documents"> | Id<"whiteboards">;
+  fileType: FileChannelType;
+};
+
+async function findFileChannel(db: DatabaseReader, args: FileChannelKey) {
+  return await db
+    .query("channels")
+    .withIndex("by_file", (q) =>
+      q.eq("roomId", args.roomId).eq("fileId", args.fileId).eq("fileType", args.fileType)
+    )
+    .first();
+}
+
+export const getFileChannel = query({
+  args: {
+    workspaceId: v.id("workspaces"),
+    roomId: v.id("rooms"),
+    fileId: v.union(v.id("codeFiles"), v.id("documents"), v.id("whiteboards")),
+    fileType: v.union(
+      v.literal("code"),
+      v.literal("document"),
+      v.literal("whiteboard")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const channel = await findFileChannel(ctx.db, args);
+    if (!channel || channel.workspaceId !== args.workspaceId) {
+      return null;
+    }
+
+    return channel;
+  },
+});
+
+export const getOrCreateFileChannel = mutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    roomId: v.id("rooms"),
+    fileId: v.union(v.id("codeFiles"), v.id("documents"), v.id("whiteboards")),
+    fileType: v.union(
+      v.literal("code"),
+      v.literal("document"),
+      v.literal("whiteboard")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const existing = await findFileChannel(ctx.db, args);
+    if (existing) {
+      return existing._id;
+    }
+
+    const channelId = await ctx.db.insert("channels", {
+      workspaceId: args.workspaceId,
+      name: `${args.fileType}-${args.fileId}`,
+      type: "file",
+      roomId: args.roomId,
+      fileId: args.fileId,
+      fileType: args.fileType,
+      createdAt: Date.now(),
+      createdBy: identity.subject,
+    });
+
+    return channelId;
   },
 });

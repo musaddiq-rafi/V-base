@@ -58,6 +58,26 @@ export const createFile = mutation({
       updatedAt: now,
     });
 
+    const existingChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_file", (q) =>
+        q.eq("roomId", args.roomId).eq("fileId", fileId).eq("fileType", "code")
+      )
+      .first();
+
+    if (!existingChannel) {
+      await ctx.db.insert("channels", {
+        workspaceId: args.workspaceId,
+        name: `code-${fileId}`,
+        type: "file",
+        roomId: args.roomId,
+        fileId: fileId,
+        fileType: "code",
+        createdAt: Date.now(),
+        createdBy: identity.subject,
+      });
+    }
+
     return fileId;
   },
 });

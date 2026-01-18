@@ -21,6 +21,29 @@ export const createWhiteboard = mutation({
       updatedAt: now,
     });
 
+    const existingChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_file", (q) =>
+        q
+          .eq("roomId", args.roomId)
+          .eq("fileId", whiteboardId)
+          .eq("fileType", "whiteboard")
+      )
+      .first();
+
+    if (!existingChannel) {
+      await ctx.db.insert("channels", {
+        workspaceId: args.workspaceId,
+        name: `whiteboard-${whiteboardId}`,
+        type: "file",
+        roomId: args.roomId,
+        fileId: whiteboardId,
+        fileType: "whiteboard",
+        createdAt: Date.now(),
+        createdBy: args.createdBy,
+      });
+    }
+
     return whiteboardId;
   },
 });

@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useParams } from "next/navigation";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -10,17 +10,30 @@ import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
 import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { CollaborativeEditor } from "@/components/document/collaborative-editor";
+import { useEffect } from "react";
 
 export default function DocumentPage() {
   const params = useParams();
-  const router = useRouter();
-  const workspaceId = params.workspaceId as string;
   const roomId = params.roomId as Id<"rooms">;
   const documentId = params.documentId as Id<"documents">;
   const { organization } = useOrganization();
 
   const document = useQuery(api.documents.getDocumentById, { documentId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
+  const getOrCreateFileChannel = useMutation(
+    api.channels.getOrCreateFileChannel
+  );
+
+  useEffect(() => {
+    if (!document) return;
+
+    getOrCreateFileChannel({
+      workspaceId: document.workspaceId,
+      roomId: document.roomId,
+      fileId: documentId,
+      fileType: "document",
+    }).catch(console.error);
+  }, [document, documentId, getOrCreateFileChannel]);
 
   if (!organization || document === undefined || room === undefined) {
     return (

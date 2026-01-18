@@ -25,6 +25,9 @@ export default function WhiteboardPage() {
   const whiteboard = useQuery(api.whiteboards.getWhiteboardById, { whiteboardId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const recordEdit = useMutation(api.whiteboards.recordWhiteboardEdit);
+  const getOrCreateFileChannel = useMutation(
+    api.channels.getOrCreateFileChannel
+  );
 
   // Record edit when user interacts with whiteboard
   useEffect(() => {
@@ -39,6 +42,17 @@ export default function WhiteboardPage() {
       return () => clearTimeout(timer);
     }
   }, [whiteboard, user, whiteboardId, recordEdit]);
+
+  useEffect(() => {
+    if (!whiteboard) return;
+
+    getOrCreateFileChannel({
+      workspaceId: whiteboard.workspaceId,
+      roomId: whiteboard.roomId,
+      fileId: whiteboardId,
+      fileType: "whiteboard",
+    }).catch(console.error);
+  }, [whiteboard, whiteboardId, getOrCreateFileChannel]);
 
   if (!organization || whiteboard === undefined || room === undefined) {
     return (

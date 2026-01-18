@@ -33,22 +33,32 @@ export default defineSchema({
     allowedUserIds: v.optional(v.array(v.string())),
   }).index("by_workspace", ["workspaceId"]),
 
-  // Chat channels - can be workspace-wide or private DM
+  // Chat channels - can be workspace-wide, file-scoped, or private DM
   channels: defineTable({
     workspaceId: v.id("workspaces"),
     name: v.string(), // "general" or "dm-userId1-userId2"
     type: v.union(
       v.literal("general"), // Workspace-wide channel
       v.literal("direct"), // 1-on-1 DM
-      v.literal("group") // Future: custom group channels
+      v.literal("group"), // Future: custom group channels
+      v.literal("file") // File-scoped channel
     ),
     // For DM channels: the two participant user IDs (Clerk IDs)
     participantIds: v.optional(v.array(v.string())),
+    // For file channels: which room/file this channel belongs to
+    roomId: v.optional(v.id("rooms")),
+    fileId: v.optional(
+      v.union(v.id("codeFiles"), v.id("documents"), v.id("whiteboards"))
+    ),
+    fileType: v.optional(
+      v.union(v.literal("code"), v.literal("document"), v.literal("whiteboard"))
+    ),
     createdAt: v.number(),
     createdBy: v.string(), // Clerk User ID
   })
     .index("by_workspace", ["workspaceId"])
-    .index("by_participants", ["participantIds"]),
+    .index("by_participants", ["participantIds"])
+    .index("by_file", ["roomId", "fileId", "fileType"]),
 
   // Messages in channels
   messages: defineTable({

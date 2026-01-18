@@ -21,6 +21,29 @@ export const createDocument = mutation({
       updatedAt: now,
     });
 
+    const existingChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_file", (q) =>
+        q
+          .eq("roomId", args.roomId)
+          .eq("fileId", documentId)
+          .eq("fileType", "document")
+      )
+      .first();
+
+    if (!existingChannel) {
+      await ctx.db.insert("channels", {
+        workspaceId: args.workspaceId,
+        name: `document-${documentId}`,
+        type: "file",
+        roomId: args.roomId,
+        fileId: documentId,
+        fileType: "document",
+        createdAt: Date.now(),
+        createdBy: args.createdBy,
+      });
+    }
+
     return documentId;
   },
 });
