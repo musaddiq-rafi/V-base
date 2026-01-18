@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 // Create a new room in a workspace
 export const createRoom = mutation({
@@ -85,7 +86,44 @@ export const deleteRoom = mutation({
       throw new Error("Room not found");
     }
 
+    const deleteChannelWithData = async (channelId: Id<"channels">) => {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+
+      for (const message of messages) {
+        await ctx.db.delete(message._id);
+      }
+
+      const lastRead = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+
+      for (const entry of lastRead) {
+        await ctx.db.delete(entry._id);
+      }
+
+      await ctx.db.delete(channelId);
+    };
+
     const liveblocksRoomIdsToDelete: string[] = [];
+
+    const fileChannels = await ctx.db
+      .query("channels")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", room.workspaceId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("type"), "file"),
+          q.eq(q.field("roomId"), args.roomId)
+        )
+      )
+      .collect();
+
+    for (const channel of fileChannels) {
+      await deleteChannelWithData(channel._id);
+    }
 
     // Handle different room types
     if (room.type === "code") {
@@ -113,6 +151,16 @@ export const deleteRoom = mutation({
         await ctx.db.delete(doc._id);
       }
     } else if (room.type === "whiteboard" || room.type === "conference") {
+      const whiteboards = await ctx.db
+        .query("whiteboards")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const board of whiteboards) {
+        liveblocksRoomIdsToDelete.push(`whiteboard:${board._id}`);
+        await ctx.db.delete(board._id);
+      }
+
       // These room types have their own Liveblocks room
       liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
     }

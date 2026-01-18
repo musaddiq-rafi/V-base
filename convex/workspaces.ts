@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Helper to get organization context from JWT
@@ -163,13 +164,72 @@ export const deleteWorkspace = mutation({
       throw new Error("Not authorized");
     }
 
-    // Delete all rooms in the workspace first
+    const deleteChannelWithData = async (channelId: Id<"channels">) => {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+
+      for (const message of messages) {
+        await ctx.db.delete(message._id);
+      }
+
+      const lastRead = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+
+      for (const entry of lastRead) {
+        await ctx.db.delete(entry._id);
+      }
+
+      await ctx.db.delete(channelId);
+    };
+
+    // Delete all channels (general, direct, file) and related data
+    const channels = await ctx.db
+      .query("channels")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    for (const channel of channels) {
+      await deleteChannelWithData(channel._id);
+    }
+
+    // Delete all rooms and their contents
     const rooms = await ctx.db
       .query("rooms")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .collect();
 
     for (const room of rooms) {
+      const documents = await ctx.db
+        .query("documents")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const doc of documents) {
+        await ctx.db.delete(doc._id);
+      }
+
+      const codeFiles = await ctx.db
+        .query("codeFiles")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const file of codeFiles) {
+        await ctx.db.delete(file._id);
+      }
+
+      const whiteboards = await ctx.db
+        .query("whiteboards")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const board of whiteboards) {
+        await ctx.db.delete(board._id);
+      }
+
       await ctx.db.delete(room._id);
     }
 
@@ -318,7 +378,17 @@ export const deleteWorkspaceFromWebhook = internalMutation({
         await ctx.db.delete(file._id);
       }
 
-      // C. Delete the room itself
+      // C. Delete all whiteboards in whiteboard rooms
+      const whiteboards = await ctx.db
+        .query("whiteboards")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const board of whiteboards) {
+        await ctx.db.delete(board._id);
+      }
+
+      // D. Delete the room itself
       await ctx.db.delete(room._id);
     }
 

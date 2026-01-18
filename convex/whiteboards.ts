@@ -165,6 +165,41 @@ export const deleteWhiteboard = mutation({
     whiteboardId: v.id("whiteboards"),
   },
   handler: async (ctx, args) => {
+    const whiteboard = await ctx.db.get(args.whiteboardId);
+    if (whiteboard) {
+      const channel = await ctx.db
+        .query("channels")
+        .withIndex("by_file", (q) =>
+          q
+            .eq("roomId", whiteboard.roomId)
+            .eq("fileId", whiteboard._id)
+            .eq("fileType", "whiteboard")
+        )
+        .first();
+
+      if (channel) {
+        const messages = await ctx.db
+          .query("messages")
+          .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+          .collect();
+
+        for (const message of messages) {
+          await ctx.db.delete(message._id);
+        }
+
+        const lastRead = await ctx.db
+          .query("lastRead")
+          .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+          .collect();
+
+        for (const entry of lastRead) {
+          await ctx.db.delete(entry._id);
+        }
+
+        await ctx.db.delete(channel._id);
+      }
+    }
+
     await ctx.db.delete(args.whiteboardId);
   },
 });

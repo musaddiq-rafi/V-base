@@ -146,6 +146,41 @@ export const deleteDocument = mutation({
     documentId: v.id("documents"),
   },
   handler: async (ctx, args) => {
+    const document = await ctx.db.get(args.documentId);
+    if (document) {
+      const channel = await ctx.db
+        .query("channels")
+        .withIndex("by_file", (q) =>
+          q
+            .eq("roomId", document.roomId)
+            .eq("fileId", document._id)
+            .eq("fileType", "document")
+        )
+        .first();
+
+      if (channel) {
+        const messages = await ctx.db
+          .query("messages")
+          .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+          .collect();
+
+        for (const message of messages) {
+          await ctx.db.delete(message._id);
+        }
+
+        const lastRead = await ctx.db
+          .query("lastRead")
+          .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+          .collect();
+
+        for (const entry of lastRead) {
+          await ctx.db.delete(entry._id);
+        }
+
+        await ctx.db.delete(channel._id);
+      }
+    }
+
     await ctx.db.delete(args.documentId);
     return { success: true, deletedDocumentId: args.documentId };
   },
@@ -173,6 +208,34 @@ export const deleteAllDocumentsForRoom = mutation({
     // Delete all documents
     for (const doc of documents) {
       deletedDocumentIds.push(doc._id);
+      const channel = await ctx.db
+        .query("channels")
+        .withIndex("by_file", (q) =>
+          q.eq("roomId", doc.roomId).eq("fileId", doc._id).eq("fileType", "document")
+        )
+        .first();
+
+      if (channel) {
+        const messages = await ctx.db
+          .query("messages")
+          .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+          .collect();
+
+        for (const message of messages) {
+          await ctx.db.delete(message._id);
+        }
+
+        const lastRead = await ctx.db
+          .query("lastRead")
+          .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+          .collect();
+
+        for (const entry of lastRead) {
+          await ctx.db.delete(entry._id);
+        }
+
+        await ctx.db.delete(channel._id);
+      }
       await ctx.db.delete(doc._id);
     }
 

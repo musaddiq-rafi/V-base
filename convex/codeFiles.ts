@@ -322,6 +322,37 @@ export const deleteNode = mutation({
 
     const deletedFileIds: string[] = [];
 
+    const deleteFileChat = async (fileId: Id<"codeFiles">, roomId: Id<"rooms">) => {
+      const channel = await ctx.db
+        .query("channels")
+        .withIndex("by_file", (q) =>
+          q.eq("roomId", roomId).eq("fileId", fileId).eq("fileType", "code")
+        )
+        .first();
+
+      if (!channel) return;
+
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const message of messages) {
+        await ctx.db.delete(message._id);
+      }
+
+      const lastRead = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const entry of lastRead) {
+        await ctx.db.delete(entry._id);
+      }
+
+      await ctx.db.delete(channel._id);
+    };
+
     // Helper function to recursively collect and delete items
     const deleteRecursively = async (itemId: Id<"codeFiles">) => {
       const currentItem = await ctx.db.get(itemId);
@@ -344,6 +375,7 @@ export const deleteNode = mutation({
       // If it's a file, add to the list for Liveblocks cleanup
       if (currentItem.type === "file") {
         deletedFileIds.push(currentItem._id);
+        await deleteFileChat(currentItem._id, currentItem.roomId);
       }
 
       // Delete the item itself
@@ -378,10 +410,42 @@ export const deleteAllFilesForRoom = mutation({
 
     const deletedFileIds: string[] = [];
 
+    const deleteFileChat = async (fileId: Id<"codeFiles">) => {
+      const channel = await ctx.db
+        .query("channels")
+        .withIndex("by_file", (q) =>
+          q.eq("roomId", args.roomId).eq("fileId", fileId).eq("fileType", "code")
+        )
+        .first();
+
+      if (!channel) return;
+
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const message of messages) {
+        await ctx.db.delete(message._id);
+      }
+
+      const lastRead = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const entry of lastRead) {
+        await ctx.db.delete(entry._id);
+      }
+
+      await ctx.db.delete(channel._id);
+    };
+
     // Collect file IDs for Liveblocks cleanup
     for (const item of allItems) {
       if (item.type === "file") {
         deletedFileIds.push(item._id);
+        await deleteFileChat(item._id);
       }
     }
 
