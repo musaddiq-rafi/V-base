@@ -4,13 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import {
-  ArrowLeft,
-  Loader2,
-  Presentation,
-  FileCode,
-  Video,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Presentation, FileCode } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
@@ -21,6 +15,7 @@ import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 
 import { DocumentList } from "@/components/document/document-list";
 import { FileExplorer } from "@/components/code/file-explorer";
+import { WhiteboardList } from "@/components/whiteboard/whiteboard-list";
 import { MeetingRoom } from "@/components/meeting/meeting-room";
 
 export default function RoomPage() {
@@ -33,7 +28,7 @@ export default function RoomPage() {
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const workspace = useQuery(
     api.workspaces.getWorkspaceByClerkOrgId,
-    organization ? { clerkOrgId: organization.id } : "skip"
+    organization ? { clerkOrgId: organization.id } : "skip",
   );
 
   // Verify this room belongs to the current workspace
@@ -170,14 +165,9 @@ export default function RoomPage() {
     );
   }
 
-  return (
-    <RoomProvider
-      id={liveblocksRoomId}
-      initialPresence={{
-        cursor: null,
-      }}
-      initialStorage={{}}
-    >
+  // For whiteboard rooms, show whiteboard list
+  if (room.type === "whiteboard") {
+    return (
       <div className="fixed inset-0 flex flex-col">
         {/* Header */}
         <motion.header
@@ -196,34 +186,63 @@ export default function RoomPage() {
               </Link>
               <div className="h-6 w-px bg-gray-200" />
               <div className="flex items-center gap-2">
-                <Presentation className="w-5 h-5 text-purple-600" />
+                <Presentation className="w-5 h-5 text-orange-600" />
                 <span className="font-semibold text-gray-900">{room.name}</span>
                 <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
                   {room.type}
                 </span>
               </div>
             </div>
-            <Suspense
-              fallback={<div className="text-sm text-gray-500">Loading...</div>}
-            >
-              <ActiveUsersAvatars />
-            </Suspense>
           </div>
         </motion.header>
 
-        {/* Room Content - Whiteboard only (conference is handled above) */}
+        {/* Whiteboard List */}
         <div className="flex-1 relative">
-          <Suspense
-            fallback={
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              </div>
-            }
-          >
-            {room.type === "whiteboard" && <Whiteboard roomId={roomId} />}
-          </Suspense>
+          <WhiteboardList
+            roomId={roomId}
+            workspaceId={organization.id}
+            convexWorkspaceId={workspace._id}
+          />
         </div>
       </div>
-    </RoomProvider>
+    );
+  }
+
+  // Fallback for any other room types
+  return (
+    <div className="fixed inset-0 flex flex-col">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex-shrink-0 z-50 bg-white border-b border-gray-200"
+      >
+        <div className="flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/workspace/${organization.id}`}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back</span>
+            </Link>
+            <div className="h-6 w-px bg-gray-200" />
+            <div className="flex items-center gap-2">
+              <Presentation className="w-5 h-5 text-purple-600" />
+              <span className="font-semibold text-gray-900">{room.name}</span>
+              <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
+                {room.type}
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <p className="text-lg font-medium mb-2">Room Type: {room.type}</p>
+          <p className="text-sm">This room type is not yet supported.</p>
+        </div>
+      </div>
+    </div>
   );
 }
