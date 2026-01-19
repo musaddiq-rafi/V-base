@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
@@ -9,8 +9,12 @@ import {
   useLocalParticipant,
   useRoomContext,
 } from "@livekit/components-react";
+import { RoomEvent } from "livekit-client";
 import { MeetingControls } from "./meeting-controls";
-import { LiveKitParticipantGrid } from "./livekit-participant-grid";
+import {
+  LiveKitParticipantGrid,
+  AudioRenderer,
+} from "./livekit-participant-grid";
 import { MeetingChat } from "./meeting-chat";
 import { ParticipantsList } from "./participants-list";
 import { MessageSquare, Users, X, Loader2 } from "lucide-react";
@@ -49,6 +53,73 @@ export function MeetingStageWithLiveKit({
   const { localParticipant } = useLocalParticipant();
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  // Log room events for debugging
+  useEffect(() => {
+    if (!room) return;
+
+    console.log("[Meeting Stage] Room connected:", room.name);
+    console.log(
+      "[Meeting Stage] Local participant:",
+      localParticipant?.identity,
+    );
+    console.log("[Meeting Stage] Total participants:", participants.length);
+
+    const handleParticipantConnected = (participant: any) => {
+      console.log(
+        "[Meeting Stage] Participant connected:",
+        participant.identity,
+      );
+    };
+
+    const handleParticipantDisconnected = (participant: any) => {
+      console.log(
+        "[Meeting Stage] Participant disconnected:",
+        participant.identity,
+      );
+    };
+
+    const handleTrackSubscribed = (
+      track: any,
+      publication: any,
+      participant: any,
+    ) => {
+      console.log(
+        "[Meeting Stage] Track subscribed:",
+        track.kind,
+        "from",
+        participant.identity,
+      );
+    };
+
+    const handleTrackUnsubscribed = (
+      track: any,
+      publication: any,
+      participant: any,
+    ) => {
+      console.log(
+        "[Meeting Stage] Track unsubscribed:",
+        track.kind,
+        "from",
+        participant.identity,
+      );
+    };
+
+    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+    room.on(RoomEvent.TrackSubscribed, handleTrackSubscribed);
+    room.on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+
+    return () => {
+      room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
+      room.off(
+        RoomEvent.ParticipantDisconnected,
+        handleParticipantDisconnected,
+      );
+      room.off(RoomEvent.TrackSubscribed, handleTrackSubscribed);
+      room.off(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+    };
+  }, [room, localParticipant, participants]);
 
   const toggleSidePanel = (panel: SidePanel) => {
     setSidePanel((current) => (current === panel ? null : panel));
@@ -185,6 +256,9 @@ export function MeetingStageWithLiveKit({
           </motion.div>
         )}
       </div>
+
+      {/* Audio Renderer for remote participants */}
+      <AudioRenderer />
 
       {/* Controls Bar */}
       <MeetingControls

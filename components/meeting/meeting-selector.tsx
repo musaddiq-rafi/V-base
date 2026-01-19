@@ -15,6 +15,7 @@ import {
   Loader2,
   X,
   Info,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -25,7 +26,7 @@ interface MeetingSelectorProps {
   onSelectMeeting: (
     meetingId: Id<"meetings">,
     meetingName: string,
-    livekitRoomName: string
+    livekitRoomName: string,
   ) => void;
 }
 
@@ -39,32 +40,63 @@ export function MeetingSelector({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newMeetingName, setNewMeetingName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [endingMeetingId, setEndingMeetingId] = useState<Id<"meetings"> | null>(
+    null,
+  );
 
   const activeMeetings = useQuery(api.meetings.getActiveMeetings, { roomId });
   const meetingStats = useQuery(api.meetings.getMeetingStats, { roomId });
   const createMeeting = useMutation(api.meetings.createMeeting);
+  const forceEndMeeting = useMutation(api.meetings.forceEndMeeting);
 
   const handleCreateMeeting = async () => {
     if (!newMeetingName.trim()) return;
 
     setIsCreating(true);
     try {
-      const meetingId = await createMeeting({
+      // FIX: Destructure the result directly from the mutation
+      // This avoids the race condition of searching activeMeetings
+      const { meetingId, livekitRoomName } = await createMeeting({
         roomId,
         name: newMeetingName.trim(),
       });
-      // Fetch the created meeting to get livekitRoomName
-      const newMeeting = activeMeetings?.find((m) => m._id === meetingId);
-      const livekitRoomName =
-        newMeeting?.livekitRoomName || `${roomId}_${Date.now()}`;
+
+      const meetingName = newMeetingName.trim();
       setNewMeetingName("");
       setIsCreateModalOpen(false);
-      onSelectMeeting(meetingId, newMeetingName.trim(), livekitRoomName);
+
+      // Use the authoritative room name returned from the server
+      onSelectMeeting(meetingId, meetingName, livekitRoomName);
     } catch (error: any) {
       console.error("Failed to create meeting:", error);
       alert(error.message || "Failed to create meeting");
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleForceEndMeeting = async (
+    meetingId: Id<"meetings">,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation(); // Prevent triggering the join click
+
+    if (
+      !confirm(
+        "Are you sure you want to end this meeting? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    setEndingMeetingId(meetingId);
+    try {
+      await forceEndMeeting({ meetingId });
+    } catch (error: any) {
+      console.error("Failed to end meeting:", error);
+      alert(error.message || "Failed to end meeting");
+    } finally {
+      setEndingMeetingId(null);
     }
   };
 
@@ -74,6 +106,17 @@ export function MeetingSelector({
     if (minutes < 60) return `${minutes}m`;
     const hours = Math.floor(minutes / 60);
     return `${hours}h ${minutes % 60}m`;
+  };
+
+  // Check if meeting seems abandoned (0 participants but still active)
+  const isAbandonedMeeting = (meeting: {
+    participantCount: number;
+    createdAt: number;
+  }) => {
+    return (
+      meeting.participantCount === 0 ||
+      Date.now() - meeting.createdAt > 60 * 60 * 1000
+    ); // older than 1 hour
   };
 
   if (activeMeetings === undefined || meetingStats === undefined) {
@@ -163,7 +206,7 @@ export function MeetingSelector({
                     onSelectMeeting(
                       meeting._id,
                       meeting.name,
-                      meeting.livekitRoomName
+                      meeting.livekitRoomName,
                     )
                   }
                 >
@@ -193,6 +236,22 @@ export function MeetingSelector({
                       <span className="text-xs text-gray-500">
                         Started by {meeting.createdByName}
                       </span>
+                      {/* Force End button for abandoned meetings or meeting creator */}
+                      {(isAbandonedMeeting(meeting) ||
+                        meeting.createdBy === user?.id) && (
+                        <button
+                          onClick={(e) => handleForceEndMeeting(meeting._id, e)}
+                          disabled={endingMeetingId === meeting._id}
+                          className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 font-medium rounded-lg transition-colors text-sm flex items-center gap-1"
+                          title="End this meeting"
+                        >
+                          {endingMeetingId === meeting._id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                       <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm">
                         Join
                       </button>
@@ -276,6 +335,15 @@ export function MeetingSelector({
                     placeholder="e.g., Code Base Updates"
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     autoFocus
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === "Enter" &&
+                        !isCreating &&
+                        newMeetingName.trim()
+                      ) {
+                        handleCreateMeeting();
+                      }
+                    }}
                   />
                 </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
@@ -32,16 +32,42 @@ export function MeetingRoom({
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
 
+  // Track if we're currently in a meeting to handle cleanup
+  const isInMeetingRef = useRef(false);
+  const meetingIdRef = useRef<Id<"meetings"> | null>(null);
+
   const joinMeeting = useMutation(api.meetings.joinMeeting);
   const leaveMeeting = useMutation(api.meetings.leaveMeeting);
+
+  // Handle browser close/refresh - leave meeting before unload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isInMeetingRef.current && meetingIdRef.current) {
+        // Use sendBeacon for reliable cleanup on page unload
+        const payload = JSON.stringify({ meetingId: meetingIdRef.current });
+        navigator.sendBeacon("/api/leave-meeting", payload);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Cleanup on unmount as well
+      if (isInMeetingRef.current && meetingIdRef.current) {
+        leaveMeeting({ meetingId: meetingIdRef.current }).catch(console.error);
+      }
+    };
+  }, [leaveMeeting]);
 
   const handleSelectMeeting = (
     meetingId: Id<"meetings">,
     meetingName: string,
-    meetingLivekitRoomName: string
+    meetingLivekitRoomName: string,
   ) => {
     setSelectedMeetingId(meetingId);
     setSelectedMeetingName(meetingName);
+    // Use the authoritative room name passed from selector
     setLivekitRoomName(meetingLivekitRoomName);
     setMeetingState("lobby");
   };
@@ -50,7 +76,19 @@ export function MeetingRoom({
     if (!selectedMeetingId) return;
 
     try {
-      await joinMeeting({ meetingId: selectedMeetingId });
+      // joinMeeting now returns { livekitRoomName }
+      const result = await joinMeeting({ meetingId: selectedMeetingId });
+
+      // Update with the authoritative room name from the database
+      // This ensures even if there was a stale value, we now have the correct one
+      if (result.livekitRoomName) {
+        setLivekitRoomName(result.livekitRoomName);
+      }
+
+      // Track that we're in a meeting for cleanup
+      isInMeetingRef.current = true;
+      meetingIdRef.current = selectedMeetingId;
+
       setMeetingState("in-meeting");
     } catch (error: any) {
       console.error("Failed to join meeting:", error);
@@ -58,24 +96,32 @@ export function MeetingRoom({
       // Go back to selector if meeting ended
       setMeetingState("selecting");
       setSelectedMeetingId(null);
+      setLivekitRoomName("");
     }
   };
 
-  const handleLeaveMeeting = async () => {
-    if (selectedMeetingId) {
+  const handleLeaveMeeting = useCallback(async () => {
+    // Mark as not in meeting first to prevent duplicate leave calls
+    isInMeetingRef.current = false;
+    const meetingId = meetingIdRef.current;
+    meetingIdRef.current = null;
+
+    if (meetingId) {
       try {
-        await leaveMeeting({ meetingId: selectedMeetingId });
+        await leaveMeeting({ meetingId });
+        console.log("[Meeting] Left meeting successfully");
       } catch (error) {
         console.error("Failed to leave meeting:", error);
       }
     }
     setMeetingState("ended");
-  };
+  }, [leaveMeeting]);
 
   const handleBackToSelector = () => {
     setMeetingState("selecting");
     setSelectedMeetingId(null);
     setSelectedMeetingName("");
+    setLivekitRoomName("");
   };
 
   if (meetingState === "selecting") {
@@ -147,9 +193,32 @@ export function MeetingRoom({
     );
   }
 
+  // Validate we have all required data before rendering LiveKit
+  if (!livekitRoomName || !selectedMeetingId || !user) {
+    return (
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 text-red-500 mx-auto mb-4">⚠️</div>
+          <h1 className="text-xl font-bold text-white mb-2">
+            Missing meeting information
+          </h1>
+          <p className="text-gray-400 mb-4">
+            Unable to connect to the meeting.
+          </p>
+          <button
+            onClick={handleBackToSelector}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Generate participant identity from user ID
-  const participantIdentity = user?.id || `guest-${Date.now()}`;
-  const participantName = user?.fullName || user?.username || "Anonymous User";
+  const participantIdentity = user.id;
+  const participantName = user.fullName || user.username || "Anonymous User";
 
   return (
     <LiveKitProvider
@@ -168,7 +237,7 @@ export function MeetingRoom({
       <MeetingStageWithLiveKit
         roomId={roomId}
         roomName={roomName}
-        meetingId={selectedMeetingId!}
+        meetingId={selectedMeetingId}
         meetingName={selectedMeetingName}
         workspaceId={workspaceId}
         isVideoEnabled={isVideoEnabled}

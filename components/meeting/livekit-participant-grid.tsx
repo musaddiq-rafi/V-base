@@ -6,21 +6,34 @@ import {
   useTracks,
   VideoTrack,
   AudioTrack,
-  TrackRefContext,
 } from "@livekit/components-react";
-import { Track, Participant } from "livekit-client";
+import { Track, Participant, TrackPublication } from "livekit-client";
 import { Mic, MicOff, VideoOff, Pin, MoreVertical } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 export function LiveKitParticipantGrid() {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
 
-  // Get all camera tracks
-  const cameraTracks = useTracks(
+  // Get all video tracks (camera + screen share) - subscribe to all
+  const videoTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
-    { onlySubscribed: true }
+    {
+      onlySubscribed: false, // Allow unsubscribed tracks to trigger subscription
+    },
   );
+
+  // Debug: Log participants and tracks
+  useEffect(() => {
+    console.log("[LiveKit Grid] Participants:", participants.length);
+    console.log("[LiveKit Grid] Video tracks:", videoTracks.length);
+    participants.forEach((p) => {
+      console.log(
+        `[LiveKit Grid] Participant ${p.identity}: camera=${p.isCameraEnabled}, mic=${p.isMicrophoneEnabled}, local=${p.isLocal}`,
+      );
+    });
+  }, [participants, videoTracks]);
 
   // Calculate grid layout based on participant count
   const getGridClass = () => {
@@ -35,13 +48,29 @@ export function LiveKitParticipantGrid() {
 
   return (
     <div className={`grid ${getGridClass()} gap-3 h-full auto-rows-fr`}>
-      {participants.map((participant) => (
-        <ParticipantTile
-          key={participant.identity}
-          participant={participant}
-          isLocal={participant.isLocal}
-        />
-      ))}
+      {participants.map((participant) => {
+        // Find tracks for this participant
+        const cameraTrack = videoTracks.find(
+          (t) =>
+            t.participant.identity === participant.identity &&
+            t.source === Track.Source.Camera,
+        );
+        const screenShareTrack = videoTracks.find(
+          (t) =>
+            t.participant.identity === participant.identity &&
+            t.source === Track.Source.ScreenShare,
+        );
+
+        return (
+          <ParticipantTile
+            key={participant.identity}
+            participant={participant}
+            isLocal={participant.isLocal}
+            cameraTrack={cameraTrack}
+            screenShareTrack={screenShareTrack}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -49,18 +78,24 @@ export function LiveKitParticipantGrid() {
 interface ParticipantTileProps {
   participant: Participant;
   isLocal: boolean;
+  cameraTrack?: {
+    participant: Participant;
+    publication: TrackPublication;
+    source: Track.Source;
+  };
+  screenShareTrack?: {
+    participant: Participant;
+    publication: TrackPublication;
+    source: Track.Source;
+  };
 }
 
-function ParticipantTile({ participant, isLocal }: ParticipantTileProps) {
-  // Get tracks for this participant
-  const cameraTrack = useTracks([Track.Source.Camera], {
-    onlySubscribed: true,
-  }).find((t) => t.participant.identity === participant.identity);
-
-  const screenShareTrack = useTracks([Track.Source.ScreenShare], {
-    onlySubscribed: true,
-  }).find((t) => t.participant.identity === participant.identity);
-
+function ParticipantTile({
+  participant,
+  isLocal,
+  cameraTrack,
+  screenShareTrack,
+}: ParticipantTileProps) {
   const isCameraEnabled = participant.isCameraEnabled;
   const isMicEnabled = participant.isMicrophoneEnabled;
   const isScreenSharing = participant.isScreenShareEnabled;
@@ -74,17 +109,34 @@ function ParticipantTile({ participant, isLocal }: ParticipantTileProps) {
     .toUpperCase()
     .slice(0, 2);
 
+  // Debug logging for track state
+  useEffect(() => {
+    console.log(
+      `[Tile ${participant.identity}] Camera enabled: ${isCameraEnabled}, Track exists: ${!!cameraTrack}`,
+    );
+    if (cameraTrack) {
+      console.log(
+        `[Tile ${participant.identity}] Track subscribed: ${cameraTrack.publication.isSubscribed}, Track: `,
+        cameraTrack.publication.track,
+      );
+    }
+  }, [participant.identity, isCameraEnabled, cameraTrack]);
+
+  // Determine what to show - prefer screen share if active
+  const activeTrack = screenShareTrack || cameraTrack;
+  const showVideo = activeTrack && (isScreenSharing || isCameraEnabled);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative bg-gray-900 rounded-xl overflow-hidden group"
+      className="relative bg-gray-900 rounded-xl overflow-hidden group min-h-[200px]"
     >
       {/* Video or Avatar */}
-      {isCameraEnabled && cameraTrack ? (
+      {showVideo && activeTrack ? (
         <div className="absolute inset-0">
           <VideoTrack
-            trackRef={cameraTrack}
+            trackRef={activeTrack}
             className="w-full h-full object-cover"
           />
         </div>
@@ -101,6 +153,14 @@ function ParticipantTile({ participant, isLocal }: ParticipantTileProps) {
         <div className="absolute top-2 left-2 px-2 py-1 bg-green-500 rounded text-xs text-white font-medium flex items-center gap-1">
           <Pin className="w-3 h-3" />
           Presenting
+        </div>
+      )}
+
+      {/* Camera off indicator */}
+      {!isCameraEnabled && !isScreenSharing && (
+        <div className="absolute top-2 left-2 px-2 py-1 bg-gray-700/80 rounded text-xs text-gray-300 font-medium flex items-center gap-1">
+          <VideoOff className="w-3 h-3" />
+          Camera off
         </div>
       )}
 
@@ -137,9 +197,8 @@ function ParticipantTile({ participant, isLocal }: ParticipantTileProps) {
   );
 }
 
-// Audio renderer for all remote participants
+// Audio renderer for all remote participants - renders audio elements for each remote track
 export function AudioRenderer() {
-  const participants = useParticipants();
   const audioTracks = useTracks([Track.Source.Microphone], {
     onlySubscribed: true,
   });
