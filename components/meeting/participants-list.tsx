@@ -17,6 +17,7 @@ interface Participant {
   isAudioEnabled: boolean;
   isScreenSharing: boolean;
   isSelf: boolean;
+  isHost: boolean;
 }
 
 interface ParticipantsListProps {
@@ -59,12 +60,12 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
                       ? `${participant.name} (You)`
                       : participant.name}
                   </span>
-                  {participant.isSelf && (
+                  {participant.isHost && (
                     <Crown className="w-3.5 h-3.5 text-yellow-500" />
                   )}
                 </div>
                 <p className="text-xs text-gray-500">
-                  {participant.isSelf ? "Host" : "Participant"}
+                  {participant.isHost ? "Host" : "Participant"}
                 </p>
               </div>
             </div>

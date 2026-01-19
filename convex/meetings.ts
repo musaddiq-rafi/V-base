@@ -132,11 +132,8 @@ export const leaveMeeting = mutation({
     const newCount = Math.max(0, meeting.participantCount - 1);
 
     if (newCount === 0) {
-      // End the meeting when last person leaves
-      await ctx.db.patch(args.meetingId, {
-        status: "ended",
-        participantCount: 0,
-      });
+      // Delete the meeting when last person leaves (keeps DB clean)
+      await ctx.db.delete(args.meetingId);
     } else {
       await ctx.db.patch(args.meetingId, {
         participantCount: newCount,
@@ -168,10 +165,8 @@ export const endMeeting = mutation({
       throw new Error("Only the meeting creator can end this meeting");
     }
 
-    await ctx.db.patch(args.meetingId, {
-      status: "ended",
-      participantCount: 0,
-    });
+    // Delete the meeting record (keeps DB clean)
+    await ctx.db.delete(args.meetingId);
 
     return { success: true };
   },
@@ -206,10 +201,8 @@ export const forceEndMeeting = mutation({
       throw new Error("Cannot force end this meeting");
     }
 
-    await ctx.db.patch(args.meetingId, {
-      status: "ended",
-      participantCount: 0,
-    });
+    // Delete the meeting record (keeps DB clean)
+    await ctx.db.delete(args.meetingId);
 
     return { success: true };
   },

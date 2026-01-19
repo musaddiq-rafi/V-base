@@ -27,6 +27,7 @@ interface MeetingSelectorProps {
     meetingId: Id<"meetings">,
     meetingName: string,
     livekitRoomName: string,
+    createdBy: string,
   ) => void;
 }
 
@@ -50,7 +51,7 @@ export function MeetingSelector({
   const forceEndMeeting = useMutation(api.meetings.forceEndMeeting);
 
   const handleCreateMeeting = async () => {
-    if (!newMeetingName.trim()) return;
+    if (!newMeetingName.trim() || !user) return;
 
     setIsCreating(true);
     try {
@@ -66,7 +67,8 @@ export function MeetingSelector({
       setIsCreateModalOpen(false);
 
       // Use the authoritative room name returned from the server
-      onSelectMeeting(meetingId, meetingName, livekitRoomName);
+      // Current user is the creator when they create a meeting
+      onSelectMeeting(meetingId, meetingName, livekitRoomName, user.id);
     } catch (error: any) {
       console.error("Failed to create meeting:", error);
       alert(error.message || "Failed to create meeting");
@@ -207,6 +209,7 @@ export function MeetingSelector({
                       meeting._id,
                       meeting.name,
                       meeting.livekitRoomName,
+                      meeting.createdBy,
                     )
                   }
                 >

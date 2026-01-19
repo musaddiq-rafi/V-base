@@ -29,6 +29,7 @@ export function MeetingRoom({
     useState<Id<"meetings"> | null>(null);
   const [selectedMeetingName, setSelectedMeetingName] = useState<string>("");
   const [livekitRoomName, setLivekitRoomName] = useState<string>("");
+  const [meetingCreatedBy, setMeetingCreatedBy] = useState<string>("");
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
 
@@ -64,11 +65,13 @@ export function MeetingRoom({
     meetingId: Id<"meetings">,
     meetingName: string,
     meetingLivekitRoomName: string,
+    createdBy: string,
   ) => {
     setSelectedMeetingId(meetingId);
     setSelectedMeetingName(meetingName);
     // Use the authoritative room name passed from selector
     setLivekitRoomName(meetingLivekitRoomName);
+    setMeetingCreatedBy(createdBy);
     setMeetingState("lobby");
   };
 
@@ -122,6 +125,7 @@ export function MeetingRoom({
     setSelectedMeetingId(null);
     setSelectedMeetingName("");
     setLivekitRoomName("");
+    setMeetingCreatedBy("");
   };
 
   if (meetingState === "selecting") {
@@ -239,6 +243,7 @@ export function MeetingRoom({
         roomName={roomName}
         meetingId={selectedMeetingId}
         meetingName={selectedMeetingName}
+        meetingCreatedBy={meetingCreatedBy}
         workspaceId={workspaceId}
         isVideoEnabled={isVideoEnabled}
         isAudioEnabled={isAudioEnabled}

@@ -24,6 +24,7 @@ interface MeetingStageProps {
   roomName: string;
   meetingId: Id<"meetings">;
   meetingName: string;
+  meetingCreatedBy: string;
   workspaceId: string;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
@@ -40,6 +41,7 @@ export function MeetingStageWithLiveKit({
   roomName,
   meetingId,
   meetingName,
+  meetingCreatedBy,
   workspaceId,
   isVideoEnabled,
   isAudioEnabled,
@@ -171,6 +173,7 @@ export function MeetingStageWithLiveKit({
     isAudioEnabled: p.isMicrophoneEnabled,
     isScreenSharing: p.isScreenShareEnabled,
     isSelf: p.isLocal,
+    isHost: p.identity === meetingCreatedBy,
   }));
 
   const participantCount = participants.length;
