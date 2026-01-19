@@ -12,7 +12,7 @@ export const getActiveMeetings = query({
     const meetings = await ctx.db
       .query("meetings")
       .withIndex("by_room_status", (q) =>
-        q.eq("roomId", args.roomId).eq("status", "active")
+        q.eq("roomId", args.roomId).eq("status", "active"),
       )
       .collect();
 
@@ -55,18 +55,19 @@ export const createMeeting = mutation({
     const activeMeetings = await ctx.db
       .query("meetings")
       .withIndex("by_room_status", (q) =>
-        q.eq("roomId", args.roomId).eq("status", "active")
+        q.eq("roomId", args.roomId).eq("status", "active"),
       )
       .collect();
 
     if (activeMeetings.length >= MAX_MEETINGS_PER_ROOM) {
       throw new Error(
-        `This room already has ${MAX_MEETINGS_PER_ROOM} active meetings. Please wait for one to end or join an existing meeting.`
+        `This room already has ${MAX_MEETINGS_PER_ROOM} active meetings. Please wait for one to end or join an existing meeting.`,
       );
     }
 
     // Create unique LiveKit room name
-    const livekitRoomName = `${args.roomId}_${Date.now()}`;
+    // Use a stable identifier that won't change between create and join
+    const livekitRoomName = `meeting_${args.roomId}_${Date.now()}`;
 
     const meetingId = await ctx.db.insert("meetings", {
       roomId: args.roomId,
@@ -79,7 +80,8 @@ export const createMeeting = mutation({
       participantCount: 0,
     });
 
-    return meetingId;
+    // Return both meetingId and livekitRoomName to avoid race condition
+    return { meetingId, livekitRoomName };
   },
 });
 
@@ -106,7 +108,8 @@ export const joinMeeting = mutation({
       participantCount: meeting.participantCount + 1,
     });
 
-    return meeting.livekitRoomName;
+    // Return the livekitRoomName so frontend always has the correct value
+    return { livekitRoomName: meeting.livekitRoomName };
   },
 });
 
@@ -129,11 +132,8 @@ export const leaveMeeting = mutation({
     const newCount = Math.max(0, meeting.participantCount - 1);
 
     if (newCount === 0) {
-      // End the meeting when last person leaves
-      await ctx.db.patch(args.meetingId, {
-        status: "ended",
-        participantCount: 0,
-      });
+      // Delete the meeting when last person leaves (keeps DB clean)
+      await ctx.db.delete(args.meetingId);
     } else {
       await ctx.db.patch(args.meetingId, {
         participantCount: newCount,
@@ -165,10 +165,44 @@ export const endMeeting = mutation({
       throw new Error("Only the meeting creator can end this meeting");
     }
 
-    await ctx.db.patch(args.meetingId, {
-      status: "ended",
-      participantCount: 0,
-    });
+    // Delete the meeting record (keeps DB clean)
+    await ctx.db.delete(args.meetingId);
+
+    return { success: true };
+  },
+});
+
+// Force end a meeting - anyone can use this for abandoned meetings
+// This is useful when participant count gets out of sync
+export const forceEndMeeting = mutation({
+  args: {
+    meetingId: v.id("meetings"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const meeting = await ctx.db.get(args.meetingId);
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+
+    // Allow force-ending if meeting has been active for more than 1 hour
+    // or if participant count is 0 but status is still active
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    const canForceEnd =
+      meeting.participantCount === 0 ||
+      meeting.createdAt < oneHourAgo ||
+      meeting.createdBy === identity.subject;
+
+    if (!canForceEnd) {
+      throw new Error("Cannot force end this meeting");
+    }
+
+    // Delete the meeting record (keeps DB clean)
+    await ctx.db.delete(args.meetingId);
 
     return { success: true };
   },
@@ -183,7 +217,7 @@ export const getMeetingStats = query({
     const activeMeetings = await ctx.db
       .query("meetings")
       .withIndex("by_room_status", (q) =>
-        q.eq("roomId", args.roomId).eq("status", "active")
+        q.eq("roomId", args.roomId).eq("status", "active"),
       )
       .collect();
 

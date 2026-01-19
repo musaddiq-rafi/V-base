@@ -24,23 +24,33 @@ interface LiveKitProviderProps {
 async function fetchToken(
   roomName: string,
   participantName: string,
-  participantIdentity: string
+  participantIdentity: string,
 ): Promise<string> {
-  const response = await fetch("/api/livekit/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      roomName,
-      participantName,
-      participantIdentity,
-    }),
+  const params = new URLSearchParams({
+    room: roomName,
+    username: participantName,
+    identity: participantIdentity,
   });
 
+  console.log(
+    "[LiveKit] Fetching token for room:",
+    roomName,
+    "identity:",
+    participantIdentity,
+  );
+
+  const response = await fetch(`/api/livekit/token?${params.toString()}`);
+
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to fetch token");
+    const errorText = await response.text();
+    let errorMessage = "Failed to fetch token";
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorMessage;
+    } catch {
+      errorMessage = `HTTP ${response.status}: ${errorText.substring(0, 100)}`;
+    }
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
@@ -59,69 +69,61 @@ export function LiveKitProvider({
   audioEnabled = true,
 }: LiveKitProviderProps) {
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
   useEffect(() => {
-    const getToken = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const fetchedToken = await fetchToken(
-          roomName,
-          participantName,
-          participantIdentity
-        );
-        setToken(fetchedToken);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error("Unknown error");
-        setError(error);
-        onError?.(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!roomName || !participantIdentity) {
+      console.error("[LiveKit] Missing roomName or participantIdentity");
+      setError(new Error("Missing room name or participant identity"));
+      setIsLoading(false);
+      return;
+    }
 
-    getToken();
+    console.log("[LiveKit] Initializing connection to room:", roomName);
+
+    fetchToken(roomName, participantName, participantIdentity)
+      .then((token) => {
+        console.log("[LiveKit] Token received successfully");
+        setToken(token);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("[LiveKit] Failed to fetch token:", err);
+        setError(err);
+        setIsLoading(false);
+        onError?.(err);
+      });
   }, [roomName, participantName, participantIdentity, onError]);
 
   const handleConnected = useCallback(() => {
+    console.log("[LiveKit] Connected to room:", roomName);
     onConnected?.();
-  }, [onConnected]);
+  }, [roomName, onConnected]);
 
   const handleDisconnected = useCallback(() => {
+    console.log("[LiveKit] Disconnected from room:", roomName);
     onDisconnected?.();
-  }, [onDisconnected]);
+  }, [roomName, onDisconnected]);
 
   const handleError = useCallback(
     (err: Error) => {
+      console.error("[LiveKit] Room error:", err);
       setError(err);
       onError?.(err);
     },
-    [onError]
+    [onError],
   );
-
-  if (!livekitUrl) {
-    return (
-      <div className="flex items-center justify-center h-full bg-[#1a1a1a]">
-        <div className="text-center">
-          <p className="text-red-400 mb-2">LiveKit URL not configured</p>
-          <p className="text-gray-500 text-sm">
-            Please set NEXT_PUBLIC_LIVEKIT_URL in your environment variables
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#1a1a1a]">
+      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-400">Connecting to meeting...</p>
+          <p className="text-gray-500 text-sm mt-2">Room: {roomName}</p>
         </div>
       </div>
     );
@@ -129,12 +131,34 @@ export function LiveKitProvider({
 
   if (error || !token) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#1a1a1a]">
+      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-2">Failed to connect</p>
+          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Connection Failed
+          </h2>
           <p className="text-gray-500 text-sm">
             {error?.message || "Unable to get meeting token"}
           </p>
+          <p className="text-gray-600 text-xs mt-2">Room: {roomName}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!livekitUrl) {
+    return (
+      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Configuration Error
+          </h2>
+          <p className="text-gray-500 text-sm">LiveKit URL is not configured</p>
         </div>
       </div>
     );
@@ -168,27 +192,29 @@ export function LiveKitProvider({
 
 // Hook to get the current room context
 export function useLiveKitRoom() {
-  const room = useRoomContext();
-  return room;
+  return useRoomContext();
 }
 
 // Connection state hook
 export function useConnectionState() {
   const room = useRoomContext();
   const [connectionState, setConnectionState] = useState<ConnectionState>(
-    room?.state || ConnectionState.Disconnected
+    ConnectionState.Disconnected,
   );
 
   useEffect(() => {
     if (!room) return;
 
-    const handleConnectionChange = () => {
-      setConnectionState(room.state);
+    const handleConnectionStateChange = (state: ConnectionState) => {
+      console.log("[LiveKit] Connection state changed:", state);
+      setConnectionState(state);
     };
 
-    room.on(RoomEvent.ConnectionStateChanged, handleConnectionChange);
+    setConnectionState(room.state);
+    room.on(RoomEvent.ConnectionStateChanged, handleConnectionStateChange);
+
     return () => {
-      room.off(RoomEvent.ConnectionStateChanged, handleConnectionChange);
+      room.off(RoomEvent.ConnectionStateChanged, handleConnectionStateChange);
     };
   }, [room]);
 
