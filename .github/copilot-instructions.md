@@ -51,9 +51,10 @@ Room routing: `app/workspace/[workspaceId]/room/[roomId]/page.tsx`
 ## Chat System Architecture
 
 ### Overview
-The chat system uses a 3-tier architecture with different scopes and lifecycles.
+The chat system uses a 3-tier architecture with different scopes and lifecycles. **All tiers use the unified `channels` + `messages` system.**
 
 ### Tier 1: Workspace Global Chat (✅ Implemented)
+- **Channel Type:** `general`
 - **Channel:** `#general` - automatically created when a workspace is created
 - **Scope:** All workspace members have access
 - **Location:** Floating bubble UI accessible from workspace pages
@@ -61,64 +62,288 @@ The chat system uses a 3-tier architecture with different scopes and lifecycles.
 - **Data Flow:** Messages stored in Convex `messages` table, linked via `channels` table
 
 ### Tier 2: Direct Messages (✅ Implemented)
+- **Channel Type:** `direct`
 - **Channel:** Private 1:1 messaging between workspace members
 - **Creation:** Via "New Message" button in chat bubble UI
 - **Component:** `NewDmModal` in `components/chat/chat-system.tsx`
 - **Data Flow:** Creates/retrieves DM channel via `api.channels.createOrGetDirectChannel`
 
-### Tier 3: Context-Aware Room Chat (🔮 Planned - Spec Only)
+### Tier 3: Context-Aware File Chat (🔮 Planned - Implementation Guide Below)
 
-> **IMPORTANT:** This feature is NOT yet implemented. The following is the specification for future development.
+> **IMPORTANT:** This feature is NOT yet implemented. The following is the approved implementation approach.
 
-#### Component Design Requirements
-- **Type:** Reusable, pluggable React component
-- **UI Pattern:** Collapsible Right Sidebar
-- **Default State:** Collapsed
-- **Trigger:** Bottom-right floating icon (consistent with existing chat bubble pattern)
+#### Design Decision: Channel-Based Architecture
 
-#### Context Binding Logic
-Chat context is bound to specific **files** or **entities** within a room, NOT the room itself.
+**DO NOT** create a separate messaging system for file chats. Instead, treat file chats as another channel type. This approach:
+- Reuses all existing `messages.ts` mutations/queries (sendMessage, toggleReaction, markChannelAsRead)
+- Allows the existing `ChatWindow` component to work with zero modifications
+- Automatically includes file chats in `getUnreadCounts` aggregation
+- Follows the DRY principle
 
-**Example Flow (Document Room):**
-1. User A creates "doc-A" in a Document Room
-2. System automatically creates a chat channel specifically for "doc-A"
-3. When Users B and C open "doc-A", they automatically join that specific channel
-4. Messages in this channel are contextually relevant to "doc-A" only
+#### Step 1: Update Schema (`convex/schema.ts`)
 
-**Example Flow (Code Room):**
-1. User A creates "main.py" in a Code Room
-2. System creates chat channel bound to "main.py"
-3. Collaborators editing "main.py" see the same chat context
+Add `"file"` to channel types and add context fields:
 
-#### Lifecycle Management (Cascading Delete)
-- The chat channel shares the lifecycle of its parent entity
-- **Delete Parent → Delete Channel:** If "doc-A" is deleted, its associated chat channel and all messages are destroyed
-- Implementation should use Convex's cascading delete pattern or explicit cleanup in delete mutations
-
-#### Proposed Schema Extension
 ```typescript
-// Add to convex/schema.ts
+// convex/schema.ts
 channels: defineTable({
-  // ... existing fields ...
+  workspaceId: v.id("workspaces"),
+  name: v.string(),
+  type: v.union(
+    v.literal("general"),
+    v.literal("direct"),
+    v.literal("group"),
+    v.literal("file")      // <-- ADD THIS
+  ),
+  participantIds: v.optional(v.array(v.string())),
 
-  // NEW: Context binding for Tier 3
+  // NEW: Context binding for file-based chat channels
   contextType: v.optional(v.union(
     v.literal("document"),
     v.literal("codeFile"),
     v.literal("whiteboard")
   )),
-  contextId: v.optional(v.string()), // ID of the bound entity
+  contextId: v.optional(v.string()), // The _id of the linked entity (as string)
+
+  createdAt: v.number(),
+  createdBy: v.string(),
 })
-  .index("by_context", ["contextType", "contextId"])
+  .index("by_workspace", ["workspaceId"])
+  .index("by_participants", ["participantIds"])
+  .index("by_context", ["contextType", "contextId"]), // <-- ADD THIS INDEX
 ```
 
-#### Proposed Component Structure
+#### Step 2: Auto-Create Channel on File Creation
+
+When creating a document/codeFile/whiteboard, automatically create its linked chat channel.
+
+**For Documents (`convex/documents.ts`):**
+```typescript
+// Inside createDocument mutation, after inserting the document:
+const documentId = await ctx.db.insert("documents", { ... });
+
+// Auto-create linked chat channel
+await ctx.db.insert("channels", {
+  workspaceId: args.workspaceId,
+  name: `doc-chat-${args.name}`,
+  type: "file",
+  contextType: "document",
+  contextId: documentId, // Link to the document
+  createdAt: Date.now(),
+  createdBy: args.createdBy,
+});
+
+return documentId;
 ```
-components/
-  chat/
-    chat-system.tsx          # Existing - Tier 1 & 2
-    context-chat-sidebar.tsx # NEW - Tier 3 sidebar wrapper
-    context-chat-panel.tsx   # NEW - Tier 3 chat panel
+
+**For Code Files (`convex/codeFiles.ts`):**
+```typescript
+// Inside createFile mutation (NOT createFolder), after inserting the file:
+const fileId = await ctx.db.insert("codeFiles", { ... });
+
+// Auto-create linked chat channel
+await ctx.db.insert("channels", {
+  workspaceId: args.workspaceId,
+  name: `code-chat-${args.name}`,
+  type: "file",
+  contextType: "codeFile",
+  contextId: fileId,
+  createdAt: Date.now(),
+  createdBy: identity.subject,
+});
+
+return fileId;
+```
+
+**For Whiteboards (`convex/whiteboards.ts`):**
+```typescript
+// Inside createWhiteboard mutation, after inserting:
+const whiteboardId = await ctx.db.insert("whiteboards", { ... });
+
+// Auto-create linked chat channel
+await ctx.db.insert("channels", {
+  workspaceId: args.workspaceId,
+  name: `wb-chat-${args.name}`,
+  type: "file",
+  contextType: "whiteboard",
+  contextId: whiteboardId,
+  createdAt: Date.now(),
+  createdBy: args.createdBy,
+});
+
+return whiteboardId;
+```
+
+#### Step 3: Add Query to Get Channel by Context (`convex/channels.ts`)
+
+```typescript
+// convex/channels.ts
+
+/**
+ * Get the chat channel linked to a specific file/document/whiteboard
+ */
+export const getChannelByContext = query({
+  args: {
+    contextType: v.union(
+      v.literal("document"),
+      v.literal("codeFile"),
+      v.literal("whiteboard")
+    ),
+    contextId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    return await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", args.contextType).eq("contextId", args.contextId)
+      )
+      .unique();
+  },
+});
+```
+
+#### Step 4: Cascading Delete (Lifecycle Management)
+
+When deleting a file, also delete its linked channel and messages.
+
+**Update `convex/documents.ts` - deleteDocument:**
+```typescript
+export const deleteDocument = mutation({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, args) => {
+    // 1. Find and delete the linked channel
+    const linkedChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", "document").eq("contextId", args.documentId)
+      )
+      .unique();
+
+    if (linkedChannel) {
+      // Delete all messages in this channel
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      // Delete lastRead records for this channel
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      // Delete the channel
+      await ctx.db.delete(linkedChannel._id);
+    }
+
+    // 2. Delete the document itself
+    await ctx.db.delete(args.documentId);
+
+    return { success: true, deletedDocumentId: args.documentId };
+  },
+});
+```
+
+> Apply the same pattern to `codeFiles.ts` (deleteNode) and `whiteboards.ts` (deleteWhiteboard).
+
+#### Step 5: Frontend Component (`components/chat/context-chat-sidebar.tsx`)
+
+```typescript
+"use client";
+
+import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { MessageCircle, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+// Reuse the existing ChatWindow internals or extract to shared component
+
+interface ContextChatSidebarProps {
+  contextType: "document" | "codeFile" | "whiteboard";
+  contextId: string;
+  workspaceId: Id<"workspaces">;
+}
+
+export function ContextChatSidebar({
+  contextType,
+  contextId,
+  workspaceId
+}: ContextChatSidebarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Get the linked channel
+  const channel = useQuery(api.channels.getChannelByContext, {
+    contextType,
+    contextId,
+  });
+
+  if (!channel) return null; // Channel not yet created (edge case)
+
+  return (
+    <>
+      {/* Floating trigger button - bottom right */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center"
+      >
+        {isOpen ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
+      </button>
+
+      {/* Collapsible right sidebar */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 20 }}
+            className="fixed top-0 right-0 h-full w-80 bg-white border-l shadow-xl z-30"
+          >
+            {/* Reuse ChatWindow logic here, passing channel._id */}
+            <ContextChatPanel
+              channelId={channel._id}
+              channelName={channel.name}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+```
+
+#### Step 6: Integration Points
+
+Add `<ContextChatSidebar />` to editor pages:
+
+**`app/workspace/[workspaceId]/room/[roomId]/document/[documentId]/page.tsx`:**
+```typescript
+// Inside the RoomProvider, add:
+<ContextChatSidebar
+  contextType="document"
+  contextId={documentId}
+  workspaceId={workspace._id}
+/>
+```
+
+**`app/workspace/[workspaceId]/room/[roomId]/code/[fileId]/page.tsx`:**
+```typescript
+<ContextChatSidebar
+  contextType="codeFile"
+  contextId={fileId}
+  workspaceId={workspace._id}
+/>
 ```
 
 ---
@@ -170,6 +395,12 @@ MeetingRoom (state machine)
 - [ ] Test if participants appear in `useParticipants()` hook
 - [ ] Check browser console for WebRTC errors
 
+**Key Code Path:**
+1. Meeting created in [`convex/meetings.ts`](convex/meetings.ts) → generates `livekitRoomName: ${args.roomId}_${Date.now()}`
+2. User joins → frontend calls `/api/livekit/route.ts` with room name
+3. Token returned → passed to `LiveKitRoom` component
+4. **Potential Issue:** If `Date.now()` differs between create/join, room names won't match
+
 **Related Files:**
 - `providers/livekit-provider.tsx` - LiveKit room connection
 - `app/api/livekit/route.ts` - Token generation
@@ -206,7 +437,7 @@ Use `internalMutation` for webhook handlers in `convex/users.ts`, `convex/worksp
 
 | Context | Room ID Pattern |
 |---------|-----------------|
-| Document | `document:${documentId}` |
+| Document | `doc:${documentId}` |
 | Code file | `code:${fileId}` |
 | Whiteboard | `whiteboard:${whiteboardId}` |
 | Room presence | `room:${roomId}` |
