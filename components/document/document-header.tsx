@@ -5,8 +5,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import type { Editor } from "@tiptap/react";
-import { 
-  FileText, 
+import {
+  FileText,
   FilePlus,
   FilePen,
   FileJson,
@@ -17,8 +17,8 @@ import {
   Underline,
   Strikethrough,
   RemoveFormatting,
-  Star, 
-  CloudOff, 
+  Star,
+  CloudOff,
   Cloud,
   MoreVertical,
   Share2,
@@ -99,7 +99,7 @@ export function DocumentHeader({
   const updateLastEdited = useMutation(api.documents.updateLastEdited);
   const { user } = useUser();
   const status = useStatus();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -545,14 +545,6 @@ export function DocumentHeader({
 
         {/* Active Collaborators */}
         <ActiveUsersAvatars />
-
-        {/* Share Button */}
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-9 px-5 text-sm font-medium gap-2"
-        >
-          <Share2 className="w-4 h-4" />
-          Share
-        </Button>
 
         {/* More Options */}
         <DropdownMenu>

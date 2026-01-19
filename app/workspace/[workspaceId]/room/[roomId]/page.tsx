@@ -198,7 +198,6 @@ export default function RoomPage() {
         </motion.header>
 
         {/* Whiteboard List */}
-        {/* Whiteboard List */}
         <div className="flex-1 relative">
           <WhiteboardList
             roomId={roomId}
