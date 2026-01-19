@@ -187,6 +187,7 @@ export default function RoomPage() {
               <div className="h-6 w-px bg-gray-200" />
               <div className="flex items-center gap-2">
                 <Presentation className="w-5 h-5 text-orange-600" />
+                <Presentation className="w-5 h-5 text-orange-600" />
                 <span className="font-semibold text-gray-900">{room.name}</span>
                 <span className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded">
                   {room.type}
@@ -196,6 +197,7 @@ export default function RoomPage() {
           </div>
         </motion.header>
 
+        {/* Whiteboard List */}
         {/* Whiteboard List */}
         <div className="flex-1 relative">
           <WhiteboardList

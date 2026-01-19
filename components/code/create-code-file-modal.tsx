@@ -7,10 +7,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { motion } from "framer-motion";
 import { X, FileCode, Folder, Loader2 } from "lucide-react";
 
-// Supported languages for code files (only languages supported by Piston API for execution)
+// Supported languages for code files (languages supported by both Piston and VBase RCE APIs)
 const LANGUAGES = [
   { value: "javascript", label: "JavaScript", extension: ".js" },
-  { value: "typescript", label: "TypeScript", extension: ".ts" },
   { value: "python", label: "Python", extension: ".py" },
   { value: "java", label: "Java", extension: ".java" },
   { value: "cpp", label: "C++", extension: ".cpp" },
