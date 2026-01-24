@@ -2,8 +2,6 @@
   <img src="./assets/logo.svg" width="650" alt="VBase Logo">
 </p>
 
-<br>
-
 ### Real-Time Collaborative Virtual Workspace
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black?logo=next.js)](https://nextjs.org/)

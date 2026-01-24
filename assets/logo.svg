@@ -1,30 +1,37 @@
 <svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
   <style>
-    /* Default Dark Mode Styles (Standard for your brand) */
-    .text-main { fill: #ffffff; }
-    .text-v { fill: url(#vGradientDark); }
-
-    /* Light Mode Overrides */
-    @media (prefers-color-scheme: light) {
-      .text-main { fill: #0f172a; } /* Slate 950 */
-      .text-v { fill: #1e293b; }    /* Slate 800 */
-    }
-
+    /* --- FONT STYLES --- */
     .brand-font {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       font-weight: 600;
     }
     .tagline-font {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       font-weight: 500;
+    }
+
+    /* --- COLOR MODES --- */
+
+    /* Default (Dark Mode) - White text and subtle gray gradient on V */
+    .text-main { fill: #ffffff; }
+    .text-v { fill: url(#vGradientDark); }
+
+    /* Light Mode Overrides - Switches to metallic dark gradient */
+    @media (prefers-color-scheme: light) {
+      .text-main, .text-v {
+        fill: url(#metallicGradient) !important;
+      }
     }
   </style>
 
   <defs>
-    <linearGradient id="vGradientDark" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="vGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="100%" stop-color="#94a3b8" />
     </linearGradient>
+
+    <linearGradient id="metallicGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155" /> <stop offset="50%" stop-color="#475569" /> <stop offset="100%" stop-color="#64748b" /> </linearGradient>
 
     <linearGradient id="baseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#38bdf8" />
