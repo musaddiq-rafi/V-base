@@ -29,8 +29,8 @@ LiveKit provider wraps individual meeting components, not the entire app.
 |-----------|---------------|------------------|--------|
 | `document` | `DocumentList` | `CollaborativeEditor` (Tiptap + Liveblocks) | ✅ Implemented |
 | `code` | `FileExplorer` | `CodeEditor` (CodeMirror + Yjs) | ✅ Implemented |
-| `whiteboard` | `WhiteboardList` | `Whiteboard` (Excalidraw) | ✅ Implemented |
-| `conference` | `MeetingSelector` | `MeetingRoom` (LiveKit) | ⚠️ Partial (See Bug Report) |
+| `whiteboard` | `WhiteboardList` | `Whiteboard` (Excalidraw) | ⚠️ Persistence Bug (See Bug Report) |
+| `conference` | `MeetingSelector` | `MeetingRoom` (LiveKit) | ✅ Working (Screen Share Pending) |
 | `kanban` | — | — | 🔮 Planned |
 
 Room routing: `app/workspace/[workspaceId]/room/[roomId]/page.tsx`
@@ -41,6 +41,7 @@ Room routing: `app/workspace/[workspaceId]/room/[roomId]/page.tsx`
 
 | Constraint | Limit |
 |------------|-------|
+| Owned Workspaces per User | **5 max** |
 | Rooms per Workspace | **10 max** |
 | Conference/Meeting Rooms per Workspace | **1 max** |
 | Concurrent Meetings per Conference Room | **3 max** |
@@ -372,40 +373,62 @@ MeetingRoom (state machine)
     └── MeetingStageWithLiveKit (in-meeting state)
 ```
 
-### ⚠️ BUG REPORT: Peer Connection Issue
+### ✅ Meeting Room Status (Updated Jan 2026)
 
-> **Status:** REQUIRES REPAIR
-> **Severity:** Critical
-> **Component:** `components/meeting/meeting-room.tsx`, `providers/livekit-provider.tsx`
+> **Status:** WORKING
+> **Audio/Video Calls:** Functional - users can create meetings, join, and stream audio/video to each other
+> **Needs Further Testing:** Edge cases, network conditions, multiple participants
 
-**Symptoms:**
-- Local media capture (Camera/Audio) works correctly
-- Users A and B can both join the same meeting
-- Users A and B **cannot see or hear each other**
+**Implemented Features:**
+- Meeting creation and joining
+- Audio streaming between participants
+- Video streaming between participants
+- Participant list with correct host identification
+- Meeting cleanup on leave/close
 
-**Suspected Causes:**
-1. **Signaling Issue:** LiveKit room tokens may not be correctly associating users to the same room
-2. **WebRTC Connection:** ICE candidate exchange may be failing
-3. **Room Name Mismatch:** The `livekitRoomName` generated may differ between users
+**Pending Features:**
+- 🔮 **Screen Sharing** - Not yet implemented
 
-**Debugging Checklist:**
-- [ ] Verify `livekitRoomName` is identical for all participants joining the same meeting
-- [ ] Check LiveKit server logs for connection attempts
-- [ ] Verify `/api/livekit/route.ts` returns correct room tokens
-- [ ] Test if participants appear in `useParticipants()` hook
-- [ ] Check browser console for WebRTC errors
-
-**Key Code Path:**
-1. Meeting created in [`convex/meetings.ts`](convex/meetings.ts) → generates `livekitRoomName: ${args.roomId}_${Date.now()}`
-2. User joins → frontend calls `/api/livekit/route.ts` with room name
-3. Token returned → passed to `LiveKitRoom` component
-4. **Potential Issue:** If `Date.now()` differs between create/join, room names won't match
-
-**Related Files:**
+**Key Files:**
 - `providers/livekit-provider.tsx` - LiveKit room connection
-- `app/api/livekit/route.ts` - Token generation
+- `app/api/livekit/token/route.ts` - Token generation
 - `convex/meetings.ts` - Meeting creation/joining logic
 - `components/meeting/meeting-stage.tsx` - Participant rendering
+- `components/meeting/meeting-selector.tsx` - Meeting list and creation
+
+---
+
+### ⚠️ BUG REPORT: Whiteboard Persistence Issue
+
+> **Status:** REQUIRES REPAIR
+> **Severity:** High
+> **Component:** `components/whiteboard/excalidraw-board.tsx`
+
+**Symptoms:**
+- User A draws on whiteboard → drawings appear correctly
+- User B sees User A's drawings in real-time (collaboration works)
+- When any user leaves the room and rejoins → **all drawings are gone**
+- Drawings are NOT being persisted to Liveblocks storage
+
+**Expected Behavior:**
+- Drawings should persist in Liveblocks room storage
+- When users rejoin, they should see previously drawn content
+
+**Suspected Causes:**
+1. **Missing Storage Hook:** Excalidraw may not be connected to Liveblocks `useStorage()` or `useMutation()`
+2. **Only Using Presence:** Drawings might only sync via presence (ephemeral) instead of storage (persistent)
+3. **Initialization Issue:** Storage may not be properly initialized when room loads
+
+**Debugging Checklist:**
+- [ ] Check if `useStorage()` is being used in `excalidraw-board.tsx`
+- [ ] Verify Liveblocks room storage is initialized with whiteboard data structure
+- [ ] Check if `onChange` handler saves to storage, not just broadcasts
+- [ ] Inspect Liveblocks dashboard for room storage data
+
+**Related Files:**
+- `components/whiteboard/excalidraw-board.tsx` - Main whiteboard component
+- `liveblocks.config.ts` - Storage type definitions
+- Liveblocks Room ID pattern: `whiteboard:${whiteboardId}`
 
 ---
 
