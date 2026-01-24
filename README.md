@@ -1,4 +1,6 @@
-# 🚀 VBase - Real-Time Collaborative Virtual Workspace
+# 🚀 VBase
+
+## Real-Time Collaborative Virtual Workspace
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18.3-blue?logo=react)](https://reactjs.org/)
@@ -39,6 +41,11 @@ VBase unifies all collaboration tools in one workspace:
 | 🎨 **Whiteboards** | Infinite canvas for brainstorming with real-time sync |
 | 📹 **Video Meetings** | HD video conferencing with up to 3 concurrent meetings |
 | 💬 **Team Chat** | Workspace-wide and direct messaging with reactions |
+
+---
+
+### Our sister project complimenting VBase
+**⚙️ [vbase-rce](https://github.com/SillyCatto/vbase-rce)**: Our own experimental RCE engine built with FastAPI and Docker for code execution in Code Room
 
 ---
 
@@ -117,9 +124,11 @@ VBase unifies all collaboration tools in one workspace:
 ### **Editors & Tools**
 | Technology | Purpose |
 |------------|---------|
+| **[vbase-rce](https://github.com/SillyCatto/vbase-rce)** | Our own experimental RCE engine |
 | **Tiptap** | Rich text document editing |
 | **CodeMirror** | Code editing with syntax highlighting |
 | **Excalidraw** | Whiteboard drawing canvas |
+| **Piston API** | An advanced & secured public RCE engine API |
 
 ---
 
@@ -131,15 +140,15 @@ VBase unifies all collaboration tools in one workspace:
 ├─────────────────────────────────────────────────────────────────┤
 │  ClerkProvider → ConvexProvider → LiveblocksProvider            │
 │                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │  Documents   │  │  Code Editor │  │  Whiteboard  │          │
-│  │  (Tiptap)    │  │ (CodeMirror) │  │ (Excalidraw) │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
+│  │  Documents   │  │  Code Editor │  │  Whiteboard  │           │
+│  │  (Tiptap)    │  │ (CodeMirror) │  │ (Excalidraw) │           │
+│  └──────────────┘  └──────────────┘  └──────────────┘           │
 │                                                                 │
-│  ┌──────────────┐  ┌──────────────┐                            │
-│  │   Meetings   │  │  Chat System │                            │
-│  │  (LiveKit)   │  │   (Convex)   │                            │
-│  └──────────────┘  └──────────────┘                            │
+│  ┌──────────────┐  ┌──────────────┐                             │
+│  │   Meetings   │  │  Chat System │                             │
+│  │  (LiveKit)   │  │   (Convex)   │                             │
+│  └──────────────┘  └──────────────┘                             │
 └─────────────────────────────────────────────────────────────────┘
                               │
           ┌───────────────────┼───────────────────┐
@@ -341,13 +350,16 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🙏 Acknowledgments
 
+All thanks to these amazing projects and services:
+
 - **[Convex](https://convex.dev)** for the incredible real-time database
-- **[Clerk](https://clerk.com)** for seamless authentication
+- **[Clerk](https://clerk.com)** for seamless authentication & organization management
 - **[Liveblocks](https://liveblocks.io)** for collaboration infrastructure
 - **[LiveKit](https://livekit.io)** for WebRTC video streaming
 - **[Excalidraw](https://excalidraw.com)** for the whiteboard canvas
 - **[Tiptap](https://tiptap.dev)** for the rich text editor
 - **[CodeMirror](https://codemirror.net)** for the code editor
+- **[Piston](https://github.com/engineer-man/piston)** for robust & secure RCE engine
 
 ---
 
