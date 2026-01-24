@@ -1,6 +1,10 @@
-# 🚀 VBase
+<p align="center">
+  <img src="./assets/logo.svg" width="650" alt="VBase Logo">
+</p>
 
-## Real-Time Collaborative Virtual Workspace
+<br>
+
+### Real-Time Collaborative Virtual Workspace
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18.3-blue?logo=react)](https://reactjs.org/)

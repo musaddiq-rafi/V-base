@@ -1,0 +1,43 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* Default Dark Mode Styles (Standard for your brand) */
+    .text-main { fill: #ffffff; }
+    .text-v { fill: url(#vGradientDark); }
+
+    /* Light Mode Overrides */
+    @media (prefers-color-scheme: light) {
+      .text-main { fill: #0f172a; } /* Slate 950 */
+      .text-v { fill: #1e293b; }    /* Slate 800 */
+    }
+
+    .brand-font {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 600;
+    }
+    .tagline-font {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 500;
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="vGradientDark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+
+    <linearGradient id="baseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+  </defs>
+
+  <text x="50%" y="85" text-anchor="middle" class="brand-font" font-size="68" letter-spacing="-0.03em">
+    <tspan class="text-v">V</tspan><tspan fill="url(#baseGradient)">Base</tspan>
+  </text>
+
+  <text x="50%" y="145" text-anchor="middle" class="tagline-font" font-size="42" letter-spacing="-0.04em">
+    <tspan class="text-main">Virtual Workspace. </tspan>
+    <tspan fill="url(#baseGradient)">Supercharged.</tspan>
+  </text>
+</svg>
