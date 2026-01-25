@@ -248,7 +248,7 @@ export default function DashboardPage() {
               Give your workspace a name to get started
             </p>
             {/* Workspace Count Info */}
-            {workspaceStats && (
+            {/* {workspaceStats && (
               <div
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-4 ${workspaceStats.maxLimit - workspaceStats.count === 0 ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"}`}
               >
@@ -258,7 +258,7 @@ export default function DashboardPage() {
                   remaining
                 </span>
               </div>
-            )}
+            )} */}
             <input
               type="text"
               value={workspaceName}
