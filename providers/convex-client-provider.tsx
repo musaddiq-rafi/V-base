@@ -1,6 +1,7 @@
 "use client";
 
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { AuthLoading, Authenticated, ConvexReactClient } from "convex/react";
 
@@ -64,6 +65,31 @@ export const ConvexClientProvider = ({
   return (
     <ClerkProvider
       appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: "#0ea5e9",
+          colorBackground: "#0b0f1a",
+          colorText: "#ffffff",
+          colorTextSecondary: "rgba(255, 255, 255, 0.6)",
+          colorInputBackground: "rgba(255, 255, 255, 0.08)",
+          colorInputText: "#ffffff",
+          borderRadius: "0.75rem",
+        },
+        elements: {
+          card: "bg-[#0b0f1a] border border-white/10 shadow-xl",
+          headerTitle: "text-white",
+          headerSubtitle: "text-white/60",
+          navbar: "hidden",
+          navbarButton: "text-white/60 hover:text-white hover:bg-white/5",
+          scrollBox: "bg-[#0b0f1a]",
+          logoBox: "h-10",
+          footerActionLink: "text-sky-400 hover:text-sky-300",
+          formFieldLabel: "text-white/80",
+          formFieldInput: "bg-white/5 border-white/10 text-white focus:border-sky-500",
+          formButtonPrimary: "bg-gradient-to-r from-sky-500 to-indigo-600 border-0 hover:from-sky-400 hover:to-indigo-500",
+          userButtonPopoverCard: "bg-[#0b0f1a] border border-white/10",
+          organizationSwitcherPopoverCard: "bg-[#0b0f1a] border border-white/10",
+        },
         layout: {
           unsafe_disableDevelopmentModeWarnings: true,
         },

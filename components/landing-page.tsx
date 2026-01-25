@@ -3,6 +3,7 @@
 import { ArrowRight, Code, Users, Video, Trello, CheckCircle2, Zap, Shield, Layers } from 'lucide-react';
 import { Logo } from './ui/logo';
 import { MovingBorderButton } from './ui/moving-border-button';
+import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 
 interface LandingPageProps {
@@ -37,7 +38,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         {/* Galaxy gradient orbs */}
         <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] rounded-full bg-gradient-radial from-purple-500/30 via-blue-500/20 to-transparent blur-[100px] animate-pulse"></div>
         <div className="absolute bottom-[20%] left-[5%] w-[600px] h-[600px] rounded-full bg-gradient-radial from-indigo-500/20 via-sky-500/15 to-transparent blur-[120px] animate-pulse" style={{ animationDelay: '1s', animationDuration: '4s' }}></div>
-        
+
         {/* Sparkling stars */}
         {stars.map((star, i) => (
           <div
@@ -53,7 +54,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             }}
           />
         ))}
-        
+
         {/* Additional glowing planet effect */}
         <div className="absolute top-[15%] left-[15%] w-[300px] h-[300px]">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400/30 via-blue-500/20 to-purple-600/30 blur-[80px] animate-spin-slow"></div>
@@ -154,10 +155,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       `}</style>
 
       {/* Header */}
-      <header 
+      <header
         className="fixed top-0 inset-x-0 z-50 opacity-0 animate-fade-in border-white/10 border-b transition-all duration-300 relative glass"
-        style={{ 
-          opacity: 1, 
+        style={{
+          opacity: 1,
           transform: `translateY(${scrollY > 50 ? '0px' : '0px'})`
         }}
       >
@@ -176,19 +177,22 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button 
+            <Button
               onClick={onGetStarted}
-              className="hidden sm:inline-block text-white/70 hover:text-white transition-colors duration-200 text-sm font-medium hover:scale-105 transform"
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex text-white/70 hover:text-white hover:bg-white/10"
             >
               Sign in
-            </button>
-            <button 
+            </Button>
+            <Button
               onClick={onGetStarted}
-              className="inline-flex items-center gap-2 shadow-sky-500/25 hover:shadow-sky-500/40 hover:from-sky-400 hover:to-indigo-500 transition-all duration-200 hover:scale-105 hover:shadow-xl text-sm font-medium text-neutral-50 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl pt-2 pr-4 pb-2 pl-4 shadow-lg"
+              size="sm"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all"
             >
               Get Started
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
-            </button>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
@@ -206,7 +210,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">Base</span>
               </span>
             </div>
-            
+
             <h1 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.1] text-white opacity-0 animate-blur-in tracking-tighter animate-delay-200" style={{ opacity: 1 }}>
               Virtual Workspace. <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-400 tracking-tighter">Supercharged.</span>
             </h1>
@@ -214,7 +218,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               Create collaborative workspaces with integrated coding rooms, whiteboards, video meetings, and Kanban boards. All in real-time.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 opacity-0 animate-scale-in animate-delay-500 relative z-10" style={{ opacity: 1 }}>
-              <MovingBorderButton 
+              <MovingBorderButton
                 onClick={onGetStarted}
                 duration={3000}
                 borderRadius="0.75rem"
@@ -453,7 +457,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <p className="text-lg text-white/70 mb-8 leading-relaxed">
                 Create workspaces for different projects and teams. Each workspace contains specialized rooms that sync in real-time, keeping everyone on the same page.
               </p>
-              
+
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-4 group hover:bg-white/5 rounded-lg p-3 transition-all duration-200">
                   <div className="h-6 w-6 rounded-full bg-sky-500/20 flex items-center justify-center mt-0.5 group-hover:bg-sky-500/30 group-hover:scale-110 transition-all duration-200">
@@ -464,7 +468,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     <p className="text-white/70 text-sm group-hover:text-white/90 transition-colors duration-200">Organize your team with separate workspaces for projects, departments, or clients.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-4 group hover:bg-white/5 rounded-lg p-3 transition-all duration-200">
                   <div className="h-6 w-6 rounded-full bg-sky-500/20 flex items-center justify-center mt-0.5 group-hover:bg-sky-500/30 group-hover:scale-110 transition-all duration-200">
                     <CheckCircle2 className="h-3 w-3 text-sky-400" />
@@ -474,7 +478,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     <p className="text-white/70 text-sm group-hover:text-white/90 transition-colors duration-200">Each workspace can contain coding, whiteboard, meeting, and Kanban rooms.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-4 group hover:bg-white/5 rounded-lg p-3 transition-all duration-200">
                   <div className="h-6 w-6 rounded-full bg-sky-500/20 flex items-center justify-center mt-0.5 group-hover:bg-sky-500/30 group-hover:scale-110 transition-all duration-200">
                     <CheckCircle2 className="h-3 w-3 text-sky-400" />
@@ -487,13 +491,14 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button 
+                <Button
                   onClick={onGetStarted}
-                  className="inline-flex items-center gap-2 shadow-sky-500/25 hover:shadow-sky-500/60 hover:from-sky-400 hover:to-indigo-500 transition-all duration-300 hover:scale-110 hover:shadow-xl group text-base font-medium text-neutral-50 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl pt-3 pr-6 pb-3 pl-6 shadow-lg"
+                  size="lg"
+                  className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/60 transition-all gap-2 group"
                 >
                   Try free trial
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
-                </button>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
               </div>
             </div>
 
@@ -509,7 +514,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         <span className="text-xs text-white/60">Live</span>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/15 transition-all duration-300 group">
                         <div className="flex items-center gap-3">
@@ -521,7 +526,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         </div>
                         <span className="text-xs font-mono text-green-400 group-hover:scale-110 transition-transform duration-200">✓ main</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/15 transition-all duration-300 group">
                         <div className="flex items-center gap-3">
                           <Layers className="h-5 w-5 text-white/60 group-hover:text-white/80 transition-colors duration-200" />
@@ -532,7 +537,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                         </div>
                         <span className="text-xs font-mono text-green-400 group-hover:scale-110 transition-transform duration-200">✓ 3 items</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/15 transition-all duration-300 group">
                         <div className="flex items-center gap-3">
                           <Trello className="h-5 w-5 text-white/60 group-hover:text-white/80 transition-colors duration-200" />
@@ -591,13 +596,13 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   </ul>
                 </div>
 
-                <div className="pt-4">
-                  <button 
+                <div>
+                  <Button
                     onClick={onGetStarted}
-                    className="w-full relative isolate rounded-full px-5 py-3 text-sm font-semibold text-black bg-white/90 shadow-[0_6px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/30 hover:bg-white/95 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 hover:scale-105"
+                    className="w-full bg-white/90 hover:bg-white/95 text-black shadow-[0_6px_24px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all"
                   >
                     Get Started
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -634,13 +639,13 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   </ul>
                 </div>
 
-                <div className="pt-4">
-                  <button 
+                <div>
+                  <Button
                     onClick={onGetStarted}
-                    className="w-full relative isolate rounded-full px-5 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-600 shadow-[0_6px_24px_rgba(56,189,248,0.4)] ring-1 ring-sky-400/30 hover:shadow-[0_8px_32px_rgba(56,189,248,0.5)] transition-all duration-300 hover:scale-105"
+                    className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-[0_6px_24px_rgba(56,189,248,0.4)] hover:shadow-[0_8px_32px_rgba(56,189,248,0.5)] transition-all"
                   >
                     Upgrade to Pro
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -677,13 +682,13 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   </ul>
                 </div>
 
-                <div className="pt-4">
-                  <button 
+                <div>
+                  <Button
                     onClick={onGetStarted}
-                    className="w-full relative isolate rounded-full px-5 py-3 text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-purple-600 shadow-[0_6px_24px_rgba(168,85,247,0.4)] ring-1 ring-violet-400/30 hover:shadow-[0_8px_32px_rgba(168,85,247,0.5)] transition-all duration-300 hover:scale-105"
+                    className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white shadow-[0_6px_24px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_32px_rgba(168,85,247,0.5)] transition-all"
                   >
                     Go Enterprise
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -729,7 +734,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </a>
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-white mb-4">Product</h4>
               <ul className="space-y-3 text-sm">
@@ -739,7 +744,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <li><a href="#" className="text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">Changelog</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-white mb-4">Support</h4>
               <ul className="space-y-3 text-sm">
@@ -750,7 +755,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </ul>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row border-white/10 border-t mt-12 pt-8 items-center justify-between">
             <p className="text-white/50 text-sm">© 2024 VBase. All rights reserved.</p>
             <div className="flex items-center gap-6 text-sm mt-4 sm:mt-0">
