@@ -163,12 +163,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         }}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <a href="#" className="inline-flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-            <span className="text-xl">
-              <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">V</span>
-              <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">Base</span>
-            </span>
-          </a>
+          <Logo href="#" className="hover:scale-105 transition-transform duration-200" />
 
           <nav className="hidden md:flex items-center gap-8">
             <a className="text-white/60 hover:text-white transition-colors duration-200 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-sky-400 after:transition-all after:duration-200 hover:after:w-full" href="#features">Features</a>
@@ -185,14 +180,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             >
               Sign in
             </Button>
-            <Button
-              onClick={onGetStarted}
-              size="sm"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all"
-            >
-              Get Started
-              <ArrowRight className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </header>
@@ -205,10 +192,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="mx-auto max-w-4xl text-center space-y-8">
             {/* VBase Brand */}
             <div className="flex items-center justify-center opacity-0 animate-blur-in" style={{ opacity: 1 }}>
-              <span className="text-5xl sm:text-6xl lg:text-7xl">
-                <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">V</span>
-                <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">Base</span>
-              </span>
+              <Logo href="" textSize="text-5xl sm:text-6xl lg:text-7xl" />
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.1] text-white opacity-0 animate-blur-in tracking-tighter animate-delay-200" style={{ opacity: 1 }}>
@@ -706,13 +690,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <div className="flex gap-3 group hover:scale-105 transition-transform duration-200 cursor-pointer mb-4 items-center">
-                <Logo className="w-9 h-9 text-white" />
-                <span className="text-xl">
-                  <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">V</span>
-                  <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">Base</span>
-                </span>
-              </div>
+              <Logo href="#" className="mb-4 hover:scale-105 transition-transform duration-200" />
               <p className="text-white/60 text-sm max-w-md mb-6">
                 The ultimate collaborative virtual workspace with integrated coding, whiteboards, video meetings, and Kanban boards.
               </p>

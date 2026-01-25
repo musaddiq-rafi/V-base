@@ -47,6 +47,7 @@ import {
   MenubarSubContent,
   MenubarShortcut,
 } from "@/components/ui/menubar";
+import { Logo } from "@/components/ui/logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -190,8 +191,8 @@ export function DocumentHeader({
       {/* Left Section - Logo and Document Name */}
       <div className="flex items-center gap-2">
         {/* Docs Logo */}
-        <div className="flex items-center justify-center w-10 h-10 shrink-0">
-          <FileText className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+        <div className="flex items-center justify-center w-10 h-10 shrink-0 mr-2">
+          <Logo />
         </div>
 
         {/* Document Info */}
