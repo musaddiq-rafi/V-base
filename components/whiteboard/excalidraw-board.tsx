@@ -8,6 +8,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { Cloud, CloudOff, Loader2, Check } from "lucide-react";
+import { useTheme } from "next-themes";
 import "@excalidraw/excalidraw/index.css";
 
 interface WhiteboardProps {
@@ -33,7 +34,8 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const updateMyPresence = useUpdateMyPresence();
   const others = useOthers();
   const broadcast = useBroadcastEvent();
-  
+  const { theme } = useTheme();
+
   // Refs
   const excalidrawAPIRef = useRef<any>(null);
   const isReceivingUpdate = useRef(false);
@@ -41,11 +43,11 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const currentElementsRef = useRef<any[]>([]);
   const lastSavedContentRef = useRef<string>(""); // Track last saved content to detect real changes
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // State
   const [isReady, setIsReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  
+
   // Convex queries and mutations
   const whiteboard = useQuery(api.whiteboards.getWhiteboardById, { whiteboardId });
   const saveContentMutation = useMutation(api.whiteboards.saveWhiteboardContent);
@@ -70,24 +72,24 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   useEventListener(({ event }: any) => {
     if (event.type === "DRAW" && excalidrawAPIRef.current && !isReceivingUpdate.current) {
       isReceivingUpdate.current = true;
-      
+
       try {
         const currentElements = excalidrawAPIRef.current.getSceneElements() || [];
         const newElements = event.elements || [];
-        
+
         // Merge elements
         const elementMap = new Map(currentElements.map((el: any) => [el.id, el]));
         newElements.forEach((el: any) => {
           elementMap.set(el.id, el);
         });
-        
+
         excalidrawAPIRef.current.updateScene({
           elements: Array.from(elementMap.values()),
         });
       } catch (e) {
         console.error("[Whiteboard] Error processing broadcast:", e);
       }
-      
+
       setTimeout(() => {
         isReceivingUpdate.current = false;
       }, 100);
@@ -98,7 +100,7 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const handleExcalidrawAPI = useCallback((api: any) => {
     console.log("[Whiteboard] Excalidraw API ready");
     excalidrawAPIRef.current = api;
-    
+
     // Load initial content once API is ready and whiteboard data is available
     if (!hasInitialized.current && whiteboard !== undefined) {
       hasInitialized.current = true;
@@ -133,30 +135,30 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
       setSaveStatus("error");
       return;
     }
-    
+
     const elements = currentElementsRef.current;
     if (elements.length === 0) {
       console.log("[Whiteboard] No elements to save");
       setSaveStatus("idle");
       return;
     }
-    
+
     console.log("[Whiteboard] Auto-saving", elements.length, "elements...");
     setSaveStatus("saving");
-    
+
     try {
       const content = JSON.stringify(elements);
-      
+
       await saveContentMutation({
         whiteboardId,
         content,
         userId: user.id,
       });
-      
+
       console.log("[Whiteboard] Auto-save successful!");
       lastSavedContentRef.current = content; // Update last saved content
       setSaveStatus("saved");
-      
+
       // Reset to idle after 2 seconds
       setTimeout(() => {
         setSaveStatus((current) => current === "saved" ? "idle" : current);
@@ -164,7 +166,7 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
     } catch (error) {
       console.error("[Whiteboard] Auto-save failed:", error);
       setSaveStatus("error");
-      
+
       // Reset error after 3 seconds
       setTimeout(() => {
         setSaveStatus((current) => current === "error" ? "idle" : current);
@@ -176,28 +178,28 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const handleChange = useCallback((elements: readonly any[], appState: any) => {
     // Skip if we're receiving updates from others or not initialized
     if (isReceivingUpdate.current || !isReady) return;
-    
+
     // Store current elements
     const elementsArray = [...elements];
     currentElementsRef.current = elementsArray;
-    
+
     // Broadcast to other users
     broadcast({
       type: "DRAW",
       elements: elementsArray,
     } as any);
-    
+
     // Only auto-save if there's an actual change
     if (elementsArray.length > 0 && user) {
       const newContent = JSON.stringify(elementsArray);
-      
+
       // Check if content actually changed
       if (newContent !== lastSavedContentRef.current) {
         // Clear existing timeout
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
         }
-        
+
         // Set new timeout for auto-save
         saveTimeoutRef.current = setTimeout(() => {
           performSave();
@@ -224,7 +226,7 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
       others.map((other) => {
         const hue = Math.abs(other.id.toString().split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 360;
         const color = `hsl(${hue}, 70%, 50%)`;
-        
+
         return [
           other.id,
           {
@@ -266,10 +268,10 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
             }
           `}
           title={
-            saveStatus === "saving" ? "Saving..." 
-            : saveStatus === "saved" ? "Saved" 
-            : saveStatus === "error" ? "Save failed" 
-            : "Auto-save enabled"
+            saveStatus === "saving" ? "Saving..."
+              : saveStatus === "saved" ? "Saved"
+                : saveStatus === "error" ? "Save failed"
+                  : "Auto-save enabled"
           }
         >
           {saveStatus === "saving" ? (
@@ -288,6 +290,7 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
         excalidrawAPI={handleExcalidrawAPI}
         onChange={handleChange}
         onPointerUpdate={handlePointerUpdate}
+        theme={theme === "dark" ? "dark" : "light"}
         initialData={{
           elements: getInitialElements(),
         }}

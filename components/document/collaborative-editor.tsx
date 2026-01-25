@@ -188,8 +188,8 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
 
   if (!editor) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#F9FBFD]">
-        <div className="animate-pulse text-gray-500">Loading editor...</div>
+      <div className="flex items-center justify-center h-full bg-[#F9FBFD] dark:bg-background">
+        <div className="animate-pulse text-gray-500 dark:text-gray-400">Loading editor...</div>
       </div>
     );
   }
@@ -209,9 +209,9 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
   };
 
   return (
-    <div ref={rootRef} className="min-h-screen bg-[#F9FBFD] print:bg-white">
+    <div ref={rootRef} className="min-h-screen bg-[#F9FBFD] dark:bg-background print:bg-white">
       {/* Header - sticky at top */}
-      <div className="sticky top-0 z-20 bg-[#F9FBFD] print:hidden">
+      <div className="sticky top-0 z-20 bg-[#F9FBFD] dark:bg-background print:hidden">
         <DocumentHeader
           documentId={documentId}
           editor={editor}
@@ -226,7 +226,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
           zoom={zoom}
           onZoomChange={setZoom}
         />
-        
+
         {/* Toolbar Container */}
         <div className="flex justify-center px-4 pb-2">
           <Toolbar editor={editor} />
@@ -235,7 +235,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
 
       {/* Ruler */}
       {showRuler && (
-        <div className="sticky top-[104px] z-10 bg-[#F9FBFD] print:hidden">
+        <div className="sticky top-[104px] z-10 bg-[#F9FBFD] dark:bg-background print:hidden">
           <Ruler
             leftMargin={leftMargin}
             rightMargin={rightMargin}
@@ -249,7 +249,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
       {/* Editor Container - A4 Paper Pages */}
       <div className="flex flex-col items-center py-6 gap-0 print:p-0 print:py-0">
         {/* Pages wrapper - creates visual separation between pages */}
-        <div 
+        <div
           className="relative editor-zoom-wrapper"
           style={{
             width: `${PAGE_WIDTH}px`,
@@ -271,9 +271,9 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
               }}
             />
           ))}
-          
+
           {/* Editor overlay - positioned absolutely over the pages */}
-          <div 
+          <div
             ref={editorContainerRef}
             className="absolute top-0 left-0 right-0 print:static print:m-0 print:h-auto print:overflow-visible"
             style={{
@@ -282,12 +282,12 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
               paddingRight: `${rightMargin}px`,
             }}
           >
-            <EditorContent 
-              editor={editor} 
+            <EditorContent
+              editor={editor}
               className="prose prose-sm sm:prose max-w-none [&_.ProseMirror]:min-h-[calc(1123px-192px)]"
             />
           </div>
-          
+
           {/* Page number indicators */}
           {showPageNumbers &&
             Array.from({ length: pageCount }, (_, index) => (
