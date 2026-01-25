@@ -361,19 +361,7 @@ export const deleteWorkspaceFromWebhook = internalMutation({
 
     console.log(`[Webhook] Deleted ${rooms.length} rooms`);
 
-    // 4. Delete workspace kick records
-    const kicks = await ctx.db
-      .query("workspaceKicks")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
-      .collect();
-
-    for (const kick of kicks) {
-      await ctx.db.delete(kick._id);
-    }
-
-    console.log(`[Webhook] Deleted ${kicks.length} kick records`);
-
-    // 5. Finally, Delete the Workspace
+    // 4. Finally, Delete the Workspace
     await ctx.db.delete(workspace._id);
 
     console.log(
@@ -465,4 +453,3 @@ export const deleteWorkspaceWithLiveblocks = internalAction({
     return { success: true };
   },
 });
-

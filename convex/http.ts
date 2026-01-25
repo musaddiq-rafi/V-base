@@ -59,19 +59,6 @@ http.route({
             },
           );
           break;
-
-        case "organizationMembership.deleted":
-          // A member was removed from the organization - record kick event
-          if (
-            result.data.organization?.id &&
-            result.data.public_user_data?.user_id
-          ) {
-            await ctx.runMutation(internal.workspaceKicks.recordKick, {
-              clerkOrgId: result.data.organization.id,
-              kickedUserId: result.data.public_user_data.user_id,
-            });
-          }
-          break;
       }
 
       return new Response(null, { status: 200 });
@@ -83,4 +70,3 @@ http.route({
 });
 
 export default http;
-
