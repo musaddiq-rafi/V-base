@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,6 +86,8 @@ export function Navbar() {
             </SignedIn>
 
             {/* Mobile Menu Button */}
+            <ModeToggle />
+
             <Button
               variant="ghost"
               size="icon"
