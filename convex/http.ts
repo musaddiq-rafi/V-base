@@ -46,17 +46,31 @@ http.route({
               clerkOrgId: result.data.id,
               name: result.data.name,
               ownerId: result.data.created_by,
-            }
+            },
           );
           break;
 
         case "organization.deleted":
-          await ctx.runMutation(
-            internal.workspaces.deleteWorkspaceFromWebhook,
+          // Use action that handles both Convex deletion and Liveblocks cleanup
+          await ctx.runAction(
+            internal.workspaces.deleteWorkspaceWithLiveblocks,
             {
               clerkOrgId: result.data.id,
-            }
+            },
           );
+          break;
+
+        case "organizationMembership.deleted":
+          // A member was removed from the organization - record kick event
+          if (
+            result.data.organization?.id &&
+            result.data.public_user_data?.user_id
+          ) {
+            await ctx.runMutation(internal.workspaceKicks.recordKick, {
+              clerkOrgId: result.data.organization.id,
+              kickedUserId: result.data.public_user_data.user_id,
+            });
+          }
           break;
       }
 
@@ -69,3 +83,4 @@ http.route({
 });
 
 export default http;
+
