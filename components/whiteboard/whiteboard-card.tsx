@@ -72,21 +72,21 @@ export function WhiteboardCard({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
+        whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
         onClick={handleOpen}
-        className="group flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-lg cursor-pointer transition-all"
+        className="group flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-lg cursor-pointer transition-all"
       >
         {/* Icon */}
-        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg flex items-center justify-center">
-          <FileText className="w-5 h-5 text-orange-600" />
+        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-lg flex items-center justify-center">
+          <FileText className="w-5 h-5 text-orange-400" />
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+          <h3 className="font-medium text-white truncate group-hover:text-orange-400 transition-colors">
             {whiteboard.name}
           </h3>
-          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
             <span className="flex items-center gap-1">
               <User className="w-3 h-3" />
               {whiteboard.lastEditorName || whiteboard.creatorName}
@@ -102,7 +102,7 @@ export function WhiteboardCard({
         <button
           onClick={handleDelete}
           disabled={isDeleting}
-          className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+          className="opacity-0 group-hover:opacity-100 p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -119,36 +119,36 @@ export function WhiteboardCard({
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ y: -4 }}
       onClick={handleOpen}
-      className="group relative bg-white border-2 border-gray-100 rounded-xl p-5 cursor-pointer hover:border-orange-200 hover:shadow-xl transition-all"
+      className="group relative bg-white/5 border-2 border-white/10 rounded-xl p-5 cursor-pointer hover:border-orange-400/50 hover:shadow-xl hover:shadow-orange-500/10 transition-all"
     >
       {/* Delete Button */}
       <button
         onClick={handleDelete}
         disabled={isDeleting}
-        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all z-10 disabled:opacity-50"
+        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all z-10 disabled:opacity-50"
       >
         <Trash2 className="w-4 h-4" />
       </button>
 
       {/* Icon */}
-      <div className="w-12 h-12 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl flex items-center justify-center mb-4">
-        <FileText className="w-6 h-6 text-orange-600" />
+      <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-xl flex items-center justify-center mb-4">
+        <FileText className="w-6 h-6 text-orange-400" />
       </div>
 
       {/* Title */}
-      <h3 className="font-semibold text-gray-900 truncate mb-2 group-hover:text-blue-600 transition-colors">
+      <h3 className="font-semibold text-white truncate mb-2 group-hover:text-orange-400 transition-colors">
         {whiteboard.name}
       </h3>
 
       {/* Metadata */}
       <div className="space-y-1">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-white/50">
           <User className="w-3 h-3" />
           <span className="truncate">
             {whiteboard.lastEditorName || whiteboard.creatorName}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-white/50">
           <Clock className="w-3 h-3" />
           <span>{formatDate(whiteboard.updatedAt)}</span>
         </div>

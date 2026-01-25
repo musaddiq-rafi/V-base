@@ -77,8 +77,8 @@ export function FileExplorer({
 
   if (files === undefined || fileCount === undefined) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="flex items-center justify-center h-full bg-[#0b0f1a]">
+        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
       </div>
     );
   }
@@ -87,19 +87,19 @@ export function FileExplorer({
   const isAtRoot = currentFolderId === undefined;
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
+    <div className="h-full flex flex-col bg-[#0b0f1a]">
       {/* Header */}
-      <div className="flex-shrink-0 px-8 py-6 border-b border-gray-200 bg-white">
+      <div className="flex-shrink-0 px-8 py-6 border-b border-white/10 bg-white/5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FileCode className="w-7 h-7 text-emerald-600" />
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              <FileCode className="w-7 h-7 text-emerald-400" />
               Code Files
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-white/50 mt-1">
               {fileCount.count} / {fileCount.limit} files used
               {fileCount.remaining > 0 && (
-                <span className="text-emerald-600 ml-1">
+                <span className="text-emerald-400 ml-1">
                   ({fileCount.remaining} remaining)
                 </span>
               )}
@@ -108,7 +108,7 @@ export function FileExplorer({
           <div className="flex items-center gap-2">
             <button
               onClick={handleCreateFolder}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white/70 rounded-lg hover:bg-white/20 transition-colors"
             >
               <Folder className="w-5 h-5" />
               New Folder
@@ -116,7 +116,7 @@ export function FileExplorer({
             <button
               onClick={handleCreateFile}
               disabled={fileCount.remaining === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/25 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-5 h-5" />
               New File
@@ -128,8 +128,8 @@ export function FileExplorer({
         <div className="flex items-center gap-1 mt-4 text-sm">
           <button
             onClick={navigateToRoot}
-            className={`flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors ${
-              isAtRoot ? "text-gray-900 font-medium" : "text-gray-600"
+            className={`flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10 transition-colors ${
+              isAtRoot ? "text-white font-medium" : "text-white/60"
             }`}
           >
             <Home className="w-4 h-4" />
@@ -137,13 +137,13 @@ export function FileExplorer({
           </button>
           {breadcrumbs?.map((crumb, index) => (
             <div key={crumb.id} className="flex items-center gap-1">
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-white/40" />
               <button
                 onClick={() => navigateToFolder(crumb.id)}
-                className={`px-2 py-1 rounded hover:bg-gray-100 transition-colors ${
+                className={`px-2 py-1 rounded hover:bg-white/10 transition-colors ${
                   index === breadcrumbs.length - 1
-                    ? "text-gray-900 font-medium"
-                    : "text-gray-600"
+                    ? "text-white font-medium"
+                    : "text-white/60"
                 }`}
               >
                 {crumb.name}
@@ -161,13 +161,13 @@ export function FileExplorer({
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center h-full text-center"
           >
-            <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
+            <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
               <FolderOpen className="w-12 h-12 text-emerald-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-white mb-2">
               {isAtRoot ? "No files yet" : "This folder is empty"}
             </h2>
-            <p className="text-gray-500 mb-6 max-w-md">
+            <p className="text-white/50 mb-6 max-w-md">
               {isAtRoot
                 ? "Create your first code file to start collaborating with your team in real-time."
                 : "Create a file or folder to organize your code."}
@@ -175,7 +175,7 @@ export function FileExplorer({
             <div className="flex items-center gap-3">
               <button
                 onClick={handleCreateFolder}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white/70 rounded-lg hover:bg-white/20 transition-colors"
               >
                 <Folder className="w-5 h-5" />
                 Create Folder
@@ -183,7 +183,7 @@ export function FileExplorer({
               <button
                 onClick={handleCreateFile}
                 disabled={fileCount.remaining === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-5 h-5" />
                 Create First File

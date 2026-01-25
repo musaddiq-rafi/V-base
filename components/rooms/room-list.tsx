@@ -33,12 +33,12 @@ const roomIcons = {
   conference: Video,
 };
 
-// Color mapping for room types
+// Color mapping for room types - Dark theme
 const roomColors = {
-  whiteboard: "bg-purple-100 text-purple-600",
-  document: "bg-blue-100 text-blue-600",
-  code: "bg-green-100 text-green-600",
-  conference: "bg-orange-100 text-orange-600",
+  whiteboard: "bg-purple-500/20 text-purple-400",
+  document: "bg-blue-500/20 text-blue-400",
+  code: "bg-green-500/20 text-green-400",
+  conference: "bg-orange-500/20 text-orange-400",
 };
 
 export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
@@ -96,7 +96,7 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
   if (rooms === undefined) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
       </div>
     );
   }
@@ -109,15 +109,15 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Rooms</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-white">Rooms</h2>
+          <p className="text-white/60 mt-1">
             {rooms.length}/{maxRooms} rooms used
           </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={isAtRoomLimit}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl hover:from-sky-400 hover:to-indigo-500 transition-all font-medium shadow-lg shadow-sky-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-5 h-5" />
           {isAtRoomLimit ? "Limit Reached" : "Create Room"}
@@ -126,17 +126,17 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
 
       {/* Rooms Grid */}
       {rooms.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
-          <Presentation className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="text-center py-16 bg-white/5 rounded-2xl border-2 border-dashed border-white/20">
+          <Presentation className="w-16 h-16 text-white/30 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">
             No rooms yet
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-white/50 mb-6">
             Create your first room to start collaborating
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl hover:from-sky-400 hover:to-indigo-500 transition-all font-medium shadow-lg shadow-sky-500/25"
           >
             <Plus className="w-5 h-5" />
             Create First Room
@@ -158,7 +158,7 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                 onClick={() =>
                   router.push(`/workspace/${clerkOrgId}/room/${room._id}`)
                 }
-                className={`group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}
+                className={`group relative bg-white/5 rounded-xl border border-white/10 p-6 hover:bg-white/8 hover:border-white/20 transition-all cursor-pointer ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}
               >
                 {/* Icon and Type */}
                 <div className="flex items-start justify-between mb-4">
@@ -168,7 +168,7 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                     <Icon className="w-6 h-6" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full capitalize">
+                    <span className="text-xs font-medium text-white/50 bg-white/10 px-3 py-1 rounded-full capitalize">
                       {room.type}
                     </span>
                     {/* Menu Button */}
@@ -180,15 +180,15 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                             menuOpenId === room._id ? null : room._id
                           );
                         }}
-                        className="p-1 rounded hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                        <MoreVertical className="w-4 h-4 text-white/50" />
                       </button>
 
                       {/* Dropdown Menu */}
                       {menuOpenId === room._id && (
                         <div
-                          className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[120px] z-10"
+                          className="absolute right-0 top-8 bg-[#0f1520] border border-white/10 rounded-lg shadow-lg py-1 min-w-[120px] z-10"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
@@ -196,7 +196,7 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                               openDeleteConfirm(room._id, room.name, e)
                             }
                             disabled={isDeleting}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
                           >
                             <Trash2 className="w-4 h-4" />
                             {isDeleting ? "Deleting..." : "Delete"}
@@ -209,18 +209,18 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
 
                 {/* Loading overlay when deleting */}
                 {isDeleting && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-xl">
-                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
+                    <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
                   </div>
                 )}
 
                 {/* Room Name */}
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-sky-400 transition-colors">
                   {room.name}
                 </h3>
 
                 {/* Footer - Active Users (placeholder for now) */}
-                <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center gap-2 text-sm text-white/50">
                   <Users className="w-4 h-4" />
                   <span>0 active</span>
                 </div>
@@ -247,7 +247,7 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setDeleteConfirmRoom(null)}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
 
             {/* Modal */}
@@ -255,24 +255,24 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 mx-4"
+              className="relative w-full max-w-sm bg-[#0f1520] rounded-2xl shadow-2xl p-6 mx-4 border border-white/10"
             >
               {/* Warning Icon */}
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-amber-400" />
                 </div>
               </div>
 
               {/* Title */}
-              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              <h3 className="text-lg font-semibold text-white text-center mb-2">
                 Delete Room
               </h3>
 
               {/* Message */}
-              <p className="text-gray-600 text-center text-sm mb-6">
+              <p className="text-white/60 text-center text-sm mb-6">
                 Are you sure you want to delete{" "}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-white">
                   &quot;{deleteConfirmRoom.name}&quot;
                 </span>
                 ? This will delete all files, documents, and data inside it.
@@ -283,13 +283,13 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeleteConfirmRoom(null)}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                  className="flex-1 px-4 py-2.5 bg-white/10 text-white rounded-xl hover:bg-white/15 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDeleteRoom(deleteConfirmRoom.id)}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-500 transition-colors font-medium"
                 >
                   Delete
                 </button>

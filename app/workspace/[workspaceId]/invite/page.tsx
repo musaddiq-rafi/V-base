@@ -78,26 +78,26 @@ export default function InvitePage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-sky-500 animate-spin" />
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-white mb-2">
             Access Denied
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-white/60 mb-4">
             Only admins can invite new members
           </p>
           <Link
             href={`/workspace/${workspaceId}`}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sky-400 hover:text-sky-300 font-medium"
           >
             Return to Workspace
           </Link>
@@ -107,32 +107,32 @@ export default function InvitePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
+    <div className="min-h-screen bg-[#0b0f1a]">
       {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200/50"
+        className="sticky top-0 z-40 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
       >
         <div className="flex items-center justify-between h-16 px-6">
           <div className="flex items-center gap-4">
             <Link
               href={`/workspace/${workspaceId}`}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back to Settings</span>
             </Link>
-            <div className="h-6 w-px bg-gray-200" />
-            <span className="font-semibold text-gray-900">
+            <div className="h-6 w-px bg-white/10" />
+            <span className="font-semibold text-white">
               {organization?.name}
             </span>
           </div>
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900">VBase</span>
+            <span className="font-bold text-white">VBase</span>
           </Link>
         </div>
       </motion.header>
@@ -142,18 +142,18 @@ export default function InvitePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden"
+          className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden"
         >
-          <div className="p-6 border-b border-gray-100">
+          <div className="p-6 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
                 <UserPlus className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-white">
                   Invite Members
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-white/60">
                   Add team members to {organization?.name}
                 </p>
               </div>
@@ -163,24 +163,24 @@ export default function InvitePage() {
           <div className="p-6 space-y-6">
             {/* Email Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/70 mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-white placeholder-white/40"
                 />
               </div>
             </div>
 
             {/* Role Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/70 mb-2">
                 Role
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -189,12 +189,12 @@ export default function InvitePage() {
                   onClick={() => setRole("org:member")}
                   className={`p-4 rounded-xl border-2 transition-all text-left ${
                     role === "org:member"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-sky-500 bg-sky-500/10"
+                      : "border-white/10 hover:border-white/20 bg-white/5"
                   }`}
                 >
-                  <p className="font-medium text-gray-900">Member</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-white">Member</p>
+                  <p className="text-sm text-white/50">
                     Can view and collaborate
                   </p>
                 </button>
@@ -203,12 +203,12 @@ export default function InvitePage() {
                   onClick={() => setRole("org:admin")}
                   className={`p-4 rounded-xl border-2 transition-all text-left ${
                     role === "org:admin"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-sky-500 bg-sky-500/10"
+                      : "border-white/10 hover:border-white/20 bg-white/5"
                   }`}
                 >
-                  <p className="font-medium text-gray-900">Admin</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-white">Admin</p>
+                  <p className="text-sm text-white/50">
                     Full access & can invite
                   </p>
                 </button>
@@ -220,7 +220,7 @@ export default function InvitePage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-xl"
+                className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl"
               >
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{error}</span>
@@ -232,7 +232,7 @@ export default function InvitePage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-xl"
+                className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl"
               >
                 <Check className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">Invitation sent successfully!</span>
@@ -245,7 +245,7 @@ export default function InvitePage() {
               whileTap={{ scale: 0.99 }}
               onClick={handleInvite}
               disabled={!email.trim() || isInviting}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:shadow-lg hover:shadow-sky-500/25 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isInviting ? (
                 <>

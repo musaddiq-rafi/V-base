@@ -40,32 +40,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
+    <div className="min-h-screen bg-[#0b0f1a]">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[10%] right-[15%] w-[400px] h-[400px] rounded-full bg-gradient-radial from-purple-500/20 via-blue-500/10 to-transparent blur-[100px]"></div>
+        <div className="absolute bottom-[20%] left-[10%] w-[500px] h-[500px] rounded-full bg-gradient-radial from-indigo-500/15 via-sky-500/10 to-transparent blur-[120px]"></div>
+      </div>
+
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Left Sidebar */}
       <aside
-        className={`fixed left-0 top-0 bottom-0 bg-white border-r border-gray-200 flex flex-col z-50 transition-all duration-300 ${
+        className={`fixed left-0 top-0 bottom-0 bg-[#0a0e17]/95 backdrop-blur-xl border-r border-white/10 flex flex-col z-50 transition-all duration-300 ${
           isCollapsed ? "w-16" : "w-48"
         } ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       >
         {/* Logo */}
         <div
-          className={`border-b border-gray-100 ${isCollapsed ? "p-3" : "p-4"}`}
+          className={`border-b border-white/10 ${isCollapsed ? "p-3" : "p-4"}`}
         >
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 shadow-lg shadow-sky-500/20">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             {!isCollapsed && (
-              <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                VBase
+              <span className="text-xl font-bold">
+                <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">V</span>
+                <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">Base</span>
               </span>
             )}
           </Link>
@@ -87,8 +94,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   isCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5"
                 } ${
                   isActive
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                    : "text-white/60 hover:bg-white/5 hover:text-white border border-transparent"
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
@@ -97,14 +104,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <>
                     <span className="font-medium text-sm">{item.label}</span>
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span className="ml-auto px-2 py-0.5 text-xs font-medium bg-blue-600 text-white rounded-full">
+                      <span className="ml-auto px-2 py-0.5 text-xs font-medium bg-sky-500 text-white rounded-full">
                         {item.badge}
                       </span>
                     )}
                   </>
                 )}
                 {isCollapsed && item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-sky-500 rounded-full" />
                 )}
               </Link>
             );
@@ -113,11 +120,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Collapse Toggle Button */}
         <div
-          className={`border-t border-gray-100 ${isCollapsed ? "p-2" : "p-3"}`}
+          className={`border-t border-white/10 ${isCollapsed ? "p-2" : "p-3"}`}
         >
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`hidden lg:flex items-center px-3 py-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all ${
+            className={`hidden lg:flex items-center px-3 py-2.5 text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all ${
               isCollapsed ? "w-full justify-center" : "ml-auto"
             }`}
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -140,13 +147,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200/50"
+          className="sticky top-0 z-30 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
         >
           <div className="flex justify-between items-center h-14 px-4 lg:px-6">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="lg:hidden p-2 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
               {isMobileMenuOpen ? (
                 <X className="w-5 h-5" />
@@ -159,7 +166,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               afterSignOutUrl="/"
               appearance={{
                 elements: {
-                  avatarBox: "w-9 h-9 ring-2 ring-gray-200",
+                  avatarBox: "w-9 h-9 ring-2 ring-white/20",
                 },
               }}
             />
@@ -167,7 +174,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </motion.header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-4 lg:p-6 relative z-10">{children}</main>
       </div>
     </div>
   );
