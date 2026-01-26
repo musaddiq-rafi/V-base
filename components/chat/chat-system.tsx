@@ -564,10 +564,12 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
   // Get all workspace members for seen receipts
   const { memberships } = useOrganization({ memberships: { pageSize: 50 } });
 
-  // Mark channel as read when chat window opens (single DB write)
+  // Mark channel as read when chat window opens AND when new messages arrive
   useEffect(() => {
-    markAsRead({ channelId: chat.channelId });
-  }, [chat.channelId, markAsRead]);
+    if (messages && messages.length > 0) {
+      markAsRead({ channelId: chat.channelId });
+    }
+  }, [chat.channelId, messages, markAsRead]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
