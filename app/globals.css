@@ -9,7 +9,8 @@
  
  :root {
    /* Light Mode Defaults */
-   --background: #ffffff;
+   --background: #f8fafc;
+   --background-secondary: #ffffff;
    --foreground: #0f172a;
  
    --card: #ffffff;
@@ -25,11 +26,11 @@
    --secondary: #f1f5f9;
    --secondary-foreground: #0f172a;
  
-   --muted: #f8fafc;
+   --muted: #f1f5f9;
    --muted-foreground: #64748b;
  
-   --accent: #f1f5f9;
-   --accent-foreground: #0f172a;
+   --accent: #e0f2fe;
+   --accent-foreground: #0369a1;
  
    --destructive: #ef4444;
    --destructive-foreground: #ffffff;
@@ -44,10 +45,18 @@
    --sidebar-foreground: #0f172a;
    --sidebar-primary: #0ea5e9;
    --sidebar-primary-foreground: #ffffff;
-   --sidebar-accent: #f1f5f9;
-   --sidebar-accent-foreground: #0f172a;
+   --sidebar-accent: #e0f2fe;
+   --sidebar-accent-foreground: #0369a1;
    --sidebar-border: #e2e8f0;
    --sidebar-ring: #0ea5e9;
+ 
+   /* Chat/Surface specific */
+   --surface: #f1f5f9;
+   --surface-hover: #e2e8f0;
+   --surface-elevated: #ffffff;
+   
+   /* Badge border */
+   --badge-border: #ffffff;
  
    /* Chart colors */
    --chart-1: #0ea5e9;
@@ -60,6 +69,7 @@
  .dark {
    /* Dark Galaxy Theme */
    --background: #0b0f1a;
+   --background-secondary: #0f1520;
    --foreground: #ffffff;
  
    --card: rgba(255, 255, 255, 0.05);
@@ -97,18 +107,38 @@
    --sidebar-accent-foreground: #ffffff;
    --sidebar-border: rgba(255, 255, 255, 0.08);
    --sidebar-ring: #0ea5e9;
+   
+   /* Chat/Surface specific */
+   --surface: rgba(255, 255, 255, 0.05);
+   --surface-hover: rgba(255, 255, 255, 0.1);
+   --surface-elevated: #0f1520;
+   
+   /* Badge border */
+   --badge-border: #0b0f1a;
  }
 
-/* Glass effect utility class */
-.glass {
+/* Glass effect utility class - Dark Mode */
+.dark .glass {
   background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
   border: 1px solid rgba(255,255,255,0.12);
   backdrop-filter: blur(12px);
 }
 
-.glass:hover {
+.dark .glass:hover {
   background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
   border: 1px solid rgba(255,255,255,0.18);
+}
+
+/* Glass effect utility class - Light Mode */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+  border: 1px solid rgba(0,0,0,0.08);
+  backdrop-filter: blur(12px);
+}
+
+.glass:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8));
+  border: 1px solid rgba(0,0,0,0.12);
 }
 
 .glass-card {
@@ -158,25 +188,6 @@ body {
   background-color: var(--background); /* Use theme variable */
   color: var(--foreground); /* Use theme variable */
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-}
-
-/* Custom scrollbar - Dark theme */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Tiptap Editor Styles */
@@ -353,6 +364,7 @@ body {
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -383,6 +395,10 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-badge-border: var(--badge-border);
 }
 
 @layer base {
@@ -394,7 +410,52 @@ body {
   }
 }
 
-/* Print Styles for Google Docs-like editor */
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html:not(.dark) body,
+html:not(.dark) * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
+}
+
+html.dark body,
+html.dark * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
+}
+
+/* Light mode scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 @media print {
   body {
     background: white !important;

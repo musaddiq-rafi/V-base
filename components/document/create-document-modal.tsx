@@ -58,18 +58,18 @@ export function CreateDocumentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#0f1520] rounded-lg shadow-xl w-full max-w-md mx-4 border border-white/10">
+      <div className="bg-background-secondary rounded-lg shadow-xl w-full max-w-md mx-4 border border-border">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-sky-400" />
-            <h2 className="text-lg font-semibold text-white">
+            <FileText className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+            <h2 className="text-lg font-semibold text-foreground">
               Create New Document
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-white/40 hover:text-white transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             disabled={isCreating}
           >
             <X className="w-5 h-5" />
@@ -80,7 +80,7 @@ export function CreateDocumentModal({
         <div className="px-6 py-4">
           <label
             htmlFor="document-name"
-            className="block text-sm font-medium text-white/70 mb-2"
+            className="block text-sm font-medium text-muted-foreground mb-2"
           >
             Document Name
           </label>
@@ -91,17 +91,17 @@ export function CreateDocumentModal({
             onChange={(e) => setName(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="e.g., Project Proposal, Meeting Notes..."
-            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all"
+            className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all"
             autoFocus
             disabled={isCreating}
           />
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-colors"
+            className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
             disabled={isCreating}
           >
             Cancel

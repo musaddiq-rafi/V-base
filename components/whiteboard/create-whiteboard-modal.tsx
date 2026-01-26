@@ -60,16 +60,16 @@ export function CreateWhiteboardModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#0f1520] border border-white/10 rounded-xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+      <div className="bg-background-secondary border border-border rounded-xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-xl font-semibold text-white">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-semibold text-foreground">
             Create New Whiteboard
           </h2>
           <button
             onClick={onClose}
             disabled={isCreating}
-            className="text-white/40 hover:text-white transition-colors disabled:opacity-50"
+            className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -82,12 +82,12 @@ export function CreateWhiteboardModal({
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-white/70 mb-2"
+                className="block text-sm font-medium text-muted-foreground mb-2"
               >
                 Whiteboard Name
               </label>
               <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   id="name"
                   type="text"
@@ -95,7 +95,7 @@ export function CreateWhiteboardModal({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Brainstorming Session"
                   disabled={isCreating}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 transition-all"
                   autoFocus
                   required
                 />
@@ -109,7 +109,7 @@ export function CreateWhiteboardModal({
               type="button"
               onClick={onClose}
               disabled={isCreating}
-              className="flex-1 px-4 py-2.5 text-white/70 bg-white/10 hover:bg-white/20 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg font-medium transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

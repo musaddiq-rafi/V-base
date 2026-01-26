@@ -27,8 +27,8 @@ interface ParticipantsListProps {
 export function ParticipantsList({ participants }: ParticipantsListProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-800">
-        <p className="text-sm text-gray-400">
+      <div className="p-4 border-b border-border">
+        <p className="text-sm text-muted-foreground">
           {participants.length} participant
           {participants.length !== 1 ? "s" : ""} in the meeting
         </p>
@@ -38,7 +38,7 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
         {participants.map((participant) => (
           <div
             key={participant.id}
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-800/50 transition-colors group"
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors group"
           >
             <div className="flex items-center gap-3">
               {/* Avatar */}
@@ -49,13 +49,13 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
                   </span>
                 </div>
                 {/* Online indicator */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-[#1e1e1e]" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-background-secondary" />
               </div>
 
               {/* Name & Role */}
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-foreground">
                     {participant.isSelf
                       ? `${participant.name} (You)`
                       : participant.name}
@@ -64,7 +64,7 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
                     <Crown className="w-3.5 h-3.5 text-yellow-500" />
                   )}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {participant.isHost ? "Host" : "Participant"}
                 </p>
               </div>
@@ -75,7 +75,7 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
               <div
                 className={`p-1.5 rounded ${
                   participant.isAudioEnabled
-                    ? "text-gray-400"
+                    ? "text-muted-foreground"
                     : "text-red-500 bg-red-500/10"
                 }`}
               >
@@ -88,7 +88,7 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
               <div
                 className={`p-1.5 rounded ${
                   participant.isVideoEnabled
-                    ? "text-gray-400"
+                    ? "text-muted-foreground"
                     : "text-red-500 bg-red-500/10"
                 }`}
               >
@@ -98,7 +98,7 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
                   <VideoOff className="w-4 h-4" />
                 )}
               </div>
-              <button className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-all">
+              <button className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all">
                 <MoreVertical className="w-4 h-4" />
               </button>
             </div>
@@ -107,8 +107,8 @@ export function ParticipantsList({ participants }: ParticipantsListProps) {
       </div>
 
       {/* Invite Section */}
-      <div className="p-4 border-t border-gray-800">
-        <button className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors text-sm">
+      <div className="p-4 border-t border-border">
+        <button className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors text-sm">
           Invite Participants
         </button>
       </div>

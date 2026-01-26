@@ -37,7 +37,7 @@ export default function CodeFilePage() {
 
   if (!organization || file === undefined || room === undefined) {
     return (
-      <div className="min-h-screen bg-[#1e1e1e] flex items-center justify-center">
+      <div className="min-h-screen bg-background-secondary flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
@@ -45,14 +45,14 @@ export default function CodeFilePage() {
 
   if (file === null || room === null) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             File not found
           </h1>
           <Link
             href={`/workspace/${organization.id}/room/${roomId}`}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sky-500 dark:text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 font-medium"
           >
             Return to Code Room
           </Link>
@@ -72,36 +72,36 @@ export default function CodeFilePage() {
       }}
       initialStorage={{}}
     >
-      <div className="fixed inset-0 flex flex-col bg-[#1e1e1e]">
+      <div className="fixed inset-0 flex flex-col bg-background-secondary">
         {/* Header Bar 1: Breadcrumb + Active Users */}
-        <div className="shrink-0 h-10 bg-[#252526] border-b border-[#1e1e1e] flex items-center justify-between px-3">
+        <div className="shrink-0 h-10 bg-muted border-b border-border flex items-center justify-between px-3">
           {/* Breadcrumb Navigation */}
-          <nav className="flex items-center gap-1.5 text-sm text-gray-400">
+          <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Link
               href={`/workspace/${organization.id}/room/${roomId}`}
-              className="hover:text-gray-200 transition-colors flex items-center gap-1.5"
+              className="hover:text-foreground transition-colors flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <FileCode className="w-4 h-4 text-emerald-500" />
               <span>{room.name}</span>
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
             {file.parentId && parentFolder && (
               <>
-                <div className="flex items-center gap-1 text-gray-500">
+                <div className="flex items-center gap-1 text-muted-foreground/80">
                   <Folder className="w-3.5 h-3.5" />
                   <span>{parentFolder.name}</span>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
               </>
             )}
-            <span className="text-gray-200">{file.name}</span>
+            <span className="text-foreground">{file.name}</span>
           </nav>
 
           {/* Active Users */}
           <div className="flex items-center">
             <ClientSideSuspense
-              fallback={<div className="text-xs text-gray-500">Loading...</div>}
+              fallback={<div className="text-xs text-muted-foreground">Loading...</div>}
             >
               <ActiveUsersAvatars variant="dark" label="editing" />
             </ClientSideSuspense>
@@ -112,10 +112,10 @@ export default function CodeFilePage() {
         <div className="flex-1 relative min-h-0">
           <ClientSideSuspense
             fallback={
-              <div className="absolute inset-0 flex items-center justify-center bg-[#1e1e1e]">
+              <div className="absolute inset-0 flex items-center justify-center bg-background-secondary">
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     Loading editor...
                   </span>
                 </div>

@@ -25,7 +25,7 @@ export function Navbar() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-sky-500/20">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
               VBase
             </span>
           </Link>
@@ -59,7 +59,7 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="hidden md:inline-flex text-white/70 hover:text-white hover:bg-white/10"
+                  className="hidden md:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted"
                 >
                   Sign In
                 </Button>
@@ -91,7 +91,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden hover:bg-white/10"
+              className="md:hidden hover:bg-muted"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
@@ -109,7 +109,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t py-4"
+            className="md:hidden border-t border-border py-4"
           >
             <div className="flex flex-col gap-4">
               <Link

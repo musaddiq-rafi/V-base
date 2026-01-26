@@ -179,20 +179,20 @@ export function MeetingStageWithLiveKit({
   const participantCount = participants.length;
 
   return (
-    <div className="h-screen bg-[#1a1a1a] flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between h-14 px-4 border-b border-gray-800"
+        className="flex items-center justify-between h-14 px-4 border-b border-border"
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           </div>
           <div>
-            <h1 className="font-semibold text-white text-sm">{meetingName}</h1>
-            <p className="text-xs text-gray-400">
+            <h1 className="font-semibold text-foreground text-sm">{meetingName}</h1>
+            <p className="text-xs text-muted-foreground">
               {roomName} • {participantCount} participant
               {participantCount !== 1 ? "s" : ""}
             </p>
@@ -204,8 +204,8 @@ export function MeetingStageWithLiveKit({
             onClick={() => toggleSidePanel("participants")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
               sidePanel === "participants"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                ? "bg-sky-600 text-white"
+                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-surface-hover"
             }`}
           >
             <Users className="w-4 h-4" />
@@ -215,8 +215,8 @@ export function MeetingStageWithLiveKit({
             onClick={() => toggleSidePanel("chat")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
               sidePanel === "chat"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                ? "bg-sky-600 text-white"
+                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-surface-hover"
             }`}
           >
             <MessageSquare className="w-4 h-4" />
@@ -237,15 +237,15 @@ export function MeetingStageWithLiveKit({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="h-full border-l border-gray-800 bg-[#1e1e1e] flex flex-col"
+            className="h-full border-l border-border bg-background-secondary flex flex-col"
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-              <h2 className="font-semibold text-white">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="font-semibold text-foreground">
                 {sidePanel === "chat" ? "Chat" : "Participants"}
               </h2>
               <button
                 onClick={() => setSidePanel(null)}
-                className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -291,10 +291,10 @@ export function MeetingStage({
   onLeave,
 }: MeetingStageProps) {
   return (
-    <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+    <div className="h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
-        <p className="text-gray-400">Connecting to meeting...</p>
+        <Loader2 className="w-10 h-10 text-sky-500 animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Connecting to meeting...</p>
       </div>
     </div>
   );

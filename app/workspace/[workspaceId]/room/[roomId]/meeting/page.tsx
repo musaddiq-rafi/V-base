@@ -23,22 +23,22 @@ export default function MeetingPage() {
 
   if (!organization || room === undefined || workspace === undefined) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
       </div>
     );
   }
 
   if (room === null || workspace === null) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             Meeting room not found
           </h1>
           <Link
             href={`/workspace/${organization.id}`}
-            className="text-blue-400 hover:text-blue-300 font-medium"
+            className="text-sky-500 dark:text-sky-400 hover:text-sky-400 dark:hover:text-sky-300 font-medium"
           >
             Return to Workspace
           </Link>

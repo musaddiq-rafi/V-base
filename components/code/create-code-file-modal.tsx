@@ -83,23 +83,23 @@ export function CreateCodeFileModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative bg-[#0f1520] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        className="relative bg-background-secondary border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             {type === "file" ? (
-              <FileCode className="w-6 h-6 text-emerald-400" />
+              <FileCode className="w-6 h-6 text-emerald-500 dark:text-emerald-400" />
             ) : (
-              <Folder className="w-6 h-6 text-amber-400" />
+              <Folder className="w-6 h-6 text-amber-500 dark:text-amber-400" />
             )}
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-foreground">
               {type === "file" ? "Create New File" : "Create New Folder"}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,7 +111,7 @@ export function CreateCodeFileModal({
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-white/70 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               {type === "file" ? "File Name" : "Folder Name"}
             </label>
@@ -123,7 +123,7 @@ export function CreateCodeFileModal({
               placeholder={
                 type === "file" ? "e.g., index.js, main.py" : "e.g., src, utils"
               }
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               autoFocus
             />
           </div>
@@ -133,7 +133,7 @@ export function CreateCodeFileModal({
             <div>
               <label
                 htmlFor="language"
-                className="block text-sm font-medium text-white/70 mb-1"
+                className="block text-sm font-medium text-muted-foreground mb-1"
               >
                 Language
               </label>
@@ -141,10 +141,10 @@ export function CreateCodeFileModal({
                 id="language"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               >
                 {LANGUAGES.map((lang) => (
-                  <option key={lang.value} value={lang.value} className="bg-[#0f1520] text-white">
+                  <option key={lang.value} value={lang.value} className="bg-background-secondary text-foreground">
                     {lang.label} ({lang.extension})
                   </option>
                 ))}
@@ -154,7 +154,7 @@ export function CreateCodeFileModal({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500 dark:text-red-400">
               {error}
             </div>
           )}
@@ -164,7 +164,7 @@ export function CreateCodeFileModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-white/10 text-white/70 rounded-lg hover:bg-white/20 transition-colors font-medium"
+              className="flex-1 px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors font-medium"
             >
               Cancel
             </button>

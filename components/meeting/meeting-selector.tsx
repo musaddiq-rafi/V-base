@@ -123,8 +123,8 @@ export function MeetingSelector({
 
   if (activeMeetings === undefined || meetingStats === undefined) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-sky-400 animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
       </div>
     );
   }
@@ -132,22 +132,22 @@ export function MeetingSelector({
   const canCreateMore = meetingStats.canCreateMore;
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between h-16 px-6 border-b border-white/10 bg-[#0b0f1a]/80 backdrop-blur-xl"
+        className="flex items-center justify-between h-16 px-6 border-b border-border bg-background/80 backdrop-blur-xl"
       >
         <div className="flex items-center gap-4">
           <Link
             href={`/workspace/${workspaceId}`}
-            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </Link>
-          <div className="h-6 w-px bg-white/10" />
+          <div className="h-6 w-px bg-border" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
               <Video className="w-4 h-4 text-rose-400" />
@@ -170,10 +170,10 @@ export function MeetingSelector({
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-8"
           >
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Join or Create a Meeting
             </h1>
-            <p className="text-gray-400">
+            <p className="text-muted-foreground">
               Select an ongoing meeting to join or start a new one
             </p>
           </motion.div>
@@ -184,15 +184,15 @@ export function MeetingSelector({
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center"
+                className="bg-surface border border-border rounded-2xl p-8 text-center"
               >
-                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
-                  <Video className="w-8 h-8 text-white/30" />
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Video className="w-8 h-8 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   No active meetings
                 </h3>
-                <p className="text-white/50 text-sm">
+                <p className="text-muted-foreground text-sm">
                   Be the first to start a meeting in this room
                 </p>
               </motion.div>
@@ -203,7 +203,7 @@ export function MeetingSelector({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl p-4 cursor-pointer transition-all group"
+                  className="bg-surface hover:bg-surface-hover border border-border hover:border-border rounded-xl p-4 cursor-pointer transition-all group"
                   onClick={() =>
                     onSelectMeeting(
                       meeting._id,
@@ -219,10 +219,10 @@ export function MeetingSelector({
                         <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white group-hover:text-sky-400 transition-colors">
+                        <h3 className="font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors">
                           {meeting.name}
                         </h3>
-                        <div className="flex items-center gap-3 text-sm text-white/50 mt-1">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
                             {meeting.participantCount} participant
@@ -236,7 +236,7 @@ export function MeetingSelector({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-white/40">
+                      <span className="text-xs text-muted-foreground">
                         Started by {meeting.createdByName}
                       </span>
                       {/* Force End button for abandoned meetings or meeting creator */}
@@ -282,7 +282,7 @@ export function MeetingSelector({
                 : "Maximum Meetings Reached"}
             </button>
             {!canCreateMore && (
-              <p className="text-center text-sm text-white/40 mt-3">
+              <p className="text-center text-sm text-muted-foreground mt-3">
                 This room can host up to {meetingStats.maxLimit} simultaneous
                 meetings. Please wait for one to end or join an existing
                 meeting.
@@ -307,20 +307,20 @@ export function MeetingSelector({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-[#0f1520] rounded-2xl shadow-2xl p-6 mx-4 border border-white/10"
+              className="relative w-full max-w-md bg-background-secondary rounded-2xl shadow-2xl p-6 mx-4 border border-border"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
-                    <Video className="w-5 h-5 text-sky-400" />
+                    <Video className="w-5 h-5 text-sky-500 dark:text-sky-400" />
                   </div>
-                  <h2 className="text-xl font-semibold text-white">
+                  <h2 className="text-xl font-semibold text-foreground">
                     Create New Meeting
                   </h2>
                 </div>
                 <button
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="text-white/40 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -328,7 +328,7 @@ export function MeetingSelector({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Meeting Name
                   </label>
                   <input
@@ -336,7 +336,7 @@ export function MeetingSelector({
                     value={newMeetingName}
                     onChange={(e) => setNewMeetingName(e.target.value)}
                     placeholder="e.g., Code Base Updates"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                     autoFocus
                     onKeyDown={(e) => {
                       if (
@@ -351,8 +351,8 @@ export function MeetingSelector({
                 </div>
 
                 <div className="flex items-start gap-2 p-3 bg-sky-500/10 border border-sky-500/20 rounded-lg">
-                  <Info className="w-4 h-4 text-sky-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-sky-300">
+                  <Info className="w-4 h-4 text-sky-500 dark:text-sky-400 mt-0.5 shrink-0" />
+                  <p className="text-sm text-sky-600 dark:text-sky-300">
                     You can have up to {meetingStats.maxLimit} meetings running
                     simultaneously in this room. Currently{" "}
                     {meetingStats.activeCount} active.
@@ -362,7 +362,7 @@ export function MeetingSelector({
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors"
+                    className="flex-1 px-4 py-3 bg-muted hover:bg-muted/80 text-foreground font-medium rounded-xl transition-colors"
                   >
                     Cancel
                   </button>
