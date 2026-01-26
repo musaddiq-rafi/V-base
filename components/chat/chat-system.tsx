@@ -138,6 +138,69 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
     }
   }, [directChannels, chatBubbles, memberships, unreadCounts]);
 
+  // Track previous unread counts to detect new messages
+  const prevUnreadCountsRef = useRef<Map<Id<"channels">, number>>(new Map());
+
+  // Show message preview popup when new messages arrive and bubbles are collapsed
+  useEffect(() => {
+    if (showBubbles || openChatWindow) {
+      // Don't show preview if bubbles are open or a chat window is open
+      prevUnreadCountsRef.current = new Map(unreadCounts);
+      return;
+    }
+
+    // Check for new unread messages
+    for (const [channelId, count] of unreadCounts) {
+      const prevCount = prevUnreadCountsRef.current.get(channelId) || 0;
+      
+      if (count > prevCount) {
+        // New message arrived! Show preview
+        const preview = previews.get(channelId);
+        if (preview) {
+          // Find channel info (from general or DM channels)
+          const generalCh = workspaceChannels?.find((ch) => ch._id === channelId);
+          const dmCh = directChannels?.find((ch) => ch._id === channelId);
+          
+          let channelName = "Unknown";
+          let avatarUrl: string | undefined;
+          
+          if (generalCh) {
+            channelName = generalCh.type === "general" ? "General" : generalCh.name;
+          } else if (dmCh) {
+            channelName = dmCh.otherUserName || "Unknown";
+            // Find avatar for DM
+            const member = memberships?.data?.find(
+              (m: { publicUserData?: { userId?: string } }) =>
+                m.publicUserData?.userId === dmCh.otherUserId
+            );
+            avatarUrl = (member?.publicUserData as { imageUrl?: string })?.imageUrl;
+          }
+          
+          setMessagePreview({
+            channelId,
+            channelName,
+            preview: preview.length > 100 ? preview.substring(0, 100) + "..." : preview,
+            avatarUrl,
+          });
+          
+          // Auto-hide preview after 5 seconds
+          const timer = setTimeout(() => {
+            setMessagePreview((current) => 
+              current?.channelId === channelId ? null : current
+            );
+          }, 5000);
+          
+          // Update ref and return early (only show one preview at a time)
+          prevUnreadCountsRef.current = new Map(unreadCounts);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+    
+    // Update ref for next comparison
+    prevUnreadCountsRef.current = new Map(unreadCounts);
+  }, [unreadCounts, previews, showBubbles, openChatWindow, workspaceChannels, directChannels, memberships]);
+
   const toggleBubbles = () => {
     setShowBubbles(!showBubbles);
   };
@@ -203,8 +266,20 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
               if (bubble) {
                 handleBubbleClick(bubble);
               } else {
-                // If bubble doesn't exist yet, create it
-                setShowBubbles(true);
+                // If bubble doesn't exist yet, create it and open chat
+                const generalCh = workspaceChannels?.find((ch) => ch._id === messagePreview.channelId);
+                const dmCh = directChannels?.find((ch) => ch._id === messagePreview.channelId);
+                
+                const newBubble: ChatBubble = {
+                  channelId: messagePreview.channelId,
+                  name: messagePreview.channelName,
+                  type: generalCh?.type === "general" ? "general" : "direct",
+                  otherUserId: dmCh?.otherUserId,
+                  avatarUrl: messagePreview.avatarUrl,
+                };
+                
+                setChatBubbles((prev) => [...prev, newBubble]);
+                setOpenChatWindow(messagePreview.channelId);
               }
               setMessagePreview(null);
             }}
