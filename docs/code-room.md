@@ -46,25 +46,25 @@ The Code Room is a collaborative code editor that allows multiple users to:
 ```mermaid
 flowchart TB
     subgraph Client["Client (Browser)"]
-        FE[File Explorer]
-        CE[CodeMirror Editor]
-        YJS[Yjs Document]
-        AWR[Awareness State]
+        FE["File Explorer"]
+        CE["CodeMirror Editor"]
+        YJS["Yjs Document"]
+        AWR["Awareness State"]
     end
 
     subgraph Liveblocks["Liveblocks Cloud"]
-        Room[Room: code:{fileId}]
-        Storage[Yjs Storage]
-        Presence[Presence/Awareness]
+        Room["Room: code:{fileId}"]
+        Storage["Yjs Storage"]
+        Presence["Presence/Awareness"]
     end
 
     subgraph Convex["Convex Backend"]
-        CF[codeFiles Table]
+        CF["codeFiles Table"]
     end
 
     subgraph RCE["Code Execution"]
-        Piston[Piston API]
-        VBase[VBase RCE]
+        Piston["Piston API"]
+        VBase["VBase RCE"]
     end
 
     FE -->|Create/Delete Files| CF
