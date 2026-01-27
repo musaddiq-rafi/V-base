@@ -185,7 +185,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             >
               Sign in
             </button>
-            <button
+            <Button
               onClick={onGetStarted}
               size="sm"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all"
@@ -491,7 +491,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button
+                <Button
                   onClick={onGetStarted}
                   size="lg"
                   className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/60 transition-all gap-2 group"
@@ -597,7 +597,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
 
                 <div className="pt-4">
-                  <button
+                  <Button
                     onClick={onGetStarted}
                     className="w-full bg-white/90 hover:bg-white/95 text-black shadow-[0_6px_24px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all"
                   >
@@ -640,7 +640,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
 
                 <div className="pt-4">
-                  <button
+                  <Button
                     onClick={onGetStarted}
                     className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-[0_6px_24px_rgba(56,189,248,0.4)] hover:shadow-[0_8px_32px_rgba(56,189,248,0.5)] transition-all"
                   >
@@ -683,7 +683,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
 
                 <div className="pt-4">
-                  <button
+                  <Button
                     onClick={onGetStarted}
                     className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white shadow-[0_6px_24px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_32px_rgba(168,85,247,0.5)] transition-all"
                   >
