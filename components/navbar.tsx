@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,16 +16,16 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden"
+      className="sticky top-0 z-50 w-full border-b border-white/10 glass backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 print:hidden"
     >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-sky-500/20">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
               VBase
             </span>
           </Link>
@@ -51,17 +53,24 @@ export function Navbar() {
           </div>
 
           {/* Auth Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="hidden md:inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden md:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
                   Sign In
-                </button>
+                </Button>
               </SignInButton>
               <SignInButton mode="modal">
-                <button className="hidden md:inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:opacity-90 h-9 px-4">
+                <Button
+                  size="sm"
+                  className="hidden md:inline-flex bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/20"
+                >
                   Get Started
-                </button>
+                </Button>
               </SignInButton>
             </SignedOut>
 
@@ -69,7 +78,7 @@ export function Navbar() {
               <UserButton
                 appearance={{
                   elements: {
-                    avatarBox: "w-9 h-9",
+                    avatarBox: "w-9 h-9 ring-2 ring-white/10 hover:ring-sky-500/50 transition-all",
                   },
                 }}
                 afterSignOutUrl="/"
@@ -77,8 +86,12 @@ export function Navbar() {
             </SignedIn>
 
             {/* Mobile Menu Button */}
-            <button
-              className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+            <ModeToggle />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden hover:bg-muted"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
@@ -86,7 +99,7 @@ export function Navbar() {
               ) : (
                 <Menu className="w-5 h-5" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -96,7 +109,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t py-4"
+            className="md:hidden border-t border-border py-4"
           >
             <div className="flex flex-col gap-4">
               <Link
@@ -122,9 +135,11 @@ export function Navbar() {
               </Link>
               <SignedOut>
                 <SignInButton mode="modal">
-                  <button className="w-full inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:opacity-90 h-9 px-4">
+                  <Button
+                    className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/20"
+                  >
                     Sign In
-                  </button>
+                  </Button>
                 </SignInButton>
               </SignedOut>
             </div>

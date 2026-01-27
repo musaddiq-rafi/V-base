@@ -60,9 +60,9 @@ function ToolbarButton({
       disabled={disabled}
       title={title}
       className={cn(
-        "flex items-center justify-center h-7 min-w-7 px-1.5 rounded-sm hover:bg-neutral-200/80 transition-colors",
-        isActive && "bg-neutral-200/80",
-        disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+        "flex items-center justify-center h-7 min-w-7 px-1.5 rounded-sm hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 transition-colors",
+        isActive && "bg-neutral-200/80 dark:bg-neutral-700/80",
+        disabled && "opacity-50 cursor-not-allowed pointer-events-none text-neutral-400 dark:text-neutral-500"
       )}
     >
       {children}
@@ -150,7 +150,7 @@ export function Toolbar({ editor }: ToolbarProps) {
   }, [editor]);
 
   return (
-    <div className="bg-[#F1F4F9] px-2.5 py-0.5 rounded-[24px] min-h-[40px] flex items-center gap-0.5 overflow-x-auto print:hidden">
+    <div className="bg-[#F1F4F9] dark:bg-secondary px-2.5 py-0.5 rounded-[24px] min-h-[40px] flex items-center gap-0.5 overflow-x-auto print:hidden border border-transparent dark:border-white/10">
       {/* Undo/Redo */}
       <ToolbarButton
         onClick={() => editor.chain().focus().undo().run()}
@@ -174,16 +174,16 @@ export function Toolbar({ editor }: ToolbarProps) {
         <Printer className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => {}} title="Spelling and grammar check">
+      <ToolbarButton onClick={() => { }} title="Spelling and grammar check">
         <SpellCheck className="h-4 w-4" />
       </ToolbarButton>
 
       {/* Heading Level Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-1 h-7 px-2 rounded-sm hover:bg-neutral-200/80 text-sm min-w-[100px] justify-between">
+          <button className="flex items-center gap-1 h-7 px-2 rounded-sm hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 text-sm min-w-[100px] justify-between">
             <span className="truncate">{getCurrentHeading()}</span>
-            <ChevronDown className="h-3 w-3 shrink-0" />
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[180px]">
@@ -200,7 +200,7 @@ export function Toolbar({ editor }: ToolbarProps) {
               className={cn(
                 "cursor-pointer",
                 (heading.value === 0 && !editor.isActive("heading")) ||
-                editor.isActive("heading", { level: heading.value }) ? "bg-neutral-100" : ""
+                  editor.isActive("heading", { level: heading.value }) ? "bg-neutral-100 dark:bg-neutral-800" : ""
               )}
             >
               <span style={{ fontSize: heading.fontSize }}>{heading.label}</span>
@@ -209,14 +209,14 @@ export function Toolbar({ editor }: ToolbarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
+      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300 dark:bg-neutral-700" />
 
       {/* Font Family Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-1 h-7 px-2 rounded-sm hover:bg-neutral-200/80 text-sm min-w-[100px] justify-between">
+          <button className="flex items-center gap-1 h-7 px-2 rounded-sm hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 text-sm min-w-[100px] justify-between">
             <span className="truncate">{currentFont}</span>
-            <ChevronDown className="h-3 w-3 shrink-0" />
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[180px] max-h-[300px] overflow-y-auto">
@@ -226,7 +226,7 @@ export function Toolbar({ editor }: ToolbarProps) {
               onClick={() => setFontFamily(font.value, font.label)}
               className={cn(
                 "cursor-pointer",
-                currentFont === font.label ? "bg-neutral-100" : ""
+                currentFont === font.label ? "bg-neutral-100 dark:bg-neutral-800" : ""
               )}
               style={{ fontFamily: font.value }}
             >
@@ -236,14 +236,14 @@ export function Toolbar({ editor }: ToolbarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
+      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300 dark:bg-neutral-700" />
 
       {/* Font Size Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-0.5 h-7 px-1.5 rounded-sm hover:bg-neutral-200/80 text-sm w-[52px] justify-center">
+          <button className="flex items-center gap-0.5 h-7 px-1.5 rounded-sm hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 text-sm w-[52px] justify-center">
             <span>{currentFontSize}</span>
-            <ChevronDown className="h-3 w-3" />
+            <ChevronDown className="h-3 w-3 opacity-50" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[80px] max-h-[300px] overflow-y-auto">
@@ -253,7 +253,7 @@ export function Toolbar({ editor }: ToolbarProps) {
               onClick={() => setFontSize(size)}
               className={cn(
                 "cursor-pointer justify-center",
-                currentFontSize === size ? "bg-neutral-100" : ""
+                currentFontSize === size ? "bg-neutral-100 dark:bg-neutral-800" : ""
               )}
             >
               {size}
@@ -262,7 +262,7 @@ export function Toolbar({ editor }: ToolbarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
+      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300 dark:bg-neutral-700" />
 
       {/* Text Formatting */}
       <ToolbarButton
@@ -297,7 +297,7 @@ export function Toolbar({ editor }: ToolbarProps) {
       {/* Text Color */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center justify-center h-7 min-w-7 px-1 rounded-sm hover:bg-neutral-200/80 transition-colors" title="Text color">
+          <button className="flex items-center justify-center h-7 min-w-7 px-1 rounded-sm hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 transition-colors" title="Text color">
             <span className="text-sm font-bold">A</span>
             <div className="w-3 h-1 bg-black mt-0.5 ml-0.5" />
           </button>
@@ -338,7 +338,7 @@ export function Toolbar({ editor }: ToolbarProps) {
       {/* Highlight Color */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center justify-center h-7 min-w-7 px-1.5 rounded-sm hover:bg-neutral-200/80 transition-colors" title="Highlight color">
+          <button className="flex items-center justify-center h-7 min-w-7 px-1.5 rounded-sm hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80 transition-colors" title="Highlight color">
             <Highlighter className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
@@ -378,36 +378,36 @@ export function Toolbar({ editor }: ToolbarProps) {
       <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
 
       {/* Text Alignment */}
-      <ToolbarButton 
-        onClick={() => editor.chain().focus().setTextAlign('left').run()} 
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
         isActive={editor.isActive({ textAlign: 'left' })}
         title="Align left"
       >
         <AlignLeft className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton 
-        onClick={() => editor.chain().focus().setTextAlign('center').run()} 
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
         isActive={editor.isActive({ textAlign: 'center' })}
         title="Align center"
       >
         <AlignCenter className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton 
-        onClick={() => editor.chain().focus().setTextAlign('right').run()} 
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
         isActive={editor.isActive({ textAlign: 'right' })}
         title="Align right"
       >
         <AlignRight className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton 
-        onClick={() => editor.chain().focus().setTextAlign('justify').run()} 
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('justify').run()}
         isActive={editor.isActive({ textAlign: 'justify' })}
         title="Justify"
       >
         <AlignJustify className="h-4 w-4" />
       </ToolbarButton>
 
-      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
+      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300 dark:bg-neutral-700" />
 
       {/* Lists */}
       <ToolbarButton
@@ -425,16 +425,16 @@ export function Toolbar({ editor }: ToolbarProps) {
         <ListOrdered className="h-4 w-4" />
       </ToolbarButton>
 
-      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300" />
+      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300 dark:bg-neutral-700" />
 
       {/* Insert Link */}
-      <ToolbarButton 
+      <ToolbarButton
         onClick={() => {
           const url = window.prompt('Enter URL:');
           if (url) {
             editor.chain().focus().setLink({ href: url }).run();
           }
-        }} 
+        }}
         isActive={editor.isActive('link')}
         title="Insert link (Ctrl+K)"
       >
@@ -442,29 +442,29 @@ export function Toolbar({ editor }: ToolbarProps) {
       </ToolbarButton>
 
       {/* Insert Image */}
-      <ToolbarButton 
+      <ToolbarButton
         onClick={() => {
           const url = window.prompt('Enter image URL:');
           if (url) {
             editor.chain().focus().setImage({ src: url }).run();
           }
-        }} 
+        }}
         title="Insert image"
       >
         <Image className="h-4 w-4" />
       </ToolbarButton>
 
       {/* Horizontal Rule */}
-      <ToolbarButton 
-        onClick={() => editor.chain().focus().setHorizontalRule().run()} 
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
         title="Horizontal line"
       >
         <Minus className="h-4 w-4" />
       </ToolbarButton>
 
       {/* Clear Formatting */}
-      <ToolbarButton 
-        onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()} 
+      <ToolbarButton
+        onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
         title="Clear formatting"
       >
         <RemoveFormatting className="h-4 w-4" />

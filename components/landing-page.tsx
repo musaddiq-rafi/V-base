@@ -3,6 +3,7 @@
 import { ArrowRight, Code, Users, Video, Trello, CheckCircle2, Zap, Shield, Layers } from 'lucide-react';
 import { Logo } from './ui/logo';
 import { MovingBorderButton } from './ui/moving-border-button';
+import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 
 interface LandingPageProps {
@@ -178,17 +179,20 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="flex items-center gap-3">
             <button
               onClick={onGetStarted}
-              className="hidden sm:inline-block text-white/70 hover:text-white transition-colors duration-200 text-sm font-medium hover:scale-105 transform"
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex text-white/70 hover:text-white hover:bg-white/10"
             >
               Sign in
             </button>
             <button
               onClick={onGetStarted}
-              className="inline-flex items-center gap-2 shadow-sky-500/25 hover:shadow-sky-500/40 hover:from-sky-400 hover:to-indigo-500 transition-all duration-200 hover:scale-105 hover:shadow-xl text-sm font-medium text-neutral-50 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl pt-2 pr-4 pb-2 pl-4 shadow-lg"
+              size="sm"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all"
             >
               Get Started
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
-            </button>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
@@ -489,11 +493,12 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={onGetStarted}
-                  className="inline-flex items-center gap-2 shadow-sky-500/25 hover:shadow-sky-500/60 hover:from-sky-400 hover:to-indigo-500 transition-all duration-300 hover:scale-110 hover:shadow-xl group text-base font-medium text-neutral-50 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl pt-3 pr-6 pb-3 pl-6 shadow-lg"
+                  size="lg"
+                  className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/60 transition-all gap-2 group"
                 >
                   Try free trial
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
-                </button>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
               </div>
             </div>
 
@@ -594,10 +599,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="pt-4">
                   <button
                     onClick={onGetStarted}
-                    className="w-full relative isolate rounded-full px-5 py-3 text-sm font-semibold text-black bg-white/90 shadow-[0_6px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/30 hover:bg-white/95 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 hover:scale-105"
+                    className="w-full bg-white/90 hover:bg-white/95 text-black shadow-[0_6px_24px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all"
                   >
                     Get Started
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -637,10 +642,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="pt-4">
                   <button
                     onClick={onGetStarted}
-                    className="w-full relative isolate rounded-full px-5 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-600 shadow-[0_6px_24px_rgba(56,189,248,0.4)] ring-1 ring-sky-400/30 hover:shadow-[0_8px_32px_rgba(56,189,248,0.5)] transition-all duration-300 hover:scale-105"
+                    className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-[0_6px_24px_rgba(56,189,248,0.4)] hover:shadow-[0_8px_32px_rgba(56,189,248,0.5)] transition-all"
                   >
                     Upgrade to Pro
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -680,10 +685,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="pt-4">
                   <button
                     onClick={onGetStarted}
-                    className="w-full relative isolate rounded-full px-5 py-3 text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-purple-600 shadow-[0_6px_24px_rgba(168,85,247,0.4)] ring-1 ring-violet-400/30 hover:shadow-[0_8px_32px_rgba(168,85,247,0.5)] transition-all duration-300 hover:scale-105"
+                    className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white shadow-[0_6px_24px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_32px_rgba(168,85,247,0.5)] transition-all"
                   >
                     Go Enterprise
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

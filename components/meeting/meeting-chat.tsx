@@ -50,11 +50,11 @@ export function MeetingChat({ roomId }: MeetingChatProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-3">
-              <Send className="w-5 h-5 text-gray-500 rotate-45" />
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <Send className="w-5 h-5 text-muted-foreground rotate-45" />
             </div>
-            <p className="text-gray-400 text-sm">No messages yet</p>
-            <p className="text-gray-500 text-xs mt-1">
+            <p className="text-muted-foreground text-sm">No messages yet</p>
+            <p className="text-muted-foreground/70 text-xs mt-1">
               Send a message to start the conversation
             </p>
           </div>
@@ -67,10 +67,10 @@ export function MeetingChat({ roomId }: MeetingChatProps) {
                 className={`flex flex-col ${isSelf ? "items-end" : "items-start"}`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-400">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {isSelf ? "You" : msg.senderName}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground/70">
                     {msg.timestamp.toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -80,8 +80,8 @@ export function MeetingChat({ roomId }: MeetingChatProps) {
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-xl ${
                     isSelf
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-200"
+                      ? "bg-sky-600 text-white"
+                      : "bg-muted text-foreground"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -93,7 +93,7 @@ export function MeetingChat({ roomId }: MeetingChatProps) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-border">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -101,12 +101,12 @@ export function MeetingChat({ roomId }: MeetingChatProps) {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-4 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
           />
           <button
             onClick={handleSend}
             disabled={!message.trim()}
-            className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl text-white transition-colors"
+            className="p-2.5 bg-sky-600 hover:bg-sky-700 disabled:bg-muted disabled:cursor-not-allowed rounded-xl text-white transition-colors"
           >
             <Send className="w-5 h-5" />
           </button>

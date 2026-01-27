@@ -65,7 +65,7 @@ export function Ruler({
   for (let i = 0; i <= pageWidth; i += 10) {
     const isMajor = i % 100 === 0;
     const isHalf = i % 50 === 0 && !isMajor;
-    
+
     ticks.push(
       <div
         key={i}
@@ -73,13 +73,12 @@ export function Ruler({
         style={{ left: i }}
       >
         <div
-          className={`w-px bg-gray-500 ${
-            isMajor ? "h-3" : isHalf ? "h-2" : "h-1"
-          }`}
+          className={`w-px bg-gray-500 dark:bg-gray-400 ${isMajor ? "h-3" : isHalf ? "h-2" : "h-1"
+            }`}
         />
         {isMajor && i > 0 && (
           <span
-            className="absolute -translate-x-1/2 text-[10px] text-gray-600 select-none"
+            className="absolute -translate-x-1/2 text-[10px] text-gray-600 dark:text-gray-300 select-none"
             style={{ top: -12 }}
           >
             {i / 100}
@@ -94,7 +93,7 @@ export function Ruler({
       {/* Ruler background */}
       <div
         ref={rulerRef}
-        className="absolute inset-0 bg-[#F9FBFD] border-b border-gray-300"
+        className="absolute inset-0 bg-[#F9FBFD] dark:bg-background border-b border-gray-300 dark:border-gray-700"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -110,7 +109,7 @@ export function Ruler({
           style={{ left: leftMargin - MARKER_WIDTH / 2 }}
           onMouseDown={handleLeftMouseDown}
         >
-          <FaCaretDown className="text-blue-500 w-4 h-4" />
+          <FaCaretDown className="text-blue-500 dark:text-blue-400 w-4 h-4" />
         </div>
 
         {/* Right margin marker */}
@@ -119,7 +118,7 @@ export function Ruler({
           style={{ right: rightMargin - MARKER_WIDTH / 2 }}
           onMouseDown={handleRightMouseDown}
         >
-          <FaCaretDown className="text-blue-500 w-4 h-4" />
+          <FaCaretDown className="text-blue-500 dark:text-blue-400 w-4 h-4" />
         </div>
       </div>
     </div>

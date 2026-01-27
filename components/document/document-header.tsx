@@ -186,12 +186,12 @@ export function DocumentHeader({
   }
 
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-[#F9FBFD] print:hidden">
+    <div className="flex items-center justify-between px-3 py-2 bg-[#F9FBFD] dark:bg-background print:hidden">
       {/* Left Section - Logo and Document Name */}
       <div className="flex items-center gap-2">
         {/* Docs Logo */}
         <div className="flex items-center justify-center w-10 h-10 shrink-0">
-          <FileText className="w-8 h-8 text-blue-600" />
+          <FileText className="w-8 h-8 text-blue-600 dark:text-blue-500" />
         </div>
 
         {/* Document Info */}
@@ -205,14 +205,14 @@ export function DocumentHeader({
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={handleKeyPress}
                 onBlur={handleSaveName}
-                className="text-lg font-medium text-gray-900 bg-transparent border-b-2 border-blue-500 outline-none px-0.5 -ml-0.5"
+                className="text-lg font-medium text-gray-900 dark:text-gray-100 bg-transparent border-b-2 border-blue-500 outline-none px-0.5 -ml-0.5"
                 autoFocus
                 disabled={isSaving}
               />
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
-                className="text-lg font-medium text-gray-900 hover:bg-gray-100 px-1 -ml-1 rounded transition-colors truncate max-w-[300px]"
+                className="text-lg font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-accent px-1 -ml-1 rounded transition-colors truncate max-w-[300px]"
               >
                 {document.name}
               </button>
@@ -220,20 +220,20 @@ export function DocumentHeader({
             {isSaving && (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
             )}
-            <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-              <Star className="w-4 h-4 text-gray-500" />
+            <button className="p-1 hover:bg-gray-100 dark:hover:bg-accent rounded transition-colors">
+              <Star className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
           {/* Menu Bar */}
-          <div className="flex items-center gap-1 text-sm text-gray-600">
+          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
             <Menubar className="h-auto border-0 bg-transparent p-0 shadow-none">
               <MenubarMenu>
-                <MenubarTrigger className="text-sm font-normal py-0.5 px-[7px] rounded-sm hover:bg-muted h-auto">
+                <MenubarTrigger className="text-sm font-normal py-0.5 px-[7px] rounded-sm hover:bg-muted h-auto dark:text-gray-300 dark:hover:text-white">
                   File
                 </MenubarTrigger>
                 <MenubarContent className="w-[240px]">
-                  <MenubarItem className="gap-2" onClick={() => {}}>
+                  <MenubarItem className="gap-2" onClick={() => { }}>
                     <FilePlus className="h-4 w-4" />
                     New Document
                   </MenubarItem>
@@ -269,7 +269,7 @@ export function DocumentHeader({
                     <FilePen className="h-4 w-4" />
                     Rename
                   </MenubarItem>
-                  <MenubarItem className="gap-2" onClick={() => {}}>
+                  <MenubarItem className="gap-2" onClick={() => { }}>
                     <Trash className="h-4 w-4" />
                     Remove
                   </MenubarItem>
@@ -529,7 +529,7 @@ export function DocumentHeader({
       {/* Right Section - Status and Actions */}
       <div className="flex items-center gap-2">
         {/* Sync Status */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mr-2">
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mr-2">
           {status === "connected" ? (
             <>
               <Cloud className="w-4 h-4 text-green-600" />
@@ -549,8 +549,8 @@ export function DocumentHeader({
         {/* More Options */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <MoreVertical className="w-5 h-5 text-gray-600" />
+            <button className="p-2 hover:bg-gray-100 dark:hover:bg-accent rounded-full transition-colors">
+              <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">

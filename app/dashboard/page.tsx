@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { motion } from "framer-motion";
 import { Plus, FolderOpen, Users, Crown, Loader2, Info } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type FilterType = "all" | "owned" | "joined";
 
@@ -94,31 +95,29 @@ export default function DashboardPage() {
   const workspaceCount = userMemberships?.data?.length || 0;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8"
-      >
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 lg:mb-10">
+        <div className="space-y-1">
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             My Workspaces
           </h1>
-          <p className="text-sm lg:text-base text-gray-600">
+          <p className="text-sm lg:text-base text-muted-foreground">
             Create, manage, and collaborate in your team workspaces
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 lg:px-5 lg:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm lg:text-base w-full sm:w-auto"
+          size="lg"
+          className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all w-full sm:w-auto gap-2"
         >
           <Plus className="w-5 h-5" />
           Create Workspace
-        </motion.button>
+        </Button>
       </motion.div>
 
       {/* Filter Tabs */}
@@ -126,31 +125,32 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
-        className="flex gap-2 mb-4 lg:mb-6 overflow-x-auto"
+        className="flex gap-2 mb-6 lg:mb-8 overflow-x-auto pb-2"
       >
         {[
           { key: "all", label: "All" },
           { key: "owned", label: "Owned" },
           { key: "joined", label: "Joined" },
         ].map((tab) => (
-          <button
+          <Button
             key={tab.key}
             onClick={() => setFilter(tab.key as FilterType)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              filter === tab.key
-                ? "bg-blue-100 text-blue-700"
-                : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
+            variant={filter === tab.key ? "default" : "outline"}
+            size="sm"
+            className={`${filter === tab.key
+                ? "bg-sky-500/20 text-sky-500 dark:text-sky-400 border-sky-500/30 hover:bg-sky-500/30 hover:text-sky-400 dark:hover:text-sky-300"
+                : "bg-transparent border-border text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border"
+              }`}
           >
             {tab.label}
-          </button>
+          </Button>
         ))}
       </motion.div>
 
       {/* Workspaces Grid */}
       {!isLoaded ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
         </div>
       ) : workspaceCount === 0 ? (
         /* Empty State */
@@ -158,22 +158,22 @@ export default function DashboardPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="flex flex-col items-center justify-center py-20 bg-white/70 rounded-2xl border border-gray-200/50"
+          className="flex flex-col items-center justify-center py-20 bg-muted rounded-2xl border border-border"
         >
-          <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">
-            <FolderOpen className="w-10 h-10 text-gray-400" />
+          <div className="w-20 h-20 rounded-2xl bg-muted-foreground/10 flex items-center justify-center mb-6">
+            <FolderOpen className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-xl font-semibold text-foreground mb-2">
             No workspaces yet
           </h3>
-          <p className="text-gray-500 mb-6 text-center max-w-md">
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
             Create your first workspace to start collaborating with your team
           </p>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-xl shadow-lg"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-medium rounded-xl shadow-lg shadow-sky-500/25"
           >
             <Plus className="w-5 h-5" />
             Create your first workspace
@@ -191,38 +191,36 @@ export default function DashboardPage() {
               key={membership.organization.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index, duration: 0.4 }}
+              transition={{ delay: 0.05 * index, duration: 0.4 }}
             >
               <Link href={`/workspace/${membership.organization.id}`}>
-                <motion.div
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  transition={{ duration: 0.2 }}
-                  className="group p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-                      {membership.organization.name.charAt(0).toUpperCase()}
+                <div className="group glass-card p-6 rounded-2xl hover:border-primary/50 transition-all cursor-pointer overflow-hidden">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-sky-500/20 group-hover:scale-110 transition-transform">
+                        {membership.organization.name.charAt(0).toUpperCase()}
+                      </div>
+                      {membership.role === "org:admin" && (
+                        <span className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
+                          <Crown className="w-3 h-3" />
+                          Admin
+                        </span>
+                      )}
                     </div>
-                    {membership.role === "org:admin" && (
-                      <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
-                        <Crown className="w-3 h-3" />
-                        Admin
+                    <h3 className="text-xl font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors">
+                      {membership.organization.name}
+                    </h3>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>
+                        {membership.organization.membersCount || 1} member
+                        {(membership.organization.membersCount || 1) !== 1 ? "s" : ""}
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                    {membership.organization.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Users className="w-4 h-4" />
-                    <span>
-                      {membership.organization.membersCount || 1} member
-                      {(membership.organization.membersCount || 1) !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-                </motion.div>
+                </div>
               </Link>
             </motion.div>
           ))}
@@ -231,71 +229,77 @@ export default function DashboardPage() {
 
       {/* Create Workspace Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
             onClick={() => setIsCreateModalOpen(false)}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-white rounded-2xl p-8 shadow-2xl w-full max-w-md mx-4"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative glass-card rounded-2xl p-8 shadow-2xl w-full max-w-md border-border"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Create Workspace
-            </h2>
-            <p className="text-gray-500 mb-4">
-              Give your workspace a name to get started
-            </p>
-            {/* Workspace Count Info */}
-            {/* {workspaceStats && (
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-4 ${workspaceStats.maxLimit - workspaceStats.count === 0 ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"}`}
-              >
-                <Info className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {workspaceStats.maxLimit - workspaceStats.count}/5 workspaces
-                  remaining
-                </span>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">
+                  Create Workspace
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Give your workspace a name to get started
+                </p>
               </div>
-            )} */}
-            <input
-              type="text"
-              value={workspaceName}
-              onChange={(e) => setWorkspaceName(e.target.value)}
-              placeholder="Workspace name"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-6"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateWorkspace}
-                disabled={
-                  !workspaceName.trim() ||
-                  isCreating ||
-                  (workspaceStats &&
-                    workspaceStats.count >= workspaceStats.maxLimit)
-                }
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : workspaceStats &&
-                  workspaceStats.count >= workspaceStats.maxLimit ? (
-                  "Limit Reached"
-                ) : (
-                  "Create"
-                )}
-              </button>
+
+              {/* Workspace Count Info */}
+              {/* {workspaceStats && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${workspaceStats.maxLimit - workspaceStats.count === 0
+                    ? "bg-red-500/10 border-red-500/30 text-red-500 dark:text-red-400"
+                    : "bg-sky-500/10 border-sky-500/30 text-sky-500 dark:text-sky-400"
+                  }`}>
+                  <Info className="w-4 h-4 shrink-0" />
+                  <span className="text-sm font-medium">
+                    {workspaceStats.maxLimit - workspaceStats.count}/5 workspaces remaining
+                  </span>
+                </div>
+              )} */}
+
+              <input
+                type="text"
+                value={workspaceName}
+                onChange={(e) => setWorkspaceName(e.target.value)}
+                placeholder="Enter workspace name"
+                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-foreground placeholder-muted-foreground transition-all"
+                autoFocus
+              />
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setIsCreateModalOpen(false)}
+                  variant="outline"
+                  className="flex-1 bg-muted border-border hover:bg-muted/80 text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateWorkspace}
+                  disabled={
+                    !workspaceName.trim() ||
+                    isCreating ||
+                    (workspaceStats && workspaceStats.count >= workspaceStats.maxLimit)
+                  }
+                  className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 gap-2"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : workspaceStats && workspaceStats.count >= workspaceStats.maxLimit ? (
+                    "Limit Reached"
+                  ) : (
+                    "Create Workspace"
+                  )}
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>

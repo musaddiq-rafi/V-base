@@ -119,11 +119,11 @@ export function LiveKitProvider({
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Connecting to meeting...</p>
-          <p className="text-gray-500 text-sm mt-2">Room: {roomName}</p>
+          <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Connecting to meeting...</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">Room: {roomName}</p>
         </div>
       </div>
     );
@@ -131,18 +131,18 @@ export function LiveKitProvider({
 
   if (error || !token) {
     return (
-      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             Connection Failed
           </h2>
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted-foreground text-sm">
             {error?.message || "Unable to get meeting token"}
           </p>
-          <p className="text-gray-600 text-xs mt-2">Room: {roomName}</p>
+          <p className="text-muted-foreground/60 text-xs mt-2">Room: {roomName}</p>
         </div>
       </div>
     );
@@ -150,15 +150,15 @@ export function LiveKitProvider({
 
   if (!livekitUrl) {
     return (
-      <div className="h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             Configuration Error
           </h2>
-          <p className="text-gray-500 text-sm">LiveKit URL is not configured</p>
+          <p className="text-muted-foreground text-sm">LiveKit URL is not configured</p>
         </div>
       </div>
     );

@@ -57,19 +57,19 @@ export function CreateDocumentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-background-secondary rounded-lg shadow-xl w-full max-w-md mx-4 border border-border">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">
+            <FileText className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+            <h2 className="text-lg font-semibold text-foreground">
               Create New Document
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             disabled={isCreating}
           >
             <X className="w-5 h-5" />
@@ -80,7 +80,7 @@ export function CreateDocumentModal({
         <div className="px-6 py-4">
           <label
             htmlFor="document-name"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-medium text-muted-foreground mb-2"
           >
             Document Name
           </label>
@@ -91,17 +91,17 @@ export function CreateDocumentModal({
             onChange={(e) => setName(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="e.g., Project Proposal, Meeting Notes..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all"
             autoFocus
             disabled={isCreating}
           />
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
             disabled={isCreating}
           >
             Cancel
@@ -109,7 +109,7 @@ export function CreateDocumentModal({
           <button
             onClick={handleCreate}
             disabled={!name.trim() || isCreating}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:shadow-sky-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
           >
             {isCreating ? (
               <>
