@@ -157,7 +157,7 @@ export function MeetingRoom({
 
   if (meetingState === "ended") {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
             <svg
@@ -174,20 +174,20 @@ export function MeetingRoom({
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             You left the meeting
           </h1>
-          <p className="text-gray-400 mb-8">Thanks for joining!</p>
+          <p className="text-muted-foreground mb-8">Thanks for joining!</p>
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={handleBackToSelector}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
+              className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors"
             >
               Join Another Meeting
             </button>
             <a
               href={`/workspace/${workspaceId}`}
-              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-xl transition-colors"
+              className="px-6 py-3 bg-muted hover:bg-surface-hover text-foreground font-medium rounded-xl transition-colors"
             >
               Back to Workspace
             </a>
@@ -200,18 +200,18 @@ export function MeetingRoom({
   // Validate we have all required data before rendering LiveKit
   if (!livekitRoomName || !selectedMeetingId || !user) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 text-red-500 mx-auto mb-4">⚠️</div>
-          <h1 className="text-xl font-bold text-white mb-2">
+          <h1 className="text-xl font-bold text-foreground mb-2">
             Missing meeting information
           </h1>
-          <p className="text-gray-400 mb-4">
+          <p className="text-muted-foreground mb-4">
             Unable to connect to the meeting.
           </p>
           <button
             onClick={handleBackToSelector}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
+            className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors"
           >
             Go Back
           </button>

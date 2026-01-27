@@ -82,21 +82,21 @@ export function CreateRoomModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 mx-4"
+            className="relative w-full max-w-md bg-background-secondary rounded-2xl shadow-2xl p-6 mx-4 border border-border"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Presentation className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
+                  <Presentation className="w-5 h-5 text-sky-500 dark:text-sky-400" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-foreground">
                   Create New Room
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -108,7 +108,7 @@ export function CreateRoomModal({
               <div>
                 <label
                   htmlFor="roomName"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Room Name
                 </label>
@@ -118,7 +118,7 @@ export function CreateRoomModal({
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder="e.g., Design Brainstorm"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all text-foreground placeholder-muted-foreground"
                   disabled={isCreating}
                   autoFocus
                 />
@@ -126,7 +126,7 @@ export function CreateRoomModal({
 
               {/* Room Type Select */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Room Type
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -151,8 +151,8 @@ export function CreateRoomModal({
                       disabled={isCreating}
                       className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl transition-all text-sm font-medium ${
                         roomType === option.value
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                          ? "border-sky-500/50 bg-sky-500/20 text-sky-500 dark:text-sky-400"
+                          : "border-border bg-muted text-muted-foreground hover:border-border hover:bg-muted/80"
                       } disabled:opacity-50`}
                     >
                       <option.icon className="w-4 h-4" />
@@ -163,7 +163,7 @@ export function CreateRoomModal({
 
                 {/* Meeting Room Info */}
                 {isMeetingSelected && (
-                  <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-red-50 text-red-700">
+                  <div className={`flex items-start gap-2 mt-3 p-3 rounded-lg ${hasMeetingRoom ? "bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30" : "bg-sky-500/20 text-sky-500 dark:text-sky-400 border border-sky-500/30"}`}>
                     {hasMeetingRoom ? (
                       <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                     ) : (
@@ -184,14 +184,14 @@ export function CreateRoomModal({
                   type="button"
                   onClick={onClose}
                   disabled={isCreating}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isCreateDisabled}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl hover:from-sky-400 hover:to-indigo-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isCreating ? (
                     <>

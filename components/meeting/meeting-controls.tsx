@@ -36,7 +36,7 @@ export function MeetingControls({
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="flex items-center justify-center gap-3 p-4 border-t border-gray-800 bg-[#1e1e1e]"
+      className="flex items-center justify-center gap-3 p-4 border-t border-border bg-background-secondary"
     >
       {/* Audio Toggle */}
       <button

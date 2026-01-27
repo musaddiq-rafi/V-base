@@ -115,30 +115,30 @@ export function MeetingLobby({
   }, [isVideoEnabled, mediaStream]);
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between h-16 px-6 border-b border-gray-800"
+        className="flex items-center justify-between h-16 px-6 border-b border-border"
       >
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </button>
-          <div className="h-6 w-px bg-gray-700" />
+          <div className="h-6 w-px bg-border" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
               <Video className="w-4 h-4 text-orange-500" />
             </div>
-            <span className="font-semibold text-white">{roomName}</span>
+            <span className="font-semibold text-foreground">{roomName}</span>
           </div>
         </div>
-        <button className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors">
+        <button className="p-2 rounded-lg bg-muted hover:bg-surface-hover text-muted-foreground hover:text-foreground transition-colors">
           <Settings className="w-5 h-5" />
         </button>
       </motion.header>
@@ -151,7 +151,7 @@ export function MeetingLobby({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden"
+            className="relative aspect-video bg-background-secondary rounded-2xl overflow-hidden"
           >
             {isVideoEnabled && hasPermission ? (
               <video
@@ -162,16 +162,16 @@ export function MeetingLobby({
                 className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
                 <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-24 h-24 rounded-full bg-surface flex items-center justify-center mx-auto mb-4">
                     {hasPermission === false ? (
                       <Video className="w-10 h-10 text-red-500" />
                     ) : (
-                      <VideoOff className="w-10 h-10 text-gray-500" />
+                      <VideoOff className="w-10 h-10 text-muted-foreground" />
                     )}
                   </div>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     {hasPermission === false
                       ? "Camera permission denied"
                       : "Camera is off"}
@@ -204,7 +204,7 @@ export function MeetingLobby({
                 onClick={onToggleAudio}
                 className={`p-3 rounded-full transition-colors ${
                   isAudioEnabled
-                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    ? "bg-surface hover:bg-surface-hover text-foreground"
                     : "bg-red-500/20 text-red-500 hover:bg-red-500/30"
                 }`}
               >
@@ -218,7 +218,7 @@ export function MeetingLobby({
                 onClick={onToggleVideo}
                 className={`p-3 rounded-full transition-colors ${
                   isVideoEnabled
-                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    ? "bg-surface hover:bg-surface-hover text-foreground"
                     : "bg-red-500/20 text-red-500 hover:bg-red-500/30"
                 }`}
               >
@@ -245,25 +245,25 @@ export function MeetingLobby({
             transition={{ delay: 0.2 }}
             className="flex flex-col justify-center"
           >
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Ready to join?
             </h1>
-            <p className="text-gray-400 mb-8">
+            <p className="text-muted-foreground mb-8">
               Check your audio and video settings before joining the meeting.
             </p>
 
             {/* Meeting Info */}
-            <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
+            <div className="bg-muted/50 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                   <Video className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white">{meetingName}</h3>
-                  <p className="text-sm text-gray-400">{roomName}</p>
+                  <h3 className="font-semibold text-foreground">{meetingName}</h3>
+                  <p className="text-sm text-muted-foreground">{roomName}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="w-4 h-4" />
                 <span>Joining meeting...</span>
               </div>
@@ -271,14 +271,14 @@ export function MeetingLobby({
 
             {/* Device Status */}
             <div className="space-y-3 mb-8">
-              <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-3">
                   {isAudioEnabled ? (
                     <Mic className="w-5 h-5 text-green-500" />
                   ) : (
                     <MicOff className="w-5 h-5 text-red-500" />
                   )}
-                  <span className="text-gray-300">Microphone</span>
+                  <span className="text-foreground/80">Microphone</span>
                 </div>
                 <span
                   className={`text-sm ${isAudioEnabled ? "text-green-500" : "text-red-500"}`}
@@ -286,14 +286,14 @@ export function MeetingLobby({
                   {isAudioEnabled ? "On" : "Off"}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-3">
                   {isVideoEnabled ? (
                     <Video className="w-5 h-5 text-green-500" />
                   ) : (
                     <VideoOff className="w-5 h-5 text-red-500" />
                   )}
-                  <span className="text-gray-300">Camera</span>
+                  <span className="text-foreground/80">Camera</span>
                 </div>
                 <span
                   className={`text-sm ${isVideoEnabled ? "text-green-500" : "text-red-500"}`}
@@ -306,7 +306,7 @@ export function MeetingLobby({
             {/* Join Button */}
             <button
               onClick={onJoin}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <Video className="w-5 h-5" />
               Join Meeting
