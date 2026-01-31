@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { Cell as CellType, CellPos } from "./types";
 import { FormulaInterpreter } from "./interpreter";
+import { formatCellValue } from "./utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CellComponentProps {
@@ -119,6 +120,11 @@ export function CellComponent({
         })()
         : data?.value || "";
 
+    // Apply formatting if it's a number (or numeric string)
+    const formattedValue = data?.style?.format
+        ? formatCellValue(displayValue, data.style.format)
+        : displayValue;
+
     // Styles
     const style = data?.style || {};
     const textAlign = style.align || "left";
@@ -185,7 +191,7 @@ export function CellComponent({
                     </AnimatePresence>
                 </>
             ) : (
-                <span className="truncate w-full select-none pointer-events-none">{displayValue}</span>
+                <span className="truncate w-full select-none pointer-events-none">{formattedValue}</span>
             )}
         </div>
     );

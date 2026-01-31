@@ -18,6 +18,7 @@ export class FormulaInterpreter {
             this.tokens.push(token);
             token = tokenizer.next();
         }
+        this.tokens.push(token); // Push the EOF token logic relies on it
     }
 
     public evaluate(): number {

@@ -10,7 +10,10 @@ import {
     Underline as UnderlineIcon,
     Strikethrough,
     Type,
-    PaintBucket
+    PaintBucket,
+    DollarSign,
+    Percent,
+    Hash
 } from "lucide-react";
 import {
     Tooltip,
@@ -29,6 +32,7 @@ interface ToolbarProps {
         align?: string;
         color?: string;
         background?: string;
+        format?: "currency" | "percent" | "number";
     };
 }
 
@@ -152,6 +156,27 @@ export function Toolbar({ onStyleChange, activeStyles = {} }: ToolbarProps) {
                         </div>
                     </div>
                 </div>
+
+                <Separator />
+
+                <ToggleButton
+                    icon={DollarSign}
+                    isActive={activeStyles.format === "currency"}
+                    onClick={() => onStyleChange({ format: activeStyles.format === "currency" ? undefined : "currency" })}
+                    label="Format as Currency"
+                />
+                <ToggleButton
+                    icon={Percent}
+                    isActive={activeStyles.format === "percent"}
+                    onClick={() => onStyleChange({ format: activeStyles.format === "percent" ? undefined : "percent" })}
+                    label="Format as Percent"
+                />
+                <ToggleButton
+                    icon={Hash}
+                    isActive={activeStyles.format === "number"}
+                    onClick={() => onStyleChange({ format: activeStyles.format === "number" ? undefined : "number" })}
+                    label="Format as Number"
+                />
 
                 <Separator />
 

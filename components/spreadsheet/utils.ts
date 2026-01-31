@@ -65,6 +65,24 @@ export function parseRange(rangeStr: string): string[] {
     return cellIds;
 }
 
+// Parsing Utils
+export function formatCellValue(value: string | number, format?: "currency" | "percent" | "number"): string {
+    const num = parseFloat(String(value));
+    if (isNaN(num)) return String(value);
+
+    if (format === "currency") {
+        return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+    }
+    if (format === "percent") {
+        return new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 2 }).format(num);
+    }
+    if (format === "number") {
+        return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
+    }
+
+    return String(value);
+}
+
 /**
  * Evaluates a formula
  */

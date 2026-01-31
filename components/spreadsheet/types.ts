@@ -8,6 +8,7 @@ export type CellStyle = {
     color?: string;
     background?: string;
     align?: "left" | "center" | "right";
+    format?: "currency" | "percent" | "number"; // New format property
 };
 
 export type Cell = {
