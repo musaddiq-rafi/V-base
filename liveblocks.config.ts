@@ -24,7 +24,8 @@ declare global {
       // Empty for Yjs documents - managed by @liveblocks/react-tiptap
 
       // Collaborative Spreadsheet
-      spreadsheet?: LiveMap<string, LiveObject<Cell>>; // Key: "row,col", Value: Cell
+      spreadsheet: LiveMap<string, LiveObject<Cell>>; // Key: "row,col", Value: Cell
+      columnWidths: LiveMap<string, number>; // Key: "colIndex", Value: width in px
     };
 
     // Custom user info set when authenticating with a secret key

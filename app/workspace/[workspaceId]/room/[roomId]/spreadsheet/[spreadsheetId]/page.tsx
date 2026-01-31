@@ -61,6 +61,7 @@ export default function SpreadsheetPage() {
             }}
             initialStorage={{
                 spreadsheet: new LiveMap(),
+                columnWidths: new LiveMap(),
             }}
         >
             <div className="fixed inset-0 flex flex-col bg-background">

@@ -17,8 +17,10 @@ interface GridProps {
     onActiveCellChange: (pos: CellPos | null) => void;
 
     // Formula range selection mode
-    isSelectingRange: boolean;
-    onRangeSelect?: (range: string) => void;
+    isSelectingRange?: boolean;
+    onRangeSelect?: (rangeStr: string) => void;
+    columnWidths?: ReadonlyMap<string, number> | Map<string, number>;
+    onColumnResize?: (col: number, width: number) => void;
 }
 
 export function Grid({
@@ -27,13 +29,49 @@ export function Grid({
     onSelectionChange,
     onActiveCellChange,
     isSelectingRange,
-    onRangeSelect
+    onRangeSelect,
+    columnWidths, // New Prop
+    onColumnResize, // New Prop
 }: GridProps) {
     const [isDragging, setIsDragging] = useState(false);
     const gridContainerRef = useRef<HTMLDivElement>(null);
 
     // Liveblocks storage
     const cells = useStorage((root) => root.spreadsheet);
+
+    // Helper to get column width
+    const getColWidth = (col: number) => {
+        if (columnWidths) {
+            const w = columnWidths.get(String(col));
+            if (w) return w;
+        }
+        return 80; // Default width
+    };
+
+    // Resize Handler
+    const handleResizeStart = (e: React.MouseEvent, col: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const startX = e.pageX;
+        const startWidth = getColWidth(col);
+
+        const handleMouseMove = (mv: MouseEvent) => {
+            const diff = mv.pageX - startX;
+            const newWidth = Math.max(40, startWidth + diff);
+            if (onColumnResize) {
+                onColumnResize(col, newWidth);
+            }
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+    };
 
     const updateCell = useMutation(({ storage }, pos: CellPos, val: string) => {
         const spreadsheet = storage.get("spreadsheet");
@@ -146,10 +184,17 @@ export function Grid({
                                         end: { row: ROWS - 1, col }
                                     });
                                 }}
-                                className={`flex-shrink-0 w-[80px] h-8 border-r border-border flex items-center justify-center text-xs font-bold transition-colors cursor-pointer hover:bg-muted ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-b-2 border-b-emerald-500" : "text-muted-foreground"
+                                className={`flex-shrink-0 relative h-8 border-r border-border flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-b-2 border-b-emerald-500" : "text-muted-foreground"
                                     }`}
+                                style={{ width: getColWidth(col) }}
                             >
                                 {getColLabel(col)}
+                                {/* Resize Handle */}
+                                <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-emerald-500 z-50 opacity-0 hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart(e, col)}
+                                    onClick={(e) => e.stopPropagation()}
+                                />
                             </div>
                         );
                     })}
@@ -188,10 +233,11 @@ export function Grid({
                                     return (
                                         <div
                                             key={cellId}
+                                            style={{ width: getColWidth(col) }}
                                             onMouseDown={() => handleMouseDown(row, col)}
                                             onMouseEnter={() => handleMouseEnter(row, col)}
                                             onMouseUp={handleMouseUp}
-                                            className="relative"
+                                            className="relative flex-shrink-0"
                                         >
                                             <CellComponent
                                                 pos={{ row, col }}

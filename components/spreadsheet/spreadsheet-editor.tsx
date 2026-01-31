@@ -26,6 +26,7 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
     const [isSelectingRange, setIsSelectingRange] = useState(false);
 
     const cells = useStorage((root) => root.spreadsheet);
+    const columnWidths = useStorage((root) => root.columnWidths);
 
     // Update cell style mutation
     const updateStyle = useMutation(({ storage }, style: any) => {
@@ -268,6 +269,14 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
         moves.forEach(move => spreadsheet.set(move.to, new LiveObject(move.data)));
     }, [activeCell]);
 
+    // Resize Column Mutation
+    const resizeColumn = useMutation(({ storage }, col: number, width: number) => {
+        const columnWidths = storage.get("columnWidths");
+        if (columnWidths) {
+            columnWidths.set(String(col), width);
+        }
+    }, []);
+
     // Calculate Selection Stats (moved down to keep logic grouped, previous position was fine too)
     const selectionStats = useMemo(() => {
         if (!selectionRange || !cells) return null;
@@ -349,6 +358,7 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
                     onSelectionChange={setSelectionRange}
                     onActiveCellChange={handleActiveCellChange}
                     isSelectingRange={isSelectingRange}
+                    columnWidths={columnWidths || undefined}
                     onRangeSelect={(rangeStr) => {
                         // Append range to current formula
                         setFormulaBarValue(prev => prev + rangeStr);
@@ -357,6 +367,7 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
                         }
                         setIsSelectingRange(false);
                     }}
+                    onColumnResize={resizeColumn}
                 />
             </div>
 
