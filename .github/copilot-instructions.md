@@ -29,8 +29,9 @@ LiveKit provider wraps individual meeting components, not the entire app.
 |-----------|---------------|------------------|--------|
 | `document` | `DocumentList` | `CollaborativeEditor` (Tiptap + Liveblocks) | ✅ Implemented |
 | `code` | `FileExplorer` | `CodeEditor` (CodeMirror + Yjs) | ✅ Implemented |
-| `whiteboard` | `WhiteboardList` | `Whiteboard` (Excalidraw) | ⚠️ Persistence Bug (See Bug Report) |
-| `conference` | `MeetingSelector` | `MeetingRoom` (LiveKit) | ✅ Working (Screen Share Pending) |
+| `whiteboard` | `WhiteboardList` | `Whiteboard` (Excalidraw) | ✅ Implemented |
+| `conference` | `MeetingSelector` | `MeetingRoom` (LiveKit) | ✅ Working (Needs UI Polish) |
+| `spreadsheet` | `SpreadsheetList` | `SpreadsheetEditor` (Liveblocks) | 🔮 Planning Phase |
 | `kanban` | — | — | 🔮 Planned |
 
 Room routing: `app/workspace/[workspaceId]/room/[roomId]/page.tsx`
@@ -375,9 +376,9 @@ MeetingRoom (state machine)
 
 ### ✅ Meeting Room Status (Updated Jan 2026)
 
-> **Status:** WORKING
+> **Status:** WORKING - NEEDS UI POLISH & TESTING
 > **Audio/Video Calls:** Functional - users can create meetings, join, and stream audio/video to each other
-> **Needs Further Testing:** Edge cases, network conditions, multiple participants
+> **Current State:** Core functionality works, but needs more comprehensive testing and UI improvements
 
 **Implemented Features:**
 - Meeting creation and joining
@@ -386,8 +387,18 @@ MeetingRoom (state machine)
 - Participant list with correct host identification
 - Meeting cleanup on leave/close
 
+**UI Improvements Needed:**
+- Clean up overall meeting room layout
+- Professional styling for controls and participant grid
+- Better visual feedback for audio/video states
+
 **Pending Features:**
 - 🔮 **Screen Sharing** - Not yet implemented
+- 🔮 **Pin Participant** - Spotlight/pin a specific user's video
+- 🔮 **Reactions** - Emoji reactions during meetings
+- 🔮 **Raise Hand** - Request to speak indicator
+- 🔮 **Remove Participant** - Host can kick users from meeting
+- 🔮 **Polls** - Participants can create polls, add options, and vote in real-time
 
 **Key Files:**
 - `providers/livekit-provider.tsx` - LiveKit room connection
@@ -398,37 +409,11 @@ MeetingRoom (state machine)
 
 ---
 
-### ⚠️ BUG REPORT: Whiteboard Persistence Issue
+### ✅ RESOLVED: Whiteboard Persistence (Fixed Jan 2026)
 
-> **Status:** REQUIRES REPAIR
-> **Severity:** High
-> **Component:** `components/whiteboard/excalidraw-board.tsx`
-
-**Symptoms:**
-- User A draws on whiteboard → drawings appear correctly
-- User B sees User A's drawings in real-time (collaboration works)
-- When any user leaves the room and rejoins → **all drawings are gone**
-- Drawings are NOT being persisted to Liveblocks storage
-
-**Expected Behavior:**
-- Drawings should persist in Liveblocks room storage
-- When users rejoin, they should see previously drawn content
-
-**Suspected Causes:**
-1. **Missing Storage Hook:** Excalidraw may not be connected to Liveblocks `useStorage()` or `useMutation()`
-2. **Only Using Presence:** Drawings might only sync via presence (ephemeral) instead of storage (persistent)
-3. **Initialization Issue:** Storage may not be properly initialized when room loads
-
-**Debugging Checklist:**
-- [ ] Check if `useStorage()` is being used in `excalidraw-board.tsx`
-- [ ] Verify Liveblocks room storage is initialized with whiteboard data structure
-- [ ] Check if `onChange` handler saves to storage, not just broadcasts
-- [ ] Inspect Liveblocks dashboard for room storage data
-
-**Related Files:**
-- `components/whiteboard/excalidraw-board.tsx` - Main whiteboard component
-- `liveblocks.config.ts` - Storage type definitions
-- Liveblocks Room ID pattern: `whiteboard:${whiteboardId}`
+> **Previous Issue:** Drawings were not persisting when users left and rejoined the room.
+> **Resolution:** Fixed by properly connecting Excalidraw to Liveblocks `useStorage()` for persistent data.
+> **Current Status:** Whiteboard data now persists correctly across sessions.
 
 ---
 
@@ -569,6 +554,32 @@ We are transitioning from a standard dashboard to a "Gather.town" inspired 2D sp
 - Canvas rendering (HTML5 Canvas or PixiJS)
 - Collision detection for room boundaries
 - Real-time position sync via Liveblocks Presence
+
+### 🔮 New Room Type: Spreadsheet Room (In Planning)
+
+> **Reference:** [Liveblocks Collaborative Spreadsheet Example](https://liveblocks.io/examples/collaborative-spreadsheet-advanced/nextjs-spreadsheet-advanced)
+
+**Scope:** Limited to core basic functionalities for demo purposes (not a full Excel clone).
+
+**Planning Status:** Needs feature scoping and feasibility analysis.
+
+**Potential Core Features:**
+- Basic grid with editable cells
+- Cell formatting (bold, colors)
+- Simple formulas (SUM, AVERAGE, basic arithmetic)
+- Real-time collaboration via Liveblocks
+- Cell selection awareness (see who's editing which cell)
+
+**Out of Scope (for MVP):**
+- Complex formulas and functions
+- Charts and visualizations
+- Import/export Excel files
+- Multiple sheets per spreadsheet
+
+**Technical Approach:**
+- Use Liveblocks storage for cell data persistence
+- Cell structure: `{ row, col, value, formula?, style? }`
+- Presence for cursor/selection tracking
 
 ### 🔮 New Room Type: Kanban Room
 - Trello-style task management
