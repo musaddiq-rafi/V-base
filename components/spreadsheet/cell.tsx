@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { Cell as CellType, CellPos } from "./types";
-import { evaluateFormula } from "./utils";
+import { FormulaInterpreter } from "./interpreter";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CellComponentProps {
@@ -101,7 +101,22 @@ export function CellComponent({
 
     // Calculate display value
     const displayValue = data?.formula
-        ? evaluateFormula(data.formula, getCellValue)
+        ? (() => {
+            try {
+                // Adapter for getCellValue to return number for interpreter
+                const getValue = (r: number, c: number) => {
+                    const val = getCellValue(r, c);
+                    const num = parseFloat(String(val));
+                    return isNaN(num) ? 0 : num;
+                };
+                // Use new interpreter
+                const interpreter = new FormulaInterpreter(data.formula, getValue);
+                const res = interpreter.evaluate();
+                return isNaN(res) ? "#ERROR" : String(res);
+            } catch {
+                return "#ERROR";
+            }
+        })()
         : data?.value || "";
 
     // Styles

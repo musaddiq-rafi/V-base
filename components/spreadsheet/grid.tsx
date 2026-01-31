@@ -6,6 +6,7 @@ import { LiveObject } from "@liveblocks/client";
 import { CellComponent } from "./cell";
 import { Cell as CellType, CellPos } from "./types";
 import { getColLabel } from "./utils";
+import { evaluateRecursive } from "./engine";
 
 const ROWS = 50;
 const COLS = 26; // A-Z
@@ -94,11 +95,12 @@ export function Grid({
         }
     }, []);
 
+    // Use the recursive evaluator
     const getCellValue = useCallback((row: number, col: number) => {
         const cellId = `${row},${col}`;
-        const cell = cells?.get(cellId);
-        if (!cell) return "";
-        return cell.value;
+        if (!cells) return "";
+        // We pass the live map to the engine
+        return evaluateRecursive(cellId, cells);
     }, [cells]);
 
     // Handle mouse events for selection

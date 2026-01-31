@@ -10,7 +10,8 @@ import { CellPos } from "./types";
 import { useState, useCallback, useMemo } from "react";
 import { LiveObject } from "@liveblocks/client";
 import { Id } from "@/convex/_generated/dataModel";
-import { evaluateFormula, getColLabel } from "./utils";
+import { getColLabel } from "./utils";
+import { evaluateRecursive } from "./engine";
 
 interface SpreadsheetEditorProps {
     spreadsheetId: Id<"spreadsheets">;
@@ -304,7 +305,9 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
                 if (cell) {
                     let val: string | number = cell.value;
                     if (cell.formula) {
-                        val = evaluateFormula(cell.formula, getCellValue);
+                        // We need the WHOLE map to evaluate recursively
+                        // Since 'cells' here is ReadonlyMap from useStorage, it works perfectly
+                        val = evaluateRecursive(cellId, cells);
                     }
 
                     const num = parseFloat(String(val));
