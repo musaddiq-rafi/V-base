@@ -206,6 +206,68 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
 
     }, [activeCell]);
 
+    // Delete Row Mutation
+    const deleteRow = useMutation(({ storage }) => {
+        if (!activeCell) return;
+        const spreadsheet = storage.get("spreadsheet");
+        if (!spreadsheet) return;
+
+        const targetRow = activeCell.row;
+        const moves: { from: string; to: string; data: any }[] = [];
+        const toDelete: string[] = [];
+
+        for (const [key, cell] of spreadsheet.entries()) {
+            const [rStr, cStr] = key.split(",");
+            const r = parseInt(rStr);
+            const c = parseInt(cStr);
+
+            if (r === targetRow) {
+                toDelete.push(key);
+            } else if (r > targetRow) {
+                moves.push({
+                    from: key,
+                    to: `${r - 1},${c}`,
+                    data: cell.toObject()
+                });
+            }
+        }
+
+        toDelete.forEach(key => spreadsheet.delete(key));
+        moves.forEach(move => spreadsheet.delete(move.from));
+        moves.forEach(move => spreadsheet.set(move.to, new LiveObject(move.data)));
+    }, [activeCell]);
+
+    // Delete Column Mutation
+    const deleteColumn = useMutation(({ storage }) => {
+        if (!activeCell) return;
+        const spreadsheet = storage.get("spreadsheet");
+        if (!spreadsheet) return;
+
+        const targetCol = activeCell.col;
+        const moves: { from: string; to: string; data: any }[] = [];
+        const toDelete: string[] = [];
+
+        for (const [key, cell] of spreadsheet.entries()) {
+            const [rStr, cStr] = key.split(",");
+            const r = parseInt(rStr);
+            const c = parseInt(cStr);
+
+            if (c === targetCol) {
+                toDelete.push(key);
+            } else if (c > targetCol) {
+                moves.push({
+                    from: key,
+                    to: `${r},${c - 1}`,
+                    data: cell.toObject()
+                });
+            }
+        }
+
+        toDelete.forEach(key => spreadsheet.delete(key));
+        moves.forEach(move => spreadsheet.delete(move.from));
+        moves.forEach(move => spreadsheet.set(move.to, new LiveObject(move.data)));
+    }, [activeCell]);
+
     // Calculate Selection Stats (moved down to keep logic grouped, previous position was fine too)
     const selectionStats = useMemo(() => {
         if (!selectionRange || !cells) return null;
@@ -265,6 +327,8 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
                 onZoomChange={setScale}
                 onInsertRow={insertRow}
                 onInsertColumn={insertColumn}
+                onDeleteRow={deleteRow}
+                onDeleteColumn={deleteColumn}
             />
 
             <Toolbar

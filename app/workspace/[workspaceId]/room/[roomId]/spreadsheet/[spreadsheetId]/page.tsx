@@ -11,7 +11,7 @@ import { useOrganization } from "@clerk/nextjs";
 import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { SpreadsheetEditor } from "@/components/spreadsheet/spreadsheet-editor";
 import { LiveMap } from "@liveblocks/client";
-import { ContextChatSidebar } from "@/components/chat/context-chat-sidebar";
+// import { ContextChatSidebar } from "@/components/chat/context-chat-sidebar";
 
 export default function SpreadsheetPage() {
     const params = useParams();
@@ -102,15 +102,14 @@ export default function SpreadsheetPage() {
                         <SpreadsheetEditor spreadsheetId={spreadsheetId} />
                     </ClientSideSuspense>
 
-                    {/* Chat Sidebar */}
-                    {/* Note: ContextChatSidebar expects workspaceId to be Id<"workspaces"> */}
-                    {workspace && (
+                    {/* Chat Sidebar Removed as per request */}
+                    {/* {workspace && (
                         <ContextChatSidebar
                             contextType="spreadsheet"
                             contextId={spreadsheetId}
                             workspaceId={workspace._id}
                         />
-                    )}
+                    )} */}
                 </div>
             </div>
         </RoomProvider>

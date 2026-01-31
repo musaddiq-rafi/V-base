@@ -140,7 +140,13 @@ export function Grid({
                         return (
                             <div
                                 key={col}
-                                className={`flex-shrink-0 w-[80px] h-8 border-r border-border flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-b-2 border-b-emerald-500" : "text-muted-foreground"
+                                onClick={() => {
+                                    onSelectionChange({
+                                        start: { row: 0, col },
+                                        end: { row: ROWS - 1, col }
+                                    });
+                                }}
+                                className={`flex-shrink-0 w-[80px] h-8 border-r border-border flex items-center justify-center text-xs font-bold transition-colors cursor-pointer hover:bg-muted ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-b-2 border-b-emerald-500" : "text-muted-foreground"
                                     }`}
                             >
                                 {getColLabel(col)}
@@ -160,7 +166,13 @@ export function Grid({
                             <div key={row} className="flex">
                                 {/* Row Header (Sticky Left) */}
                                 <div
-                                    className={`flex-shrink-0 w-10 h-8 border-b border-r border-border bg-[#F8F9FA] dark:bg-muted/20 sticky left-0 z-30 flex items-center justify-center text-xs font-bold transition-colors ${isRowSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-r-2 border-r-emerald-500" : "text-muted-foreground"
+                                    onClick={() => {
+                                        onSelectionChange({
+                                            start: { row, col: 0 },
+                                            end: { row, col: COLS - 1 }
+                                        });
+                                    }}
+                                    className={`flex-shrink-0 w-10 h-8 border-b border-r border-border bg-[#F8F9FA] dark:bg-muted/20 sticky left-0 z-30 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer hover:bg-muted ${isRowSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-r-2 border-r-emerald-500" : "text-muted-foreground"
                                         }`}
                                 >
                                     {row + 1}

@@ -53,8 +53,8 @@ export function Toolbar({ onStyleChange, activeStyles = {} }: ToolbarProps) {
                 <button
                     onClick={onClick}
                     className={`p-1.5 rounded-sm transition-all ${isActive
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         }`}
                 >
                     <Icon className="w-4 h-4" style={{ color }} />
@@ -68,7 +68,7 @@ export function Toolbar({ onStyleChange, activeStyles = {} }: ToolbarProps) {
 
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="flex items-center gap-0.5 p-1.5 border-b bg-[#F9FBFD] dark:bg-background h-10 overflow-x-auto">
+            <div className="flex items-center gap-0.5 p-1.5 border-b bg-[#F9FBFD] dark:bg-background h-10 overflow-visible">
                 <ToggleButton
                     icon={Undo2}
                     onClick={() => { }}

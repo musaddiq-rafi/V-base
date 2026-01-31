@@ -55,6 +55,8 @@ interface SpreadsheetHeaderProps {
     zoom?: number;
     onInsertRow?: (direction: "above" | "below") => void;
     onInsertColumn?: (direction: "left" | "right") => void;
+    onDeleteRow?: () => void;
+    onDeleteColumn?: () => void;
 }
 
 export function SpreadsheetHeader({
@@ -65,6 +67,8 @@ export function SpreadsheetHeader({
     zoom = 1,
     onInsertRow,
     onInsertColumn,
+    onDeleteRow,
+    onDeleteColumn,
 }: SpreadsheetHeaderProps) {
     const spreadsheet = useQuery(api.spreadsheets.getSpreadsheetById, { spreadsheetId });
     // Note: We might need to add updateName mutation for spreadsheets in backend if not exists
@@ -206,6 +210,13 @@ export function SpreadsheetHeader({
                                         <Redo2 className="h-4 w-4" />
                                         Redo
                                         <MenubarShortcut>Ctrl+Y</MenubarShortcut>
+                                    </MenubarItem>
+                                    <MenubarSeparator />
+                                    <MenubarItem onClick={onDeleteRow} className="text-red-500 hover:text-red-600 gap-2">
+                                        <Trash className="h-4 w-4" /> Delete Row
+                                    </MenubarItem>
+                                    <MenubarItem onClick={onDeleteColumn} className="text-red-500 hover:text-red-600 gap-2">
+                                        <Trash className="h-4 w-4" /> Delete Column
                                     </MenubarItem>
                                 </MenubarContent>
                             </MenubarMenu>
