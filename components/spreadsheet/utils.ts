@@ -67,11 +67,6 @@ export function parseRange(rangeStr: string): string[] {
 
 /**
  * Evaluates a formula
- * Supports:
- * - Basic math: + - * /
- * - Functions: SUM, AVERAGE, COUNT, MAX, MIN
- * - Cell refs: A1, B2
- * - Ranges: A1:B2
  */
 export function evaluateFormula(formula: string, getCellValue: (row: number, col: number) => string | number): string {
     if (!formula.startsWith("=")) return formula;
@@ -87,35 +82,24 @@ export function evaluateFormula(formula: string, getCellValue: (row: number, col
 
     try {
         // 1. Resolve Ranges (SUM(A1:B2) -> SUM(1, 2, 3, 4))
-        // Note: This is a simplified implementation. Proper tokenizer needed for full robustness.
-        // We regex replace "A1:Z9" patterns.
         expression = expression.replace(/([A-Z]+[0-9]+):([A-Z]+[0-9]+)/g, (match) => {
-            const cells = parseRange(match);
-            // We can't replace range with values directly because functions expect args.
-            // But JS eval can't handle ranges.
-            // Strategy: Replace ranges with array logic or comma separated list if inside a function?
-            // Easier strategy for MVP: Pre-process functions that take ranges.
-            return match; // Temp, handled in function procesing
+            // This replacement is tricky because we need to know context (inside function?)
+            // For now, simpler approach: Don't replace range HERE, allow function parser to see it.
+            // But we can token replace it to something safe if needed.
+            return match;
         });
 
         // 2. Resolve Functions
-        // We'll replace known functions with JS implementations
-        // SUM(A1:B2) or SUM(A1, B2)
-
         const functions = ["SUM", "AVERAGE", "COUNT", "MAX", "MIN"];
 
         for (const func of functions) {
-            // Regex to match FUNC(args)
-            // Nested logic is complex, assuming simple non-nested for MVP
             const regex = new RegExp(`${func}\\(([^)]+)\\)`, "g");
             expression = expression.replace(regex, (_, args) => {
-                // Args can be ranges or single cells
                 const values: number[] = [];
                 const parts = args.split(",");
 
                 for (const part of parts) {
                     const trimmed = part.trim();
-                    // Check if range
                     if (trimmed.includes(":")) {
                         const rangeCells = parseRange(trimmed);
                         for (const cid of rangeCells) {
@@ -123,12 +107,10 @@ export function evaluateFormula(formula: string, getCellValue: (row: number, col
                             values.push(getVal(r, c));
                         }
                     } else {
-                        // Check if cell
                         const cellPos = parseCellId(trimmed);
                         if (cellPos) {
                             values.push(getVal(cellPos.row, cellPos.col));
                         } else {
-                            // Literal number
                             const num = parseFloat(trimmed);
                             if (!isNaN(num)) values.push(num);
                         }
@@ -144,9 +126,8 @@ export function evaluateFormula(formula: string, getCellValue: (row: number, col
             });
         }
 
-        // 3. Resolve Individual User Cell References (A1) that are not part of ranges (already handled or remaining)
+        // 3. Resolve Individual User Cell References (A1)
         expression = expression.replace(/([A-Z]+[0-9]+)/g, (match) => {
-            // Check if it looks like a cell ref
             const pos = parseCellId(match);
             if (pos) {
                 return getVal(pos.row, pos.col).toString();
@@ -155,8 +136,6 @@ export function evaluateFormula(formula: string, getCellValue: (row: number, col
         });
 
         // 4. Evaluate Math
-        // Security warning: eval is dangerous. In production, use a math expression parser library.
-        // For this university project/MVP, we'll strip anything not math-related.
         const safeExpression = expression.replace(/[^0-9+\-*/().\s]/g, "");
 
         // eslint-disable-next-line no-eval

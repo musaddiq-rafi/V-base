@@ -3,7 +3,10 @@ export type CellId = string; // "row,col"
 export type CellStyle = {
     bold?: boolean;
     italic?: boolean;
+    underline?: boolean;
+    strike?: boolean;
     color?: string;
+    background?: string;
     align?: "left" | "center" | "right";
 };
 
@@ -13,7 +16,7 @@ export type Cell = {
     style?: CellStyle;
 };
 
-export type CellPos = {
+export interface CellPos {
     row: number;
     col: number;
-};
+}
