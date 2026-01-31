@@ -116,7 +116,97 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
     // Derived active style for toolbar feedback (from active cell only)
     const activeStyle = activeCell && cells ? cells.get(`${activeCell.row},${activeCell.col}`)?.style : {};
 
-    // Calculate Selection Stats
+    // Insert Row Mutation
+    const insertRow = useMutation(({ storage }, direction: "above" | "below") => {
+        if (!activeCell) return;
+        const spreadsheet = storage.get("spreadsheet");
+        if (!spreadsheet) return;
+
+        const targetRow = direction === "above" ? activeCell.row : activeCell.row + 1;
+
+        // We need to shift everything >= targetRow down by 1
+        // Since we can't query keys by range easily in LiveMap, we iterate all
+        // This is expensive but necessary for this data model.
+        // To avoid overwriting issues, we should process in descending order or collect moves.
+        // LiveMap doesn't support complex queries, so we get all entries.
+
+        // Collect moves: { from: "r,c", to: "r+1,c", data: ... }
+        const moves: { from: string; to: string; data: any }[] = [];
+
+        // We can't iterate LiveMap directly with standard methods easily without converting?
+        // Storage.get("spreadsheet") is a LiveMap.
+        // .entries() returns iterator.
+
+        for (const [key, cell] of spreadsheet.entries()) {
+            const [rStr, cStr] = key.split(",");
+            const r = parseInt(rStr);
+            const c = parseInt(cStr);
+
+            if (r >= targetRow) {
+                moves.push({
+                    from: key,
+                    to: `${r + 1},${c}`,
+                    data: cell.toObject() // Clone data
+                });
+            }
+        }
+
+        // Sort moves descending by row to avoid conflicts? 
+        // Actually since we clone data, we can just write active updates.
+        // But we must delete old keys that moved.
+        // A cell at targetRow moves to targetRow+1. targetRow becomes empty.
+
+        // Apply updates
+        // 1. Delete all moved keys to clear space (optional if we just overwrite, but let's be clean)
+        // Wait, if 5 moves to 6, and 6 moves to 7...
+        // We can just set new values. But we must be careful not to read Dirty state if we did it in-place.
+        // collecting 'moves' (snapshot) first is safe.
+
+        moves.forEach(move => {
+            spreadsheet.delete(move.from);
+        });
+
+        moves.forEach(move => {
+            spreadsheet.set(move.to, new LiveObject(move.data));
+        });
+
+    }, [activeCell]);
+
+    // Insert Column Mutation
+    const insertColumn = useMutation(({ storage }, direction: "left" | "right") => {
+        if (!activeCell) return;
+        const spreadsheet = storage.get("spreadsheet");
+        if (!spreadsheet) return;
+
+        const targetCol = direction === "left" ? activeCell.col : activeCell.col + 1;
+
+        const moves: { from: string; to: string; data: any }[] = [];
+
+        for (const [key, cell] of spreadsheet.entries()) {
+            const [rStr, cStr] = key.split(",");
+            const r = parseInt(rStr);
+            const c = parseInt(cStr);
+
+            if (c >= targetCol) {
+                moves.push({
+                    from: key,
+                    to: `${r},${c + 1}`,
+                    data: cell.toObject()
+                });
+            }
+        }
+
+        moves.forEach(move => {
+            spreadsheet.delete(move.from);
+        });
+
+        moves.forEach(move => {
+            spreadsheet.set(move.to, new LiveObject(move.data));
+        });
+
+    }, [activeCell]);
+
+    // Calculate Selection Stats (moved down to keep logic grouped, previous position was fine too)
     const selectionStats = useMemo(() => {
         if (!selectionRange || !cells) return null;
 
@@ -129,14 +219,6 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
         if (startRow === endRow && startCol === endCol) return null;
 
         const values: number[] = [];
-
-        // Helper to get raw numeric value recursively or simply
-        // For stats, we usually only count computed numeric values.
-        // We'll simplisticly try to parse the cell's 'value' field. 
-        // Note: Real sheets evaluate formulas first. 
-        // Our 'value' field stores result for formulas? No, 'value' is empty for formulas in our current model. 
-        // The display logic evaluates it. We need a way to get evaluated value here.
-        // We can reuse evaluateFormula but we need the getter.
 
         const getCellValue = (r: number, c: number) => {
             const cId = `${r},${c}`;
@@ -181,6 +263,8 @@ export function SpreadsheetEditor({ spreadsheetId }: SpreadsheetEditorProps) {
                 onRedo={() => { }}
                 zoom={scale}
                 onZoomChange={setScale}
+                onInsertRow={insertRow}
+                onInsertColumn={insertColumn}
             />
 
             <Toolbar

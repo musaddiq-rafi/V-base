@@ -114,13 +114,13 @@ export function CellComponent({
         style.strike ? "line-through" : ""
     ].filter(Boolean).join(" ");
     const color = style.color || "inherit";
-    const backgroundColor = style.background || "transparent";
+    const backgroundColor = style.background || undefined;
 
     return (
         <div
             className={`relative min-w-[80px] h-8 border-b border-r border-border text-sm flex items-center px-1 overflow-visible
         ${isActive ? "ring-2 ring-emerald-500 z-20" : ""}
-        ${isSelected && !isActive ? "bg-emerald-100/50 dark:bg-emerald-900/20" : ""}
+        ${isSelected && !isActive ? "bg-emerald-200/50 dark:bg-emerald-900/40" : ""}
         `}
             style={{ textAlign, fontWeight, fontStyle, textDecoration, color, backgroundColor }}
             onClick={onFocus}

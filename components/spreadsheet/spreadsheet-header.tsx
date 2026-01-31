@@ -53,6 +53,8 @@ interface SpreadsheetHeaderProps {
     onRedo?: () => void;
     onZoomChange?: (zoom: number) => void;
     zoom?: number;
+    onInsertRow?: (direction: "above" | "below") => void;
+    onInsertColumn?: (direction: "left" | "right") => void;
 }
 
 export function SpreadsheetHeader({
@@ -61,6 +63,8 @@ export function SpreadsheetHeader({
     onRedo,
     onZoomChange,
     zoom = 1,
+    onInsertRow,
+    onInsertColumn,
 }: SpreadsheetHeaderProps) {
     const spreadsheet = useQuery(api.spreadsheets.getSpreadsheetById, { spreadsheetId });
     // Note: We might need to add updateName mutation for spreadsheets in backend if not exists
@@ -230,11 +234,11 @@ export function SpreadsheetHeader({
                                     Insert
                                 </MenubarTrigger>
                                 <MenubarContent className="w-[240px]">
-                                    <MenubarItem>Row Above</MenubarItem>
-                                    <MenubarItem>Row Below</MenubarItem>
+                                    <MenubarItem onClick={() => onInsertRow?.("above")}>Row Above</MenubarItem>
+                                    <MenubarItem onClick={() => onInsertRow?.("below")}>Row Below</MenubarItem>
                                     <MenubarSeparator />
-                                    <MenubarItem>Column Left</MenubarItem>
-                                    <MenubarItem>Column Right</MenubarItem>
+                                    <MenubarItem onClick={() => onInsertColumn?.("left")}>Column Left</MenubarItem>
+                                    <MenubarItem onClick={() => onInsertColumn?.("right")}>Column Right</MenubarItem>
                                 </MenubarContent>
                             </MenubarMenu>
 

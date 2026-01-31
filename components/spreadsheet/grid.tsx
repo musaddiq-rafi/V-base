@@ -30,7 +30,7 @@ export function Grid({
     onRangeSelect
 }: GridProps) {
     const [isDragging, setIsDragging] = useState(false);
-    const gridRef = useRef<HTMLDivElement>(null);
+    const gridContainerRef = useRef<HTMLDivElement>(null);
 
     // Liveblocks storage
     const cells = useStorage((root) => root.spreadsheet);
@@ -84,24 +84,17 @@ export function Grid({
     };
 
     const handleMouseUp = () => {
-        // If we were selecting a range for formula, now is the time to commit it potentially?
-        // Actually, we usually commit on click or keep updating as we drag.
-        // Google sheets updates formula bar as you drag.
         if (isSelectingRange && selectionRange && onRangeSelect) {
             const startCol = getColLabel(Math.min(selectionRange.start.col, selectionRange.end.col));
             const startRow = Math.min(selectionRange.start.row, selectionRange.end.row) + 1;
             const endCol = getColLabel(Math.max(selectionRange.start.col, selectionRange.end.col));
             const endRow = Math.max(selectionRange.start.row, selectionRange.end.row) + 1;
 
-            const rangeString = `${startCol}${startRow}:${endCol}${endRow}`;
-            // If single cell
-            // const rangeString = (startCol === endCol && startRow === endRow) 
-            //    ? `${startCol}${startRow}` 
-            //    : `${startCol}${startRow}:${endCol}${endRow}`;
+            const rangeString = (startCol === endCol && startRow === endRow)
+                ? `${startCol}${startRow}`
+                : `${startCol}${startRow}:${endCol}${endRow}`;
 
-            // We update parent actively during drag via selectionRange, so parent can derive range string
-            // But here we might just trigger a final "finished selection" if needed.
-            // For now, parent watches selectionRange.
+            onRangeSelect(rangeString);
         }
         setIsDragging(false);
     };
@@ -126,95 +119,88 @@ export function Grid({
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden select-none bg-background">
-            {/* Column Headers */}
-            <div className="flex ml-10 border-b border-border bg-[#F8F9FA] dark:bg-muted/20">
-                {Array.from({ length: COLS }).map((_, col) => {
-                    const isSelected = selectionRange &&
-                        col >= Math.min(selectionRange.start.col, selectionRange.end.col) &&
-                        col <= Math.max(selectionRange.start.col, selectionRange.end.col);
+        <div
+            className="flex-1 overflow-auto h-full relative bg-background select-none"
+            ref={gridContainerRef}
+            onMouseLeave={() => setIsDragging(false)}
+        >
+            <div className="inline-block min-w-full relative">
 
-                    return (
-                        <div
-                            key={col}
-                            className={`flex-shrink-0 w-[80px] h-8 border-r border-border flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-b-2 border-b-emerald-500" : "text-muted-foreground"
-                                }`}
-                        >
-                            {getColLabel(col)}
-                        </div>
-                    );
-                })}
-            </div>
+                {/* Header Row (Column Labels) - Sticky Top */}
+                <div className="flex sticky top-0 z-40 bg-[#F8F9FA] dark:bg-muted/20 border-b border-border shadow-sm">
+                    {/* Top-Left Corner Spacer */}
+                    <div className="flex-shrink-0 w-10 h-8 bg-[#F8F9FA] dark:bg-muted/20 border-r border-border sticky left-0 z-50"></div>
 
-            <div className="flex-1 overflow-auto flex relative" ref={gridRef}>
-                {/* Row Headers */}
-                <div className="flex-shrink-0 w-10 border-r border-border bg-[#F8F9FA] dark:bg-muted/20 sticky left-0 z-10">
-                    {Array.from({ length: ROWS }).map((_, row) => {
+                    {/* Column Labels */}
+                    {Array.from({ length: COLS }).map((_, col) => {
                         const isSelected = selectionRange &&
-                            row >= Math.min(selectionRange.start.row, selectionRange.end.row) &&
-                            row <= Math.max(selectionRange.start.row, selectionRange.end.row);
+                            col >= Math.min(selectionRange.start.col, selectionRange.end.col) &&
+                            col <= Math.max(selectionRange.start.col, selectionRange.end.col);
 
                         return (
                             <div
-                                key={row}
-                                className={`h-8 border-b border-border flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-r-2 border-r-emerald-500" : "text-muted-foreground"
+                                key={col}
+                                className={`flex-shrink-0 w-[80px] h-8 border-r border-border flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-b-2 border-b-emerald-500" : "text-muted-foreground"
                                     }`}
                             >
-                                {row + 1}
+                                {getColLabel(col)}
                             </div>
                         );
                     })}
                 </div>
 
-                {/* Cells Grid */}
-                <div className="relative" onMouseLeave={() => setIsDragging(false)}>
-                    {Array.from({ length: ROWS }).map((_, row) => (
-                        <div key={row} className="flex">
-                            {Array.from({ length: COLS }).map((_, col) => {
-                                const cellId = `${row},${col}`;
-                                const cellData = cells?.get(cellId);
-                                const isActive = activeCell?.row === row && activeCell?.col === col;
-                                const isSelected = isInSelection(row, col);
+                {/* Rows Area */}
+                <div className="flex flex-col">
+                    {Array.from({ length: ROWS }).map((_, row) => {
+                        const isRowSelected = selectionRange &&
+                            row >= Math.min(selectionRange.start.row, selectionRange.end.row) &&
+                            row <= Math.max(selectionRange.start.row, selectionRange.end.row);
 
-                                return (
-                                    <div
-                                        key={cellId}
-                                        onMouseDown={() => handleMouseDown(row, col)}
-                                        onMouseEnter={() => handleMouseEnter(row, col)}
-                                        onMouseUp={handleMouseUp}
-                                        className="relative" // Wrapper for positioning
-                                    >
-                                        <CellComponent
-                                            pos={{ row, col }}
-                                            data={cellData}
-                                            isActive={isActive}
-                                            isSelected={isSelected}
-                                            onFocus={() => {
-                                                if (!isSelectingRange) {
-                                                    // If we focus explicitly via tab or something, ensure active cell updates
-                                                    onActiveCellChange({ row, col });
-                                                    onSelectionChange({ start: { row, col }, end: { row, col } });
-                                                }
-                                            }}
-                                            onUpdate={(val) => updateCell({ row, col }, val)}
-                                            getCellValue={getCellValue}
-                                        />
-                                        {/* Selection Border Overlay for drag range could be optimized to a single SVG overlay, 
-                                            but cell-level borders work for MVP if styled correctly in CellComponent.
-                                            Actually CellComponent handles "isSelected" style.
-                                        */}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
+                        return (
+                            <div key={row} className="flex">
+                                {/* Row Header (Sticky Left) */}
+                                <div
+                                    className={`flex-shrink-0 w-10 h-8 border-b border-r border-border bg-[#F8F9FA] dark:bg-muted/20 sticky left-0 z-30 flex items-center justify-center text-xs font-bold transition-colors ${isRowSelected ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-r-2 border-r-emerald-500" : "text-muted-foreground"
+                                        }`}
+                                >
+                                    {row + 1}
+                                </div>
 
-                    {/* 
-                       TODO: Optimization - Render a single selection overlay div 
-                       calculated from selectionRange * cell dimensions 
-                       instead of prop-drilling isSelected to every cell for performance.
-                       But for 50x26 cells (1300 elements), React might handle it okay-ish.
-                    */}
+                                {/* Cells */}
+                                {Array.from({ length: COLS }).map((_, col) => {
+                                    const cellId = `${row},${col}`;
+                                    const cellData = cells?.get(cellId);
+                                    const isActive = activeCell?.row === row && activeCell?.col === col;
+                                    const isSelected = isInSelection(row, col);
+
+                                    return (
+                                        <div
+                                            key={cellId}
+                                            onMouseDown={() => handleMouseDown(row, col)}
+                                            onMouseEnter={() => handleMouseEnter(row, col)}
+                                            onMouseUp={handleMouseUp}
+                                            className="relative"
+                                        >
+                                            <CellComponent
+                                                pos={{ row, col }}
+                                                data={cellData}
+                                                isActive={isActive}
+                                                isSelected={isSelected}
+                                                onFocus={() => {
+                                                    if (!isSelectingRange) {
+                                                        onActiveCellChange({ row, col });
+                                                        onSelectionChange({ start: { row, col }, end: { row, col } });
+                                                    }
+                                                }}
+                                                onUpdate={(val) => updateCell({ row, col }, val)}
+                                                getCellValue={getCellValue}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
