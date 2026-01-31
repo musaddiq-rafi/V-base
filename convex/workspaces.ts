@@ -262,7 +262,7 @@ export const deleteWorkspaceFromWebhook = internalMutation({
       return { liveblocksRoomIds: [] };
     }
 
-    const liveblocksRoomIds: string[] = [];
+    const liveblocksRoomIdsToDelete: string[] = [];
 
     // 2. Find and Delete All Channels & Related Data
     const channels = await ctx.db
@@ -312,7 +312,7 @@ export const deleteWorkspaceFromWebhook = internalMutation({
 
       for (const doc of documents) {
         // Collect Liveblocks room ID for documents
-        liveblocksRoomIds.push(`doc:${doc._id}`);
+        liveblocksRoomIdsToDelete.push(`doc:${doc._id}`);
         await ctx.db.delete(doc._id);
       }
 
@@ -325,7 +325,7 @@ export const deleteWorkspaceFromWebhook = internalMutation({
       for (const file of codeFiles) {
         // Collect Liveblocks room ID for code files (only actual files, not folders)
         if (file.type === "file") {
-          liveblocksRoomIds.push(`code:${file._id}`);
+          liveblocksRoomIdsToDelete.push(`code:${file._id}`);
         }
         await ctx.db.delete(file._id);
       }
@@ -338,7 +338,7 @@ export const deleteWorkspaceFromWebhook = internalMutation({
 
       for (const whiteboard of whiteboards) {
         // Collect Liveblocks room ID for whiteboards
-        liveblocksRoomIds.push(`whiteboard:${whiteboard._id}`);
+        liveblocksRoomIdsToDelete.push(`whiteboard:${whiteboard._id}`);
         await ctx.db.delete(whiteboard._id);
       }
 
@@ -352,10 +352,22 @@ export const deleteWorkspaceFromWebhook = internalMutation({
         await ctx.db.delete(meeting._id);
       }
 
-      // E. Add the room itself to Liveblocks cleanup (for room presence)
-      liveblocksRoomIds.push(`room:${room._id}`);
+      // E. Delete all spreadsheets in spreadsheet rooms
+      const spreadsheets = await ctx.db
+        .query("spreadsheets")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
 
-      // F. Delete the room itself
+      for (const sheet of spreadsheets) {
+        // Collect Liveblocks room ID for spreadsheets
+        liveblocksRoomIdsToDelete.push(`spreadsheet:${sheet._id}`);
+        await ctx.db.delete(sheet._id);
+      }
+
+      // F. Add the room itself to Liveblocks cleanup (for room presence)
+      liveblocksRoomIdsToDelete.push(`room:${room._id}`);
+
+      // G. Delete the room itself
       await ctx.db.delete(room._id);
     }
 
@@ -365,10 +377,10 @@ export const deleteWorkspaceFromWebhook = internalMutation({
     await ctx.db.delete(workspace._id);
 
     console.log(
-      `[Webhook] Successfully deleted workspace and all children. Liveblocks rooms to delete: ${liveblocksRoomIds.length}`,
+      `[Webhook] Successfully deleted workspace and all children. Liveblocks rooms to delete: ${liveblocksRoomIdsToDelete.length}`,
     );
 
-    return { liveblocksRoomIds };
+    return { liveblocksRoomIds: liveblocksRoomIdsToDelete };
   },
 });
 

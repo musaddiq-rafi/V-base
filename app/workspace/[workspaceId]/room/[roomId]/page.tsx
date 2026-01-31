@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, Presentation, FileCode } from "lucide-react";
+import { ArrowLeft, Loader2, Presentation, FileCode, Table } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
@@ -17,6 +17,7 @@ import { DocumentList } from "@/components/document/document-list";
 import { FileExplorer } from "@/components/code/file-explorer";
 import { WhiteboardList } from "@/components/whiteboard/whiteboard-list";
 import { MeetingRoom } from "@/components/meeting/meeting-room";
+import { SpreadsheetList } from "@/components/spreadsheet/spreadsheet-list";
 
 export default function RoomPage() {
   const params = useParams();
@@ -199,6 +200,49 @@ export default function RoomPage() {
         {/* Whiteboard List */}
         <div className="flex-1 relative">
           <WhiteboardList
+            roomId={roomId}
+            workspaceId={organization.id}
+            convexWorkspaceId={workspace._id}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // For spreadsheet rooms, show spreadsheet list
+  if (room.type === "spreadsheet") {
+    return (
+      <div className="fixed inset-0 flex flex-col bg-background">
+        {/* Header */}
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
+        >
+          <div className="flex items-center justify-between h-14 px-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/workspace/${organization.id}`}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back</span>
+              </Link>
+              <div className="h-6 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <Table className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <span className="font-semibold text-foreground">{room.name}</span>
+                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
+                  {room.type}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.header>
+
+        {/* Spreadsheet List */}
+        <div className="flex-1 relative">
+          <SpreadsheetList
             roomId={roomId}
             workspaceId={organization.id}
             convexWorkspaceId={workspace._id}

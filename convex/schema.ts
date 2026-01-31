@@ -26,7 +26,8 @@ export default defineSchema({
       v.literal("document"),
       v.literal("code"),
       v.literal("whiteboard"),
-      v.literal("conference")
+      v.literal("conference"),
+      v.literal("spreadsheet")
     ),
     // Optional: Access control list (array of Clerk user IDs)
     // If empty, everyone in workspace can access
@@ -40,15 +41,28 @@ export default defineSchema({
     type: v.union(
       v.literal("general"), // Workspace-wide channel
       v.literal("direct"), // 1-on-1 DM
-      v.literal("group") // Future: custom group channels
+      v.literal("group"), // Future: custom group channels
+      v.literal("file") // Chat associated with a file/document/whiteboard/spreadsheet
     ),
     // For DM channels: the two participant user IDs (Clerk IDs)
     participantIds: v.optional(v.array(v.string())),
+
+    // Context binding for file-based chat channels
+    contextType: v.optional(
+      v.union(
+        v.literal("document"),
+        v.literal("codeFile"),
+        v.literal("whiteboard"),
+        v.literal("spreadsheet")
+      )
+    ),
+    contextId: v.optional(v.string()), // The _id of the linked entity (as string)
     createdAt: v.number(),
     createdBy: v.string(), // Clerk User ID
   })
     .index("by_workspace", ["workspaceId"])
-    .index("by_participants", ["participantIds"]),
+    .index("by_participants", ["participantIds"])
+    .index("by_context", ["contextType", "contextId"]),
 
   // Messages in channels
   messages: defineTable({
@@ -148,4 +162,17 @@ export default defineSchema({
   })
     .index("by_room", ["roomId"])
     .index("by_room_status", ["roomId", "status"]),
+
+  // Spreadsheets within spreadsheet rooms
+  spreadsheets: defineTable({
+    roomId: v.id("rooms"), // Parent spreadsheet room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Spreadsheet name
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
 });

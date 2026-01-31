@@ -14,6 +14,7 @@ import {
   Video,
   Info,
   AlertCircle,
+  Table,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -30,7 +31,7 @@ export function CreateRoomModal({
 }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState<
-    "document" | "code" | "whiteboard" | "conference"
+    "document" | "code" | "whiteboard" | "conference" | "spreadsheet"
   >("whiteboard");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -134,6 +135,7 @@ export function CreateRoomModal({
                     { value: "whiteboard", label: "Whiteboard", icon: PenTool },
                     { value: "document", label: "Document", icon: FileText },
                     { value: "code", label: "Code", icon: Code2 },
+                    { value: "spreadsheet", label: "Spreadsheet", icon: Table },
                     { value: "conference", label: "Meeting", icon: Video },
                   ].map((option) => (
                     <button
@@ -142,18 +144,18 @@ export function CreateRoomModal({
                       onClick={() =>
                         setRoomType(
                           option.value as
-                            | "document"
-                            | "code"
-                            | "whiteboard"
-                            | "conference"
+                          | "document"
+                          | "code"
+                          | "whiteboard"
+                          | "conference"
+                          | "spreadsheet"
                         )
                       }
                       disabled={isCreating}
-                      className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl transition-all text-sm font-medium ${
-                        roomType === option.value
+                      className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl transition-all text-sm font-medium ${roomType === option.value
                           ? "border-sky-500/50 bg-sky-500/20 text-sky-500 dark:text-sky-400"
                           : "border-border bg-muted text-muted-foreground hover:border-border hover:bg-muted/80"
-                      } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                     >
                       <option.icon className="w-4 h-4" />
                       {option.label}
