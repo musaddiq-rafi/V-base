@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function CreateRoomModal({
     "document" | "code" | "whiteboard" | "conference" | "kanban"
   >("whiteboard");
   const [isCreating, setIsCreating] = useState(false);
+  const router = useRouter();
 
   const createRoom = useMutation(api.rooms.createRoom);
   const roomStats = useQuery(api.rooms.getRoomStats, { workspaceId });
@@ -50,11 +52,19 @@ export function CreateRoomModal({
 
     setIsCreating(true);
     try {
-      await createRoom({
+      const result: any = await createRoom({
         workspaceId,
         name: roomName.trim(),
         type: roomType,
       });
+      // If a kanban was created, navigate to it
+      if (roomType === "kanban" && result?.kanbanId) {
+        const kbId = result.kanbanId;
+        // Use workspaceId in route param (workspace route uses this id)
+        // Navigate to the kanban board page
+        router.push(`/workspace/${workspaceId}/room/${result.roomId}/kanban/${kbId}`);
+        return; // navigation will close modal by leaving page
+      }
       setRoomName("");
       setRoomType("whiteboard");
       onClose();

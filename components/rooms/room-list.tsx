@@ -159,7 +159,11 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() =>
-                  router.push(`/workspace/${clerkOrgId}/room/${room._id}`)
+                  router.push(
+                    room.type === "kanban"
+                      ? `/workspace/${clerkOrgId}/room/${room._id}/kanban/${room._id}`
+                      : `/workspace/${clerkOrgId}/room/${room._id}`,
+                  )
                 }
                 className={`group relative bg-white/5 rounded-xl border border-white/10 p-6 hover:bg-white/8 hover:border-white/20 transition-all cursor-pointer ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}
               >

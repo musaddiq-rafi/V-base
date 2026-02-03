@@ -53,7 +53,39 @@ export const createRoom = mutation({
       type: args.type,
     });
 
-    return roomId;
+    // If it's a kanban room, create a default kanban board
+    if (args.type === "kanban") {
+      const now = Date.now();
+      await ctx.db.insert("kanbans", {
+        roomId,
+        workspaceId: args.workspaceId,
+        name: `${args.name} Board`,
+        createdBy: identity.subject,
+        createdAt: now,
+        updatedAt: now,
+        content: JSON.stringify({
+          version: 1,
+          columns: [
+            { id: "todo", title: "To do", cardIds: [] },
+            { id: "in-progress", title: "In progress", cardIds: [] },
+            { id: "done", title: "Done", cardIds: [] },
+          ],
+          cards: {},
+        }),
+      });
+    }
+
+    if (args.type === "kanban") {
+      // find the kanban we just created
+      const kanban = await ctx.db
+        .query("kanbans")
+        .withIndex("by_room", (q) => q.eq("roomId", roomId))
+        .first();
+
+      return { roomId, kanbanId: kanban?._id || null };
+    }
+
+    return { roomId };
   },
 });
 
@@ -130,6 +162,16 @@ export const deleteRoom = mutation({
     } else if (room.type === "whiteboard" || room.type === "conference") {
       // These room types have their own Liveblocks room
       liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
+    } else if (room.type === "kanban") {
+      // Delete kanban boards in this room
+      const kanbans = await ctx.db
+        .query("kanbans")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const kb of kanbans) {
+        await ctx.db.delete(kb._id);
+      }
     }
 
     // Delete the room itself
