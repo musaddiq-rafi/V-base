@@ -10,7 +10,8 @@ export const createRoom = mutation({
       v.literal("document"),
       v.literal("code"),
       v.literal("whiteboard"),
-      v.literal("conference")
+      v.literal("conference"),
+      v.literal("kanban")
     ),
   },
   handler: async (ctx, args) => {
@@ -42,6 +43,8 @@ export const createRoom = mutation({
         );
       }
     }
+
+    // Kanban room: no special constraints, just create
 
     // Create the room
     const roomId = await ctx.db.insert("rooms", {

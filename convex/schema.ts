@@ -58,30 +58,15 @@ export default defineSchema({
     authorId: v.string(), // Clerk User ID
     authorName: v.string(), // Cached from users table (for backwards compat)
     content: v.string(),
-    timestamp: v.number(),
-    // Reactions: map of reaction type to array of user IDs who reacted
-    reactions: v.optional(
-      v.object({
-        like: v.optional(v.array(v.string())), // Array of Clerk User IDs
-        dislike: v.optional(v.array(v.string())),
-        haha: v.optional(v.array(v.string())),
-      })
-    ),
-    // Optional: for future features
-    attachments: v.optional(
-      v.array(
-        v.object({
-          url: v.string(),
-          type: v.string(),
-          name: v.string(),
-        })
-      )
-    ),
-    // For threaded replies (future)
-    parentMessageId: v.optional(v.id("messages")),
-  })
-    .index("by_channel", ["channelId", "timestamp"])
-    .index("by_workspace", ["workspaceId"]),
+  }),
+
+  // Kanban boards (minimal)
+  kanbanBoards: defineTable({
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+  }).index("by_workspace", ["workspaceId"]),
 
   // Last read timestamp per user per channel (cursor-based read tracking)
   lastRead: defineTable({

@@ -66,6 +66,9 @@ export default function WorkspacePage() {
   }
 
   if (!organization) {
+    // Kanban room routing (future)
+    // Example: If you want to redirect or show a kanban-specific UI, handle here.
+    // For now, just continue to show "Workspace not found" if no organization.
     return (
       <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
         <div className="text-center">
