@@ -16,6 +16,7 @@ import {
   Trash2,
   MoreVertical,
   AlertTriangle,
+  Trello,
 } from "lucide-react";
 import { CreateRoomModal } from "./create-room-modal";
 
@@ -30,6 +31,7 @@ const roomIcons = {
   document: FileText,
   code: Code,
   conference: Video,
+  kanban: Trello,
 };
 
 // Color mapping for room types - Theme aware
@@ -38,6 +40,7 @@ const roomColors = {
   document: "bg-blue-500/20 text-blue-600 dark:text-blue-400",
   code: "bg-green-500/20 text-green-600 dark:text-green-400",
   conference: "bg-orange-500/20 text-orange-600 dark:text-orange-400",
+  kanban: "bg-pink-500/20 text-pink-600 dark:text-pink-400",
 };
 
 export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {

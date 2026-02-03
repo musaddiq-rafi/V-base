@@ -14,6 +14,7 @@ import {
   Video,
   Info,
   AlertCircle,
+  Trello,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -30,7 +31,7 @@ export function CreateRoomModal({
 }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState<
-    "document" | "code" | "whiteboard" | "conference"
+    "document" | "code" | "whiteboard" | "conference" | "kanban"
   >("whiteboard");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -134,6 +135,7 @@ export function CreateRoomModal({
                     { value: "whiteboard", label: "Whiteboard", icon: PenTool },
                     { value: "document", label: "Document", icon: FileText },
                     { value: "code", label: "Code", icon: Code2 },
+                    { value: "kanban", label: "Kanban", icon: Trello },
                     { value: "conference", label: "Meeting", icon: Video },
                   ].map((option) => (
                     <button
@@ -146,6 +148,7 @@ export function CreateRoomModal({
                             | "code"
                             | "whiteboard"
                             | "conference"
+                            | "kanban"
                         )
                       }
                       disabled={isCreating}
