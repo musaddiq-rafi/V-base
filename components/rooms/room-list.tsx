@@ -12,6 +12,7 @@ import {
   FileText,
   Code,
   Video,
+  Trello,
   Loader2,
   Users,
   Trash2,
@@ -31,6 +32,7 @@ const roomIcons = {
   document: FileText,
   code: Code,
   conference: Video,
+  kanban: Trello,
 };
 
 // Color mapping for room types - Dark theme
@@ -39,6 +41,7 @@ const roomColors = {
   document: "bg-blue-500/20 text-blue-400",
   code: "bg-green-500/20 text-green-400",
   conference: "bg-orange-500/20 text-orange-400",
+  kanban: "bg-emerald-500/20 text-emerald-400",
 };
 
 export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {

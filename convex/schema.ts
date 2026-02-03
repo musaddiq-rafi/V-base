@@ -61,12 +61,7 @@ export default defineSchema({
   }),
 
   // Kanban boards (minimal)
-  kanbanBoards: defineTable({
-    workspaceId: v.id("workspaces"),
-    name: v.string(),
-    createdBy: v.string(), // Clerk User ID
-    createdAt: v.number(),
-  }).index("by_workspace", ["workspaceId"]),
+  // (kanbans table defined later)
 
   // Last read timestamp per user per channel (cursor-based read tracking)
   lastRead: defineTable({

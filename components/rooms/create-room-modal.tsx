@@ -12,6 +12,7 @@ import {
   FileText,
   Code2,
   Video,
+  Trello,
   Info,
   AlertCircle,
 } from "lucide-react";
@@ -30,7 +31,7 @@ export function CreateRoomModal({
 }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState<
-    "document" | "code" | "whiteboard" | "conference"
+    "document" | "code" | "whiteboard" | "conference" | "kanban"
   >("whiteboard");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -135,6 +136,7 @@ export function CreateRoomModal({
                     { value: "document", label: "Document", icon: FileText },
                     { value: "code", label: "Code", icon: Code2 },
                     { value: "conference", label: "Meeting", icon: Video },
+                    { value: "kanban", label: "Kanban", icon: Trello },
                   ].map((option) => (
                     <button
                       key={option.value}
@@ -146,6 +148,7 @@ export function CreateRoomModal({
                             | "code"
                             | "whiteboard"
                             | "conference"
+                            | "kanban"
                         )
                       }
                       disabled={isCreating}
@@ -155,11 +158,11 @@ export function CreateRoomModal({
                           : "border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/8"
                       } disabled:opacity-50`}
                     >
-                      <option.icon className="w-4 h-4" />
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                  <option.icon className="w-4 h-4" />
+                  {option.label}
+                </button>
+              ))}
+            </div>
 
                 {/* Meeting Room Info */}
                 {isMeetingSelected && (
