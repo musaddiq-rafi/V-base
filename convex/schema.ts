@@ -26,7 +26,8 @@ export default defineSchema({
       v.literal("document"),
       v.literal("code"),
       v.literal("whiteboard"),
-      v.literal("conference")
+      v.literal("conference"),
+      v.literal("kanban") 
     ),
     // Optional: Access control list (array of Clerk user IDs)
     // If empty, everyone in workspace can access
@@ -104,6 +105,20 @@ export default defineSchema({
   })
     .index("by_room", ["roomId"])
     .index("by_workspace", ["workspaceId"]),
+  //Kanban boards within kanban rooms
+  kanbans: defineTable({
+    roomId: v.id("rooms"), // Parent kanban room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Kanban board name (e.g., "Sprint Tasks")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),  
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+    // For simplicity, we'll store the entire kanban state as a JSON string
+    content: v.optional(v.string()), // Serialized kanban data (JSON string)
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),  
 
   // Code files and folders within code rooms
   codeFiles: defineTable({
