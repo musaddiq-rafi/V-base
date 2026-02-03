@@ -14,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
@@ -92,9 +92,12 @@ const toColumnId = (id: string) => id.replace("column:", "");
 export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
   const { user } = useUser();
   const saveKanbanContent = useMutation(api.kanban.saveKanbanContent);
+  const kanbanQuery = useQuery(api.kanban.getKanbanById, { kanbanId });
+
+  const sourceContent = content ?? kanbanQuery?.content;
 
   const [board, setBoard] = useState<KanbanContentV1>(() =>
-    parseContent(content),
+    parseContent(sourceContent),
   );
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -108,10 +111,10 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
   const lastSyncedRef = useRef<string>(JSON.stringify(parseContent(content)));
 
   useEffect(() => {
-    const parsed = parseContent(content);
+    const parsed = parseContent(sourceContent);
     setBoard(parsed);
     lastSyncedRef.current = JSON.stringify(parsed);
-  }, [content]);
+  }, [sourceContent]);
 
   useEffect(() => {
     if (!kanbanId || !user?.id) return;

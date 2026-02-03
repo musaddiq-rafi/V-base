@@ -27,7 +27,8 @@ export default defineSchema({
       v.literal("code"),
       v.literal("whiteboard"),
       v.literal("conference"),
-      v.literal("kanban") 
+      v.literal("kanban"),
+      v.literal("spreadsheet")
     ),
     // Optional: Access control list (array of Clerk user IDs)
     // If empty, everyone in workspace can access
@@ -41,15 +42,28 @@ export default defineSchema({
     type: v.union(
       v.literal("general"), // Workspace-wide channel
       v.literal("direct"), // 1-on-1 DM
-      v.literal("group") // Future: custom group channels
+      v.literal("group"), // Future: custom group channels
+      v.literal("file") // File-based chat (linked to documents/code/whiteboards)
     ),
     // For DM channels: the two participant user IDs (Clerk IDs)
     participantIds: v.optional(v.array(v.string())),
+    
+    // For file-based chat channels: context binding
+    contextType: v.optional(v.union(
+      v.literal("document"),
+      v.literal("codeFile"),
+      v.literal("whiteboard"),
+      v.literal("kanbanBoard"),
+      v.literal("spreadsheet")
+    )),
+    contextId: v.optional(v.string()), // The _id of the linked entity
+    
     createdAt: v.number(),
     createdBy: v.string(), // Clerk User ID
   })
     .index("by_workspace", ["workspaceId"])
-    .index("by_participants", ["participantIds"]),
+    .index("by_participants", ["participantIds"])
+    .index("by_context", ["contextType", "contextId"]),
 
   // Messages in channels
   messages: defineTable({
@@ -58,7 +72,30 @@ export default defineSchema({
     authorId: v.string(), // Clerk User ID
     authorName: v.string(), // Cached from users table (for backwards compat)
     content: v.string(),
-  }),
+    timestamp: v.number(),
+    // Reactions: map of reaction type to array of user IDs who reacted
+    reactions: v.optional(
+      v.object({
+        like: v.optional(v.array(v.string())),
+        dislike: v.optional(v.array(v.string())),
+        haha: v.optional(v.array(v.string())),
+      })
+    ),
+    // Optional attachments
+    attachments: v.optional(
+      v.array(
+        v.object({
+          url: v.string(),
+          type: v.string(),
+          name: v.string(),
+        })
+      )
+    ),
+    // For threaded replies (optional)
+    parentMessageId: v.optional(v.id("messages")),
+  })
+    .index("by_channel", ["channelId", "timestamp"])
+    .index("by_workspace", ["workspaceId"]),
 
   // Kanban boards (minimal)
   // (kanbans table defined later)
