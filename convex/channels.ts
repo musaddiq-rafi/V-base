@@ -212,3 +212,27 @@ export const getChannel = query({
     return channel;
   },
 });
+
+/**
+ * Get channel by context
+ */
+export const getChannelByContext = query({
+  args: {
+    contextType: v.union(
+      v.literal("document"),
+      v.literal("codeFile"),
+      v.literal("whiteboard"),
+      v.literal("spreadsheet")
+    ),
+    contextId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const channel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", args.contextType).eq("contextId", args.contextId)
+      )
+      .unique();
+    return channel;
+  },
+});

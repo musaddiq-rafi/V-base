@@ -4,20 +4,19 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, Presentation, FileCode } from "lucide-react";
+import { ArrowLeft, Loader2, Presentation, FileCode, Table } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
-import { useEffect, Suspense } from "react";
-import { RoomProvider } from "@liveblocks/react/suspense";
-import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
-import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
-
+import { useEffect } from "react";
+// Components
 import { DocumentList } from "@/components/document/document-list";
 import { FileExplorer } from "@/components/code/file-explorer";
 import { WhiteboardList } from "@/components/whiteboard/whiteboard-list";
 import { MeetingRoom } from "@/components/meeting/meeting-room";
+// Merged Imports
 import { KanbanList } from "@/components/kanban/kanban-list";
+import { SpreadsheetList } from "@/components/spreadsheet/spreadsheet-list";
 
 export default function RoomPage() {
   const params = useParams();
@@ -32,32 +31,28 @@ export default function RoomPage() {
     organization ? { clerkOrgId: organization.id } : "skip",
   );
 
-  // Verify this room belongs to the current workspace
   useEffect(() => {
     if (room && workspace && room.workspaceId !== workspace._id) {
-      // Room doesn't belong to this workspace, redirect
       router.push(`/workspace/${organization?.id}`);
     }
   }, [room, workspace, router, organization?.id]);
 
   if (!organization || room === undefined || workspace === undefined) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-sky-400 animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
       </div>
     );
   }
 
   if (room === null || workspace === null) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">
-            Room not found
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Room not found</h1>
           <Link
             href={`/workspace/${organization.id}`}
-            className="text-sky-400 hover:text-sky-300 font-medium"
+            className="text-sky-500 dark:text-sky-400 hover:text-sky-400 dark:hover:text-sky-300 font-medium"
           >
             Return to Workspace
           </Link>
@@ -66,154 +61,125 @@ export default function RoomPage() {
     );
   }
 
-  // Create unique room ID for Liveblocks (only for whiteboard)
-  const liveblocksRoomId = `room:${roomId}`;
-
-  // For document rooms, show document list instead of editor
+  // Document Rooms
   if (room.type === "document") {
     return (
-      <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
-        {/* Header */}
+      <div className="fixed inset-0 flex flex-col bg-background">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex-shrink-0 z-50 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
+          className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
               <Link
                 href={`/workspace/${organization.id}`}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
               </Link>
-              <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <Presentation className="w-5 h-5 text-purple-400" />
-                <span className="font-semibold text-white">{room.name}</span>
-                <span className="text-xs text-white/50 capitalize bg-white/10 px-2 py-1 rounded">
+                <Presentation className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                <span className="font-semibold text-foreground">{room.name}</span>
+                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
                   {room.type}
                 </span>
               </div>
             </div>
           </div>
         </motion.header>
-
-        {/* Document List */}
         <div className="flex-1 relative">
-          <DocumentList
-            roomId={roomId}
-            workspaceId={organization.id}
-            convexWorkspaceId={workspace._id}
-          />
+          <DocumentList roomId={roomId} workspaceId={organization.id} convexWorkspaceId={workspace._id} />
         </div>
       </div>
     );
   }
 
-  // For code rooms, show file explorer instead of editor
+  // Code Rooms
   if (room.type === "code") {
     return (
-      <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
-        {/* Header */}
+      <div className="fixed inset-0 flex flex-col bg-background">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex-shrink-0 z-50 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
+          className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
               <Link
                 href={`/workspace/${organization.id}`}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
               </Link>
-              <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <FileCode className="w-5 h-5 text-emerald-400" />
-                <span className="font-semibold text-white">{room.name}</span>
-                <span className="text-xs text-white/50 capitalize bg-white/10 px-2 py-1 rounded">
+                <FileCode className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <span className="font-semibold text-foreground">{room.name}</span>
+                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
                   {room.type}
                 </span>
               </div>
             </div>
           </div>
         </motion.header>
-
-        {/* File Explorer */}
         <div className="flex-1 relative">
-          <FileExplorer
-            roomId={roomId}
-            workspaceId={organization.id}
-            convexWorkspaceId={workspace._id}
-          />
+          <FileExplorer roomId={roomId} workspaceId={organization.id} convexWorkspaceId={workspace._id} />
         </div>
       </div>
     );
   }
 
-  // For conference rooms, show the meeting room
+  // Conference Rooms
   if (room.type === "conference") {
     return (
-      <MeetingRoom
-        roomId={roomId}
-        roomName={room.name}
-        workspaceId={organization.id}
-      />
+      <MeetingRoom roomId={roomId} roomName={room.name} workspaceId={organization.id} />
     );
   }
 
-  // For whiteboard rooms, show whiteboard list
+  // Whiteboard Rooms
   if (room.type === "whiteboard") {
     return (
-      <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
-        {/* Header */}
+      <div className="fixed inset-0 flex flex-col bg-background">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex-shrink-0 z-50 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
+          className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
               <Link
                 href={`/workspace/${organization.id}`}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
               </Link>
-              <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <Presentation className="w-5 h-5 text-orange-400" />
-                <span className="font-semibold text-white">{room.name}</span>
-                <span className="text-xs text-white/50 capitalize bg-white/10 px-2 py-1 rounded">
+                <Presentation className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+                <span className="font-semibold text-foreground">{room.name}</span>
+                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
                   {room.type}
                 </span>
               </div>
             </div>
           </div>
         </motion.header>
-
-        {/* Whiteboard List */}
         <div className="flex-1 relative">
-          <WhiteboardList
-            roomId={roomId}
-            workspaceId={organization.id}
-            convexWorkspaceId={workspace._id}
-          />
+          <WhiteboardList roomId={roomId} workspaceId={organization.id} convexWorkspaceId={workspace._id} />
         </div>
       </div>
     );
   }
 
-  // For kanban rooms, show kanban list
+  // Kanban Rooms (from rafi-dev)
   if (room.type === "kanban") {
     return (
       <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
-        {/* Header */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -239,50 +205,79 @@ export default function RoomPage() {
             </div>
           </div>
         </motion.header>
-
-        {/* Kanban List */}
         <div className="flex-1 relative">
-          <KanbanList
-            roomId={roomId}
-            workspaceId={organization.id}
-            convexWorkspaceId={workspace._id}
-          />
+          <KanbanList roomId={roomId} workspaceId={organization.id} convexWorkspaceId={workspace._id} />
         </div>
       </div>
     );
   }
 
-  // Fallback for any other room types
+  // Spreadsheet Rooms (from main)
+  if (room.type === "spreadsheet") {
+    return (
+      <div className="fixed inset-0 flex flex-col bg-background">
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
+        >
+          <div className="flex items-center justify-between h-14 px-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/workspace/${organization.id}`}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back</span>
+              </Link>
+              <div className="h-6 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <Table className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <span className="font-semibold text-foreground">{room.name}</span>
+                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
+                  {room.type}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.header>
+        <div className="flex-1 relative">
+          <SpreadsheetList roomId={roomId} workspaceId={organization.id} convexWorkspaceId={workspace._id} />
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
+    <div className="fixed inset-0 flex flex-col bg-background">
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex-shrink-0 z-50 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
+        className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
       >
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-4">
             <Link
               href={`/workspace/${organization.id}`}
-              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
             </Link>
-            <div className="h-6 w-px bg-white/10" />
+            <div className="h-6 w-px bg-border" />
             <div className="flex items-center gap-2">
-              <Presentation className="w-5 h-5 text-purple-400" />
-              <span className="font-semibold text-white">{room.name}</span>
-              <span className="text-xs text-white/50 capitalize bg-white/10 px-2 py-1 rounded">
+              <Presentation className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+              <span className="font-semibold text-foreground">{room.name}</span>
+              <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
                 {room.type}
               </span>
             </div>
           </div>
         </div>
       </motion.header>
-
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center text-white/60">
+        <div className="text-center text-muted-foreground">
           <p className="text-lg font-medium mb-2">Room Type: {room.type}</p>
           <p className="text-sm">This room type is not yet supported.</p>
         </div>

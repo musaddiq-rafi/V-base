@@ -15,6 +15,7 @@ import {
   Trello,
   Info,
   AlertCircle,
+  Table,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -32,7 +33,7 @@ export function CreateRoomModal({
 }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState<
-    "document" | "code" | "whiteboard" | "conference" | "kanban"
+    "document" | "code" | "whiteboard" | "conference" | "kanban" | "spreadsheet"
   >("whiteboard");
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
@@ -93,21 +94,21 @@ export function CreateRoomModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-[#0f1520] rounded-2xl shadow-2xl p-6 mx-4 border border-white/10"
+            className="relative w-full max-w-md bg-background-secondary rounded-2xl shadow-2xl p-6 mx-4 border border-border"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
-                  <Presentation className="w-5 h-5 text-sky-400" />
+                  <Presentation className="w-5 h-5 text-sky-500 dark:text-sky-400" />
                 </div>
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-foreground">
                   Create New Room
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="text-white/40 hover:text-white transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -119,7 +120,7 @@ export function CreateRoomModal({
               <div>
                 <label
                   htmlFor="roomName"
-                  className="block text-sm font-medium text-white/70 mb-2"
+                  className="block text-sm font-medium text-muted-foreground mb-2"
                 >
                   Room Name
                 </label>
@@ -129,7 +130,7 @@ export function CreateRoomModal({
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder="e.g., Design Brainstorm"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all text-white placeholder-white/40"
+                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all text-foreground placeholder-muted-foreground"
                   disabled={isCreating}
                   autoFocus
                 />
@@ -137,7 +138,7 @@ export function CreateRoomModal({
 
               {/* Room Type Select */}
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Room Type
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -145,6 +146,7 @@ export function CreateRoomModal({
                     { value: "whiteboard", label: "Whiteboard", icon: PenTool },
                     { value: "document", label: "Document", icon: FileText },
                     { value: "code", label: "Code", icon: Code2 },
+                    { value: "spreadsheet", label: "Spreadsheet", icon: Table },
                     { value: "conference", label: "Meeting", icon: Video },
                     { value: "kanban", label: "Kanban", icon: Trello },
                   ].map((option) => (
@@ -159,14 +161,14 @@ export function CreateRoomModal({
                             | "whiteboard"
                             | "conference"
                             | "kanban"
+                            | "spreadsheet"
                         )
                       }
                       disabled={isCreating}
-                      className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl transition-all text-sm font-medium ${
-                        roomType === option.value
-                          ? "border-sky-500/50 bg-sky-500/20 text-sky-400"
-                          : "border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/8"
-                      } disabled:opacity-50`}
+                      className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl transition-all text-sm font-medium ${roomType === option.value
+                          ? "border-sky-500/50 bg-sky-500/20 text-sky-500 dark:text-sky-400"
+                          : "border-border bg-muted text-muted-foreground hover:border-border hover:bg-muted/80"
+                        } disabled:opacity-50`}
                     >
                   <option.icon className="w-4 h-4" />
                   {option.label}
@@ -176,7 +178,7 @@ export function CreateRoomModal({
 
                 {/* Meeting Room Info */}
                 {isMeetingSelected && (
-                  <div className={`flex items-start gap-2 mt-3 p-3 rounded-lg ${hasMeetingRoom ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-sky-500/20 text-sky-400 border border-sky-500/30"}`}>
+                  <div className={`flex items-start gap-2 mt-3 p-3 rounded-lg ${hasMeetingRoom ? "bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30" : "bg-sky-500/20 text-sky-500 dark:text-sky-400 border border-sky-500/30"}`}>
                     {hasMeetingRoom ? (
                       <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                     ) : (
@@ -197,7 +199,7 @@ export function CreateRoomModal({
                   type="button"
                   onClick={onClose}
                   disabled={isCreating}
-                  className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl hover:bg-white/15 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel
                 </button>

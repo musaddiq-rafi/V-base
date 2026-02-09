@@ -22,7 +22,6 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          {/* Logo */}
           <Logo />
 
           {/* Desktop Navigation */}
@@ -54,7 +53,7 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="hidden md:inline-flex text-white/70 hover:text-white hover:bg-white/10"
+                  className="hidden md:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted"
                 >
                   Sign In
                 </Button>
@@ -86,7 +85,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden hover:bg-white/10"
+              className="md:hidden hover:bg-muted"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
@@ -104,7 +103,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t py-4"
+            className="md:hidden border-t border-border py-4"
           >
             <div className="flex flex-col gap-4">
               <Link

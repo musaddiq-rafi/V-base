@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 /**
  * Helper to get organization context from JWT
@@ -52,7 +53,7 @@ export const createWorkspace = mutation({
 
     if (userWorkspaces.length >= 5) {
       throw new Error(
-        "You have reached the maximum limit of 5 workspaces. Please delete an existing workspace to create a new one."
+        "You have reached the maximum limit of 5 workspaces. Please delete an existing workspace to create a new one.",
       );
     }
 
@@ -242,11 +243,12 @@ export const upsertWorkspaceFromWebhook = internalMutation({
 });
 
 // INTERNAL MUTATION: For the Webhook to delete workspaces (with cascading deletes)
+// Returns Liveblocks room IDs that need to be deleted externally
 export const deleteWorkspaceFromWebhook = internalMutation({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
     console.log(
-      `[Webhook] Deleting workspace data for Org: ${args.clerkOrgId}`
+      `[Webhook] Deleting workspace data for Org: ${args.clerkOrgId}`,
     );
 
     // 1. Find the workspace
@@ -257,8 +259,10 @@ export const deleteWorkspaceFromWebhook = internalMutation({
 
     if (!workspace) {
       console.warn(`[Webhook] Workspace not found for Org: ${args.clerkOrgId}`);
-      return;
+      return { liveblocksRoomIds: [] };
     }
+
+    const liveblocksRoomIdsToDelete: string[] = [];
 
     // 2. Find and Delete All Channels & Related Data
     const channels = await ctx.db
@@ -291,6 +295,8 @@ export const deleteWorkspaceFromWebhook = internalMutation({
       await ctx.db.delete(channel._id);
     }
 
+    console.log(`[Webhook] Deleted ${channels.length} channels`);
+
     // 3. Find and Delete All Rooms and their contents
     const rooms = await ctx.db
       .query("rooms")
@@ -305,6 +311,8 @@ export const deleteWorkspaceFromWebhook = internalMutation({
         .collect();
 
       for (const doc of documents) {
+        // Collect Liveblocks room ID for documents
+        liveblocksRoomIdsToDelete.push(`doc:${doc._id}`);
         await ctx.db.delete(doc._id);
       }
 
@@ -315,16 +323,145 @@ export const deleteWorkspaceFromWebhook = internalMutation({
         .collect();
 
       for (const file of codeFiles) {
+        // Collect Liveblocks room ID for code files (only actual files, not folders)
+        if (file.type === "file") {
+          liveblocksRoomIdsToDelete.push(`code:${file._id}`);
+        }
         await ctx.db.delete(file._id);
       }
 
-      // C. Delete the room itself
+      // C. Delete all whiteboards in whiteboard rooms
+      const whiteboards = await ctx.db
+        .query("whiteboards")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const whiteboard of whiteboards) {
+        // Collect Liveblocks room ID for whiteboards
+        liveblocksRoomIdsToDelete.push(`whiteboard:${whiteboard._id}`);
+        await ctx.db.delete(whiteboard._id);
+      }
+
+      // D. Delete all meetings in conference rooms
+      const meetings = await ctx.db
+        .query("meetings")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const meeting of meetings) {
+        await ctx.db.delete(meeting._id);
+      }
+
+      // E. Delete all spreadsheets in spreadsheet rooms
+      const spreadsheets = await ctx.db
+        .query("spreadsheets")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const sheet of spreadsheets) {
+        // Collect Liveblocks room ID for spreadsheets
+        liveblocksRoomIdsToDelete.push(`spreadsheet:${sheet._id}`);
+        await ctx.db.delete(sheet._id);
+      }
+
+      // F. Add the room itself to Liveblocks cleanup (for room presence)
+      liveblocksRoomIdsToDelete.push(`room:${room._id}`);
+
+      // G. Delete the room itself
       await ctx.db.delete(room._id);
     }
+
+    console.log(`[Webhook] Deleted ${rooms.length} rooms`);
 
     // 4. Finally, Delete the Workspace
     await ctx.db.delete(workspace._id);
 
-    console.log(`[Webhook] Successfully deleted workspace and all children.`);
+    console.log(
+      `[Webhook] Successfully deleted workspace and all children. Liveblocks rooms to delete: ${liveblocksRoomIdsToDelete.length}`,
+    );
+
+    return { liveblocksRoomIds: liveblocksRoomIdsToDelete };
+  },
+});
+
+// INTERNAL ACTION: Delete Liveblocks rooms (runs in Node.js environment)
+// This is called after deleteWorkspaceFromWebhook to clean up Liveblocks
+export const deleteLiveblocksRooms = internalAction({
+  args: {
+    roomIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.roomIds.length === 0) {
+      console.log("[Liveblocks] No rooms to delete");
+      return { deleted: 0, failed: 0 };
+    }
+
+    const LIVEBLOCKS_SECRET_KEY = process.env.LIVEBLOCKS_SECRET_KEY;
+    if (!LIVEBLOCKS_SECRET_KEY) {
+      console.error("[Liveblocks] LIVEBLOCKS_SECRET_KEY not configured");
+      return { deleted: 0, failed: args.roomIds.length, error: "No API key" };
+    }
+
+    console.log(`[Liveblocks] Deleting ${args.roomIds.length} rooms...`);
+
+    let deleted = 0;
+    let failed = 0;
+
+    for (const roomId of args.roomIds) {
+      try {
+        const response = await fetch(
+          `https://api.liveblocks.io/v2/rooms/${encodeURIComponent(roomId)}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${LIVEBLOCKS_SECRET_KEY}`,
+            },
+          },
+        );
+
+        if (response.ok || response.status === 404) {
+          // 404 means room doesn't exist, which is fine
+          deleted++;
+          console.log(`[Liveblocks] Deleted room: ${roomId}`);
+        } else {
+          failed++;
+          console.error(
+            `[Liveblocks] Failed to delete room ${roomId}: ${response.status}`,
+          );
+        }
+      } catch (error) {
+        failed++;
+        console.error(`[Liveblocks] Error deleting room ${roomId}:`, error);
+      }
+    }
+
+    console.log(
+      `[Liveblocks] Cleanup complete. Deleted: ${deleted}, Failed: ${failed}`,
+    );
+    return { deleted, failed };
+  },
+});
+
+// INTERNAL ACTION: Complete workspace deletion with Liveblocks cleanup
+// This is the main entry point called from http.ts webhook handler
+export const deleteWorkspaceWithLiveblocks = internalAction({
+  args: { clerkOrgId: v.string() },
+  handler: async (ctx, args) => {
+    // Step 1: Delete all Convex data and get Liveblocks room IDs
+    const result = await ctx.runMutation(
+      internal.workspaces.deleteWorkspaceFromWebhook,
+      {
+        clerkOrgId: args.clerkOrgId,
+      },
+    );
+
+    // Step 2: Delete Liveblocks rooms
+    if (result.liveblocksRoomIds && result.liveblocksRoomIds.length > 0) {
+      await ctx.runAction(internal.workspaces.deleteLiveblocksRooms, {
+        roomIds: result.liveblocksRoomIds,
+      });
+    }
+
+    return { success: true };
   },
 });

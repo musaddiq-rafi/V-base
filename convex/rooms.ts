@@ -11,7 +11,8 @@ export const createRoom = mutation({
       v.literal("code"),
       v.literal("whiteboard"),
       v.literal("conference"),
-      v.literal("kanban")
+      v.literal("kanban"),
+      v.literal("spreadsheet")
     ),
   },
   handler: async (ctx, args) => {
@@ -162,7 +163,7 @@ export const deleteRoom = mutation({
     } else if (room.type === "whiteboard" || room.type === "conference") {
       // These room types have their own Liveblocks room
       liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
-    } else if (room.type === "kanban") {
+    } else if () {
       // Delete kanban boards in this room
       const kanbans = await ctx.db
         .query("kanbans")
@@ -170,7 +171,19 @@ export const deleteRoom = mutation({
         .collect();
 
       for (const kb of kanbans) {
+        // liveblocksRoomIdsToDelete.push(`kanban:${kb._id}`);
         await ctx.db.delete(kb._id);
+      }
+    } else if (room.type === "spreadsheet") {
+      // Delete all spreadsheets in this room and collect their IDs
+      const spreadsheets = await ctx.db
+        .query("spreadsheets")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const sheet of spreadsheets) {
+        liveblocksRoomIdsToDelete.push(`spreadsheet:${sheet._id}`);
+        await ctx.db.delete(sheet._id);
       }
     }
 

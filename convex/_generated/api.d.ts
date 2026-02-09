@@ -17,6 +17,7 @@ import type * as kanban from "../kanban.js";
 import type * as meetings from "../meetings.js";
 import type * as messages from "../messages.js";
 import type * as rooms from "../rooms.js";
+import type * as spreadsheets from "../spreadsheets.js";
 import type * as users from "../users.js";
 import type * as whiteboards from "../whiteboards.js";
 import type * as workspaces from "../workspaces.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   meetings: typeof meetings;
   messages: typeof messages;
   rooms: typeof rooms;
+  spreadsheets: typeof spreadsheets;
   users: typeof users;
   whiteboards: typeof whiteboards;
   workspaces: typeof workspaces;

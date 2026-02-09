@@ -258,7 +258,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-24 right-6 bg-[#0f1520] rounded-xl shadow-2xl p-4 w-80 cursor-pointer z-50 border border-white/10 backdrop-blur-xl"
+            className="fixed bottom-24 right-6 bg-background-secondary rounded-xl shadow-2xl p-4 w-80 cursor-pointer z-50 border border-border backdrop-blur-xl"
             onClick={() => {
               const bubble = chatBubbles.find(
                 (b) => b.channelId === messagePreview.channelId
@@ -286,7 +286,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
           >
             <div className="flex items-start gap-3">
               {messagePreview.avatarUrl ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ring-white/10">
+                <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ring-border">
                   <Image
                     src={messagePreview.avatarUrl}
                     alt={messagePreview.channelName}
@@ -300,10 +300,10 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {messagePreview.channelName}
                 </p>
-                <p className="text-sm text-white/60 line-clamp-2 mt-0.5">
+                <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
                   {messagePreview.preview}
                 </p>
               </div>
@@ -312,7 +312,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
                   e.stopPropagation();
                   setMessagePreview(null);
                 }}
-                className="text-white/40 hover:text-white/70 flex-shrink-0 transition-colors"
+                className="text-muted-foreground hover:text-foreground flex-shrink-0 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -378,7 +378,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-[#0b0f1a] shadow-sm"
+            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-badge-border shadow-sm"
           >
             {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
           </motion.div>
@@ -450,7 +450,7 @@ function ChatBubbleComponent({
 
       {/* Unread Badge - Outside button to prevent clipping */}
       {unreadCount !== undefined && unreadCount > 0 && (
-        <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-[#0b0f1a] shadow-sm">
+        <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-badge-border shadow-sm">
           {unreadCount > 99 ? "99+" : unreadCount}
         </div>
       )}
@@ -465,7 +465,7 @@ function ChatBubbleComponent({
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute -top-2 -left-2 w-5 h-5 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xs shadow-lg z-10 border border-white/10 backdrop-blur-sm"
+          className="absolute -top-2 -left-2 w-5 h-5 bg-muted hover:bg-muted/80 text-foreground rounded-full flex items-center justify-center text-xs shadow-lg z-10 border border-border backdrop-blur-sm"
         >
           <X className="w-3 h-3" />
         </motion.button>
@@ -475,7 +475,7 @@ function ChatBubbleComponent({
         <motion.div
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
-          className="absolute right-14 top-1/2 -translate-y-1/2 bg-[#0f1520] text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap max-w-xs border border-white/10 shadow-lg"
+          className="absolute right-14 top-1/2 -translate-y-1/2 bg-background-secondary text-foreground px-3 py-1.5 rounded-lg text-sm whitespace-nowrap max-w-xs border border-border shadow-lg"
         >
           {label}
         </motion.div>
@@ -601,7 +601,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      className="fixed bottom-6 right-24 w-80 h-[500px] bg-[#0f1520] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden z-40 backdrop-blur-xl"
+      className="fixed bottom-6 right-24 w-80 h-[500px] bg-background-secondary rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden z-40 backdrop-blur-xl"
     >
       {/* Header */}
       <div className="p-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-between">
@@ -633,7 +633,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0b0f1a]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background">
         {messages?.map((msg) => {
           const isOwn = msg.authorId === user?.id;
 
@@ -646,7 +646,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
                 className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}
               >
                 {!isOwn && (
-                  <span className="text-xs text-white/50 mb-1 px-2">
+                  <span className="text-xs text-muted-foreground mb-1 px-2">
                     {msg.authorName}
                   </span>
                 )}
@@ -654,7 +654,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
                   className={`px-4 py-2 rounded-2xl ${
                     isOwn
                       ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-br-sm"
-                      : "bg-white/10 text-white rounded-bl-sm border border-white/5"
+                      : "bg-muted text-foreground rounded-bl-sm border border-border"
                   }`}
                 >
                   <p className="text-sm break-words">{msg.content}</p>
@@ -666,8 +666,8 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
                     onClick={() => handleReaction(msg._id, "like")}
                     className={`text-xs px-2 py-1 rounded-full transition-colors ${
                       msg.reactions?.like?.includes(user?.id || "")
-                        ? "bg-sky-500/20 text-sky-400"
-                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                        ? "bg-sky-500/20 text-sky-500 dark:text-sky-400"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
                     👍 {msg.reactions?.like?.length || 0}
@@ -676,8 +676,8 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
                     onClick={() => handleReaction(msg._id, "haha")}
                     className={`text-xs px-2 py-1 rounded-full transition-colors ${
                       msg.reactions?.haha?.includes(user?.id || "")
-                        ? "bg-yellow-500/20 text-yellow-400"
-                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                        ? "bg-yellow-500/20 text-yellow-500 dark:text-yellow-400"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
                     😂 {msg.reactions?.haha?.length || 0}
@@ -691,7 +691,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-white/10 bg-[#0f1520]">
+      <div className="p-3 border-t border-border bg-background-secondary">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -699,7 +699,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-sm text-white placeholder-white/40"
+            className="flex-1 px-3 py-2 bg-muted border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-sm text-foreground placeholder-muted-foreground"
           />
           <button
             onClick={handleSendMessage}
@@ -772,9 +772,9 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative bg-[#0f1520] rounded-2xl p-6 shadow-2xl w-full max-w-md mx-4 border border-white/10"
+        className="relative bg-background-secondary rounded-2xl p-6 shadow-2xl w-full max-w-md mx-4 border border-border"
       >
-        <h2 className="text-xl font-bold text-white mb-4">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           New Direct Message
         </h2>
         <input
@@ -782,7 +782,7 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search members..."
-          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent mb-4 text-white placeholder-white/40"
+          className="w-full px-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent mb-4 text-foreground placeholder-muted-foreground"
           autoFocus
         />
 
@@ -807,10 +807,10 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
                     avatarUrl
                   )
                 }
-                className="w-full p-3 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3 border border-transparent hover:border-white/10"
+                className="w-full p-3 hover:bg-muted rounded-lg transition-colors flex items-center gap-3 border border-transparent hover:border-border"
               >
                 {avatarUrl ? (
-                  <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ring-white/10">
+                  <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ring-border">
                     <Image
                       src={avatarUrl}
                       alt={userName}
@@ -824,8 +824,8 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
                   </div>
                 )}
                 <div className="flex-1 text-left">
-                  <div className="font-medium text-white">{userName}</div>
-                  <div className="text-xs text-white/50">
+                  <div className="font-medium text-foreground">{userName}</div>
+                  <div className="text-xs text-muted-foreground">
                     {member.publicUserData?.identifier}
                   </div>
                 </div>
@@ -834,7 +834,7 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
           })}
 
           {filteredMembers.length === 0 && (
-            <div className="p-8 text-center text-white/50">
+            <div className="p-8 text-center text-muted-foreground">
               <p className="text-sm">No members found</p>
             </div>
           )}
@@ -842,7 +842,7 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
 
         <button
           onClick={onClose}
-          className="mt-4 w-full px-4 py-2 bg-white/5 hover:bg-white/10 text-white/70 font-medium rounded-lg transition-colors border border-white/10"
+          className="mt-4 w-full px-4 py-2 bg-muted hover:bg-muted/80 text-muted-foreground font-medium rounded-lg transition-colors border border-border"
         >
           Cancel
         </button>

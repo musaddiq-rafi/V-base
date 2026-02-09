@@ -142,7 +142,7 @@ export function CodeFileCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
-      className="group relative bg-white/5 rounded-xl border border-white/10 hover:border-white/20 shadow-sm hover:shadow-lg hover:shadow-emerald-500/10 transition-all cursor-pointer overflow-hidden"
+      className="group relative bg-surface rounded-xl border border-border hover:border-border shadow-sm hover:shadow-lg hover:shadow-emerald-500/10 transition-all cursor-pointer overflow-hidden"
       onClick={onClick}
     >
       {/* Card Content */}
@@ -157,7 +157,7 @@ export function CodeFileCard({
             }`}
           >
             {type === "folder" ? (
-              <Folder className="w-6 h-6 text-amber-400" />
+              <Folder className="w-6 h-6 text-amber-500 dark:text-amber-400" />
             ) : (
               <span
                 className={`text-xs font-bold ${langConfig?.color || "text-gray-400"}`}
@@ -174,15 +174,15 @@ export function CodeFileCard({
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className="p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <MoreVertical className="w-4 h-4 text-white/50" />
+              <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </button>
 
             {/* Dropdown Menu */}
             {showMenu && (
               <div
-                className="absolute right-0 top-8 bg-[#0f1520] border border-white/10 rounded-lg shadow-lg py-1 min-w-[120px] z-10"
+                className="absolute right-0 top-8 bg-background-secondary border border-border rounded-lg shadow-lg py-1 min-w-[120px] z-10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
@@ -191,7 +191,7 @@ export function CodeFileCard({
                     setIsRenaming(true);
                     setShowMenu(false);
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-white/70 hover:bg-white/10"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
                 >
                   <Pencil className="w-4 h-4" />
                   Rename
@@ -199,7 +199,7 @@ export function CodeFileCard({
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-500/10"
                 >
                   <Trash2 className="w-4 h-4" />
                   {isDeleting ? "Deleting..." : "Delete"}
@@ -220,20 +220,20 @@ export function CodeFileCard({
               onKeyDown={handleKeyDown}
               onClick={(e) => e.stopPropagation()}
               autoFocus
-              className="w-full px-2 py-1 text-sm font-medium text-white bg-white/5 border border-sky-500 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full px-2 py-1 text-sm font-medium text-foreground bg-muted border border-sky-500 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           ) : (
-            <h3 className="font-medium text-white truncate">{name}</h3>
+            <h3 className="font-medium text-foreground truncate">{name}</h3>
           )}
           {type === "file" && language && (
-            <p className="text-xs text-white/50 mt-0.5 capitalize">
+            <p className="text-xs text-muted-foreground mt-0.5 capitalize">
               {language}
             </p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/50">
+        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <span>{creatorName}</span>
           <span>{formatDate(updatedAt)}</span>
         </div>

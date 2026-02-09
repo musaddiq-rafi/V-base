@@ -180,4 +180,17 @@ export default defineSchema({
   })
     .index("by_room", ["roomId"])
     .index("by_room_status", ["roomId", "status"]),
+
+  // Spreadsheets within spreadsheet rooms
+  spreadsheets: defineTable({
+    roomId: v.id("rooms"), // Parent spreadsheet room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Spreadsheet name
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
 });
