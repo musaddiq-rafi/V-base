@@ -12,6 +12,7 @@ import {
   FileText,
   Code,
   Video,
+  Trello,
   Loader2,
   Trash2,
   MoreVertical,
@@ -31,15 +32,17 @@ const roomIcons = {
   document: FileText,
   code: Code,
   conference: Video,
+  kanban: Trello,
   spreadsheet: Table,
 };
 
 // Color mapping for room types - Theme aware
 const roomColors = {
-  whiteboard: "bg-purple-500/20 text-purple-600 dark:text-purple-400",
-  document: "bg-blue-500/20 text-blue-600 dark:text-blue-400",
-  code: "bg-green-500/20 text-green-600 dark:text-green-400",
-  conference: "bg-orange-500/20 text-orange-600 dark:text-orange-400",
+  whiteboard: "bg-purple-500/20 text-purple-400",
+  document: "bg-blue-500/20 text-blue-400",
+  code: "bg-green-500/20 text-green-400",
+  conference: "bg-orange-500/20 text-orange-400",
+  kanban: "bg-emerald-500/20 text-emerald-400",
   spreadsheet: "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
 };
 

@@ -12,11 +12,13 @@ import {
   FileText,
   Code2,
   Video,
+  Trello,
   Info,
   AlertCircle,
   Table,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -31,9 +33,10 @@ export function CreateRoomModal({
 }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState<
-    "document" | "code" | "whiteboard" | "conference" | "spreadsheet"
+    "document" | "code" | "whiteboard" | "conference" | "kanban" | "spreadsheet"
   >("whiteboard");
   const [isCreating, setIsCreating] = useState(false);
+  const router = useRouter();
 
   const createRoom = useMutation(api.rooms.createRoom);
   const roomStats = useQuery(api.rooms.getRoomStats, { workspaceId });
@@ -50,11 +53,19 @@ export function CreateRoomModal({
 
     setIsCreating(true);
     try {
-      await createRoom({
+      const result: any = await createRoom({
         workspaceId,
         name: roomName.trim(),
         type: roomType,
       });
+      // If a kanban was created, navigate to it
+      if (roomType === "kanban" && result?.kanbanId) {
+        const kbId = result.kanbanId;
+        // Use workspaceId in route param (workspace route uses this id)
+        // Navigate to the kanban board page
+        router.push(`/workspace/${workspaceId}/room/${result.roomId}/kanban/${kbId}`);
+        return; // navigation will close modal by leaving page
+      }
       setRoomName("");
       setRoomType("whiteboard");
       onClose();
@@ -137,6 +148,7 @@ export function CreateRoomModal({
                     { value: "code", label: "Code", icon: Code2 },
                     { value: "spreadsheet", label: "Spreadsheet", icon: Table },
                     { value: "conference", label: "Meeting", icon: Video },
+                    { value: "kanban", label: "Kanban", icon: Trello },
                   ].map((option) => (
                     <button
                       key={option.value}
@@ -144,11 +156,12 @@ export function CreateRoomModal({
                       onClick={() =>
                         setRoomType(
                           option.value as
-                          | "document"
-                          | "code"
-                          | "whiteboard"
-                          | "conference"
-                          | "spreadsheet"
+                            | "document"
+                            | "code"
+                            | "whiteboard"
+                            | "conference"
+                            | "kanban"
+                            | "spreadsheet"
                         )
                       }
                       disabled={isCreating}
@@ -157,11 +170,11 @@ export function CreateRoomModal({
                           : "border-border bg-muted text-muted-foreground hover:border-border hover:bg-muted/80"
                         } disabled:opacity-50`}
                     >
-                      <option.icon className="w-4 h-4" />
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                  <option.icon className="w-4 h-4" />
+                  {option.label}
+                </button>
+              ))}
+            </div>
 
                 {/* Meeting Room Info */}
                 {isMeetingSelected && (

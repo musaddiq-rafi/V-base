@@ -11,6 +11,7 @@ export const createRoom = mutation({
       v.literal("code"),
       v.literal("whiteboard"),
       v.literal("conference"),
+      v.literal("kanban"),
       v.literal("spreadsheet")
     ),
   },
@@ -44,6 +45,8 @@ export const createRoom = mutation({
       }
     }
 
+    // Kanban room: no special constraints, just create
+
     // Create the room
     const roomId = await ctx.db.insert("rooms", {
       workspaceId: args.workspaceId,
@@ -51,7 +54,39 @@ export const createRoom = mutation({
       type: args.type,
     });
 
-    return roomId;
+    // If it's a kanban room, create a default kanban board
+    if (args.type === "kanban") {
+      const now = Date.now();
+      await ctx.db.insert("kanbans", {
+        roomId,
+        workspaceId: args.workspaceId,
+        name: `${args.name} Board`,
+        createdBy: identity.subject,
+        createdAt: now,
+        updatedAt: now,
+        content: JSON.stringify({
+          version: 1,
+          columns: [
+            { id: "todo", title: "To do", cardIds: [] },
+            { id: "in-progress", title: "In progress", cardIds: [] },
+            { id: "done", title: "Done", cardIds: [] },
+          ],
+          cards: {},
+        }),
+      });
+    }
+
+    if (args.type === "kanban") {
+      // find the kanban we just created
+      const kanban = await ctx.db
+        .query("kanbans")
+        .withIndex("by_room", (q) => q.eq("roomId", roomId))
+        .first();
+
+      return { roomId, kanbanId: kanban?._id || null };
+    }
+
+    return { roomId };
   },
 });
 
@@ -128,6 +163,17 @@ export const deleteRoom = mutation({
     } else if (room.type === "whiteboard" || room.type === "conference") {
       // These room types have their own Liveblocks room
       liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
+    } else if () {
+      // Delete kanban boards in this room
+      const kanbans = await ctx.db
+        .query("kanbans")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const kb of kanbans) {
+        // liveblocksRoomIdsToDelete.push(`kanban:${kb._id}`);
+        await ctx.db.delete(kb._id);
+      }
     } else if (room.type === "spreadsheet") {
       // Delete all spreadsheets in this room and collect their IDs
       const spreadsheets = await ctx.db

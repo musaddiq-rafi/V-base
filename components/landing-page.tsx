@@ -219,14 +219,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               className="hidden sm:inline-flex px-3 py-1.5 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-md transition-colors duration-200"
             >
               Sign in
-            </button>
-            <Button
-              onClick={onGetStarted}
-              size="sm"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all"
-            >
-              Get Started
-              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

@@ -27,6 +27,7 @@ export default defineSchema({
       v.literal("code"),
       v.literal("whiteboard"),
       v.literal("conference"),
+      v.literal("kanban"),
       v.literal("spreadsheet")
     ),
     // Optional: Access control list (array of Clerk user IDs)
@@ -42,21 +43,21 @@ export default defineSchema({
       v.literal("general"), // Workspace-wide channel
       v.literal("direct"), // 1-on-1 DM
       v.literal("group"), // Future: custom group channels
-      v.literal("file") // Chat associated with a file/document/whiteboard/spreadsheet
+      v.literal("file") // File-based chat (linked to documents/code/whiteboards)
     ),
     // For DM channels: the two participant user IDs (Clerk IDs)
     participantIds: v.optional(v.array(v.string())),
-
-    // Context binding for file-based chat channels
-    contextType: v.optional(
-      v.union(
-        v.literal("document"),
-        v.literal("codeFile"),
-        v.literal("whiteboard"),
-        v.literal("spreadsheet")
-      )
-    ),
-    contextId: v.optional(v.string()), // The _id of the linked entity (as string)
+    
+    // For file-based chat channels: context binding
+    contextType: v.optional(v.union(
+      v.literal("document"),
+      v.literal("codeFile"),
+      v.literal("whiteboard"),
+      v.literal("kanbanBoard"),
+      v.literal("spreadsheet")
+    )),
+    contextId: v.optional(v.string()), // The _id of the linked entity
+    
     createdAt: v.number(),
     createdBy: v.string(), // Clerk User ID
   })
@@ -75,12 +76,12 @@ export default defineSchema({
     // Reactions: map of reaction type to array of user IDs who reacted
     reactions: v.optional(
       v.object({
-        like: v.optional(v.array(v.string())), // Array of Clerk User IDs
+        like: v.optional(v.array(v.string())),
         dislike: v.optional(v.array(v.string())),
         haha: v.optional(v.array(v.string())),
       })
     ),
-    // Optional: for future features
+    // Optional attachments
     attachments: v.optional(
       v.array(
         v.object({
@@ -90,11 +91,14 @@ export default defineSchema({
         })
       )
     ),
-    // For threaded replies (future)
+    // For threaded replies (optional)
     parentMessageId: v.optional(v.id("messages")),
   })
     .index("by_channel", ["channelId", "timestamp"])
     .index("by_workspace", ["workspaceId"]),
+
+  // Kanban boards (minimal)
+  // (kanbans table defined later)
 
   // Last read timestamp per user per channel (cursor-based read tracking)
   lastRead: defineTable({
@@ -118,6 +122,20 @@ export default defineSchema({
   })
     .index("by_room", ["roomId"])
     .index("by_workspace", ["workspaceId"]),
+  //Kanban boards within kanban rooms
+  kanbans: defineTable({
+    roomId: v.id("rooms"), // Parent kanban room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Kanban board name (e.g., "Sprint Tasks")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),  
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+    // For simplicity, we'll store the entire kanban state as a JSON string
+    content: v.optional(v.string()), // Serialized kanban data (JSON string)
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),  
 
   // Code files and folders within code rooms
   codeFiles: defineTable({
