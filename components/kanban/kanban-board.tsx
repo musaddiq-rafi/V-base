@@ -25,6 +25,9 @@ import {
   X,
   Save,
   GripVertical,
+  LayoutGrid,
+  List,
+  AlertCircle,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useDroppable } from "@dnd-kit/core";
@@ -319,8 +322,118 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
     setEditingDescription("");
   };
 
+  const [isListView, setIsListView] = useState(false);
+
+  const toggleView = () => {
+    setIsListView((prev) => !prev);
+  };
+
   return (
     <div className="h-full flex flex-col bg-[#0b0f1a]">
+      {/* View Toggle & Info Banner */}
+      <div className="flex-shrink-0 bg-[#0f1520] border-b border-white/10 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+              <button
+                onClick={() => setIsListView(false)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
+                  !isListView
+                    ? "bg-emerald-500 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="text-sm font-medium">Board</span>
+              </button>
+              <button
+                onClick={() => setIsListView(true)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
+                  isListView
+                    ? "bg-emerald-500 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <List className="w-4 h-4" />
+                <span className="text-sm font-medium">List</span>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <AlertCircle className="w-4 h-4 text-amber-400" />
+            <span className="text-xs text-amber-400 font-medium">
+              Real-time collaboration not available for Kanban boards
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {isListView ? (
+        /* List View */
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Task</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Description</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Column</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {board.columns.map((column) =>
+                  column.cardIds.map((cardId) => {
+                    const card = board.cards[cardId];
+                    if (!card) return null;
+                    return (
+                      <tr
+                        key={card.id}
+                        className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-white font-medium">{card.title}</td>
+                        <td className="py-3 px-4 text-white/60 text-sm">
+                          {card.description || "No description"}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            {column.title}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openEditCard(card.id)}
+                              className="text-white/40 hover:text-emerald-400 transition-colors"
+                              title="Edit card"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCard(card.id)}
+                              className="text-white/40 hover:text-red-400 transition-colors"
+                              title="Delete card"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            {board.columns.every((col) => col.cardIds.length === 0) && (
+              <div className="text-center py-12">
+                <p className="text-white/40 text-sm">No tasks yet. Switch to Board view to add tasks.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Board View */
+        <>
       <DndContext
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
@@ -380,6 +493,8 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
+        </>
+      )}
 
       {editingCardId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
