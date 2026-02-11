@@ -446,6 +446,12 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
       >
         {isListView ? "Kanban Board" : "List View"}
       </button>
+      <button
+        onClick={toggleView}
+        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        {isListView ? "Switch to Kanban View" : "Switch to List View"}
+      </button>
     </div>
   );
 }
@@ -590,3 +596,27 @@ function KanbanCardItem({
     </div>
   );
 }
+
+<table className="table-auto w-full border-collapse border border-gray-300">
+            <thead>
+              <tr>
+                <th className="border border-gray-300 px-4 py-2">Task</th>
+                <th className="border border-gray-300 px-4 py-2">Description</th>
+                <th className="border border-gray-300 px-4 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {board.columns.map((column) =>
+                column.cardIds.map((cardId) => {
+                  const card = board.cards[cardId];
+                  return (
+                    <tr key={card.id}>
+                      <td className="border border-gray-300 px-4 py-2">{card.title}</td>
+                      <td className="border border-gray-300 px-4 py-2">{card.description || "No description"}</td>
+                      <td className="border border-gray-300 px-4 py-2">{column.title}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
