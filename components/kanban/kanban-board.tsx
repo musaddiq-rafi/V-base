@@ -319,6 +319,12 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
     setEditingDescription("");
   };
 
+  const [isListView, setIsListView] = useState(false);
+
+  const toggleView = () => {
+    setIsListView((prev) => !prev);
+  };
+
   return (
     <div className="h-full flex flex-col bg-[#0b0f1a]">
       <DndContext
@@ -434,6 +440,12 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
           </div>
         </div>
       )}
+      <button
+        onClick={toggleView}
+        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 text-sm bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+      >
+        {isListView ? "Kanban Board" : "List View"}
+      </button>
     </div>
   );
 }
