@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { motion } from "framer-motion";
 import {
   useParticipants,
@@ -55,6 +57,48 @@ export function MeetingStageWithLiveKit({
   const { localParticipant } = useLocalParticipant();
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  // Get the meeting's chat channel for unread tracking
+  const channel = useQuery(api.channels.getChannelByContext, {
+    contextType: "meeting",
+    contextId: meetingId,
+  });
+
+  // Get messages to calculate unread count
+  const messages = useQuery(
+    api.messages.getMessagesWithAuthors,
+    channel ? { channelId: channel._id } : "skip"
+  );
+
+  // Track last read timestamp for unread badge
+  const lastReadRef = useRef<number>(Date.now());
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Mark as read mutation
+  const markAsRead = useMutation(api.messages.markChannelAsRead);
+
+  // Update unread count when messages change and chat is closed
+  useEffect(() => {
+    if (!messages || sidePanel === "chat") {
+      setUnreadCount(0);
+      return;
+    }
+
+    // Count messages after last read timestamp
+    const newMessages = messages.filter(
+      (msg) => msg.timestamp > lastReadRef.current && msg.authorId !== user?.id
+    );
+    setUnreadCount(newMessages.length);
+  }, [messages, sidePanel, user?.id]);
+
+  // When chat panel opens, reset unread count and mark as read
+  useEffect(() => {
+    if (sidePanel === "chat" && channel) {
+      lastReadRef.current = Date.now();
+      setUnreadCount(0);
+      markAsRead({ channelId: channel._id });
+    }
+  }, [sidePanel, channel, markAsRead]);
 
   // Log room events for debugging
   useEffect(() => {
@@ -213,13 +257,19 @@ export function MeetingStageWithLiveKit({
           </button>
           <button
             onClick={() => toggleSidePanel("chat")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors relative ${
               sidePanel === "chat"
                 ? "bg-sky-600 text-white"
                 : "bg-muted text-muted-foreground hover:text-foreground hover:bg-surface-hover"
             }`}
           >
             <MessageSquare className="w-4 h-4" />
+            {/* Unread badge */}
+            {unreadCount > 0 && sidePanel !== "chat" && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-background">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
         </div>
       </motion.header>
@@ -251,7 +301,7 @@ export function MeetingStageWithLiveKit({
               </button>
             </div>
             <div className="flex-1 overflow-hidden">
-              {sidePanel === "chat" && <MeetingChat roomId={roomId} />}
+              {sidePanel === "chat" && <MeetingChat meetingId={meetingId} />}
               {sidePanel === "participants" && (
                 <ParticipantsList participants={formattedParticipants} />
               )}

@@ -163,7 +163,7 @@ export const deleteRoom = mutation({
     } else if (room.type === "whiteboard" || room.type === "conference") {
       // These room types have their own Liveblocks room
       liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
-    } else if () {
+    } else if (room.type === "kanban") {
       // Delete kanban boards in this room
       const kanbans = await ctx.db
         .query("kanbans")
