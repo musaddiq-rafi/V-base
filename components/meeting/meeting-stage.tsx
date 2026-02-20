@@ -226,37 +226,49 @@ export function MeetingStageWithLiveKit({
     }
   }, [localParticipant, isAudioEnabled, onToggleAudio]);
 
+  // Helper to parse participant metadata
+  const parseMetadata = (metadata: string | undefined): { avatar?: string } => {
+    if (!metadata) return {};
+    try {
+      return JSON.parse(metadata);
+    } catch {
+      return {};
+    }
+  };
+
   // Convert LiveKit participants to our format
-  const formattedParticipants = participants.map((p) => ({
-    id: p.identity,
-    name: p.name || p.identity,
-    avatar: undefined,
-    isVideoEnabled: p.isCameraEnabled,
-    isAudioEnabled: p.isMicrophoneEnabled,
-    isScreenSharing: p.isScreenShareEnabled,
-    isSelf: p.isLocal,
-    isHost: p.identity === meetingCreatedBy,
-  }));
+  const formattedParticipants = participants.map((p) => {
+    const meta = parseMetadata(p.metadata);
+    return {
+      id: p.identity,
+      name: p.name || p.identity,
+      avatar: meta.avatar,
+      isVideoEnabled: p.isCameraEnabled,
+      isAudioEnabled: p.isMicrophoneEnabled,
+      isScreenSharing: p.isScreenShareEnabled,
+      isSelf: p.isLocal,
+      isHost: p.identity === meetingCreatedBy,
+    };
+  });
 
   const participantCount = participants.length;
 
   return (
-    <div className="h-screen bg-background flex flex-col">
-      {/* Header */}
+    <div className="h-screen bg-[#202124] flex flex-col">
+      {/* Header - Google Meet style */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between h-14 px-4 border-b border-border"
+        className="flex items-center justify-between h-14 px-4 bg-[#202124]"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+          <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           </div>
+          <div className="h-4 w-px bg-[#5f6368]" />
           <div>
-            <h1 className="font-semibold text-foreground text-sm">
-              {meetingName}
-            </h1>
-            <p className="text-xs text-muted-foreground">
+            <h1 className="font-medium text-white text-sm">{meetingName}</h1>
+            <p className="text-xs text-[#9aa0a6]">
               {roomName} • {participantCount} participant
               {participantCount !== 1 ? "s" : ""}
             </p>
@@ -266,27 +278,27 @@ export function MeetingStageWithLiveKit({
         <div className="flex items-center gap-2">
           <button
             onClick={() => toggleSidePanel("participants")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors ${
               sidePanel === "participants"
-                ? "bg-sky-600 text-white"
-                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-surface-hover"
+                ? "bg-[#8ab4f8] text-[#202124]"
+                : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"
             }`}
           >
             <Users className="w-4 h-4" />
-            <span className="text-sm">{participantCount}</span>
+            <span className="text-sm font-medium">{participantCount}</span>
           </button>
           <button
             onClick={() => toggleSidePanel("chat")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors relative ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors relative ${
               sidePanel === "chat"
-                ? "bg-sky-600 text-white"
-                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-surface-hover"
+                ? "bg-[#8ab4f8] text-[#202124]"
+                : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"
             }`}
           >
             <MessageSquare className="w-4 h-4" />
             {/* Unread badge */}
             {unreadCount > 0 && sidePanel !== "chat" && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-background">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#ea4335] rounded-full flex items-center justify-center text-[10px] font-bold text-white">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
@@ -295,9 +307,9 @@ export function MeetingStageWithLiveKit({
       </motion.header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden bg-[#202124]">
         {/* Video Grid */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-2">
           <LiveKitParticipantGrid
             getQueuePosition={getQueuePosition}
             isHandRaised={isHandRaised}
@@ -323,21 +335,21 @@ export function MeetingStageWithLiveKit({
           </motion.div>
         )}
 
-        {/* Side Panel */}
+        {/* Side Panel - Google Meet style */}
         {sidePanel && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
+            animate={{ width: 360, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="h-full border-l border-border bg-background-secondary flex flex-col"
+            className="h-full border-l border-[#3c4043] bg-[#202124] flex flex-col"
           >
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="font-semibold text-foreground">
-                {sidePanel === "chat" ? "Chat" : "Participants"}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#3c4043]">
+              <h2 className="font-medium text-white text-base">
+                {sidePanel === "chat" ? "In-call messages" : "People"}
               </h2>
               <button
                 onClick={() => setSidePanel(null)}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                className="p-2 rounded-full hover:bg-[#3c4043] text-[#9aa0a6] hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
