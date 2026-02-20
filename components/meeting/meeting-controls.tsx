@@ -17,9 +17,11 @@ interface MeetingControlsProps {
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
   isScreenSharing: boolean;
+  isHandRaised: boolean;
   onToggleVideo: () => void;
   onToggleAudio: () => void;
   onToggleScreenShare: () => void;
+  onToggleRaiseHand: () => void;
   onLeave: () => void;
 }
 
@@ -27,9 +29,11 @@ export function MeetingControls({
   isVideoEnabled,
   isAudioEnabled,
   isScreenSharing,
+  isHandRaised,
   onToggleVideo,
   onToggleAudio,
   onToggleScreenShare,
+  onToggleRaiseHand,
   onLeave,
 }: MeetingControlsProps) {
   return (
@@ -87,8 +91,13 @@ export function MeetingControls({
 
       {/* Raise Hand */}
       <button
-        className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-all"
-        title="Raise hand"
+        onClick={onToggleRaiseHand}
+        className={`p-4 rounded-full transition-all ${
+          isHandRaised
+            ? "bg-amber-500 hover:bg-amber-600 text-white"
+            : "bg-gray-700 hover:bg-gray-600 text-white"
+        }`}
+        title={isHandRaised ? "Lower hand" : "Raise hand"}
       >
         <Hand className="w-5 h-5" />
       </button>

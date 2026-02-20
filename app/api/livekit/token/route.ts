@@ -5,18 +5,19 @@ export async function GET(request: NextRequest) {
   const room = request.nextUrl.searchParams.get("room");
   const username = request.nextUrl.searchParams.get("username");
   const identity = request.nextUrl.searchParams.get("identity");
+  const avatar = request.nextUrl.searchParams.get("avatar");
 
   if (!room) {
     return NextResponse.json(
       { error: 'Missing "room" query parameter' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!identity) {
     return NextResponse.json(
       { error: 'Missing "identity" query parameter' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   if (!apiKey || !apiSecret) {
     return NextResponse.json(
       { error: "Server misconfigured - missing LiveKit credentials" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -37,12 +38,18 @@ export async function GET(request: NextRequest) {
     ttl: "6h",
   });
 
+  // Set initial metadata with avatar if provided
+  if (avatar) {
+    at.metadata = JSON.stringify({ avatar });
+  }
+
   at.addGrant({
     room: room,
     roomJoin: true,
     canPublish: true,
     canSubscribe: true,
     canPublishData: true,
+    canUpdateOwnMetadata: true, // Required for raise hand feature
   });
 
   const token = await at.toJwt();
@@ -59,14 +66,14 @@ export async function POST(request: NextRequest) {
     if (!room) {
       return NextResponse.json(
         { error: 'Missing "room" in request body' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!identity) {
       return NextResponse.json(
         { error: 'Missing "identity" in request body' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -76,9 +83,11 @@ export async function POST(request: NextRequest) {
     if (!apiKey || !apiSecret) {
       return NextResponse.json(
         { error: "Server misconfigured - missing LiveKit credentials" },
-        { status: 500 }
+        { status: 500 },
       );
     }
+
+    const { avatar } = body;
 
     const at = new AccessToken(apiKey, apiSecret, {
       identity: identity,
@@ -86,12 +95,18 @@ export async function POST(request: NextRequest) {
       ttl: "6h",
     });
 
+    // Set initial metadata with avatar if provided
+    if (avatar) {
+      at.metadata = JSON.stringify({ avatar });
+    }
+
     at.addGrant({
       room: room,
       roomJoin: true,
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
+      canUpdateOwnMetadata: true, // Required for raise hand feature
     });
 
     const token = await at.toJwt();
@@ -101,7 +116,7 @@ export async function POST(request: NextRequest) {
     console.error("Error generating LiveKit token:", error);
     return NextResponse.json(
       { error: "Failed to generate token" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

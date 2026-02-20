@@ -50,6 +50,13 @@ export function MeetingLobby({
     let animationId: number;
 
     const initMedia = async () => {
+      // Skip getUserMedia if both video and audio are disabled
+      if (!isVideoEnabled && !isAudioEnabled) {
+        setMediaStream(null);
+        setHasPermission(true); // No permission needed if nothing is requested
+        return;
+      }
+
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: isVideoEnabled,
@@ -259,7 +266,9 @@ export function MeetingLobby({
                   <Video className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">{meetingName}</h3>
+                  <h3 className="font-semibold text-foreground">
+                    {meetingName}
+                  </h3>
                   <p className="text-sm text-muted-foreground">{roomName}</p>
                 </div>
               </div>

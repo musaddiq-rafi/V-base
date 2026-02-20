@@ -19,7 +19,8 @@ import {
 } from "./livekit-participant-grid";
 import { MeetingChat } from "./meeting-chat";
 import { ParticipantsList } from "./participants-list";
-import { MessageSquare, Users, X, Loader2 } from "lucide-react";
+import { useRaisedHands, RaisedHandInfo } from "./use-raised-hands";
+import { MessageSquare, Users, X, Loader2, Hand } from "lucide-react";
 
 interface MeetingStageProps {
   roomId: Id<"rooms">;
@@ -58,6 +59,23 @@ export function MeetingStageWithLiveKit({
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
+  // Raise hand state management
+  const {
+    raisedHands,
+    isLocalHandRaised,
+    toggleRaiseHand,
+    getQueuePosition,
+    isHandRaised,
+    requestLowerHand,
+    totalRaisedHands,
+  } = useRaisedHands();
+
+  // Check if current user is workspace admin
+  const workspace = useQuery(api.workspaces.getWorkspaceByClerkOrgId, {
+    clerkOrgId: workspaceId,
+  });
+  const isAdmin = user?.id === workspace?.ownerId;
+
   // Get the meeting's chat channel for unread tracking
   const channel = useQuery(api.channels.getChannelByContext, {
     contextType: "meeting",
@@ -67,7 +85,7 @@ export function MeetingStageWithLiveKit({
   // Get messages to calculate unread count
   const messages = useQuery(
     api.messages.getMessagesWithAuthors,
-    channel ? { channelId: channel._id } : "skip"
+    channel ? { channelId: channel._id } : "skip",
   );
 
   // Track last read timestamp for unread badge
@@ -86,7 +104,7 @@ export function MeetingStageWithLiveKit({
 
     // Count messages after last read timestamp
     const newMessages = messages.filter(
-      (msg) => msg.timestamp > lastReadRef.current && msg.authorId !== user?.id
+      (msg) => msg.timestamp > lastReadRef.current && msg.authorId !== user?.id,
     );
     setUnreadCount(newMessages.length);
   }, [messages, sidePanel, user?.id]);
@@ -235,7 +253,9 @@ export function MeetingStageWithLiveKit({
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           </div>
           <div>
-            <h1 className="font-semibold text-foreground text-sm">{meetingName}</h1>
+            <h1 className="font-semibold text-foreground text-sm">
+              {meetingName}
+            </h1>
             <p className="text-xs text-muted-foreground">
               {roomName} • {participantCount} participant
               {participantCount !== 1 ? "s" : ""}
@@ -278,8 +298,30 @@ export function MeetingStageWithLiveKit({
       <div className="flex-1 flex overflow-hidden">
         {/* Video Grid */}
         <div className="flex-1 p-4">
-          <LiveKitParticipantGrid />
+          <LiveKitParticipantGrid
+            getQueuePosition={getQueuePosition}
+            isHandRaised={isHandRaised}
+          />
         </div>
+
+        {/* Raised Hands Notification Badge */}
+        {totalRaisedHands > 0 && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="absolute top-20 left-4 z-10"
+          >
+            <button
+              onClick={() => toggleSidePanel("participants")}
+              className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg transition-colors"
+            >
+              <Hand className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                Raised Hands ({totalRaisedHands})
+              </span>
+            </button>
+          </motion.div>
+        )}
 
         {/* Side Panel */}
         {sidePanel && (
@@ -303,7 +345,13 @@ export function MeetingStageWithLiveKit({
             <div className="flex-1 overflow-hidden">
               {sidePanel === "chat" && <MeetingChat meetingId={meetingId} />}
               {sidePanel === "participants" && (
-                <ParticipantsList participants={formattedParticipants} />
+                <ParticipantsList
+                  participants={formattedParticipants}
+                  raisedHands={raisedHands}
+                  isAdmin={isAdmin}
+                  currentUserId={user?.id}
+                  onLowerHand={requestLowerHand}
+                />
               )}
             </div>
           </motion.div>
@@ -318,9 +366,11 @@ export function MeetingStageWithLiveKit({
         isVideoEnabled={isVideoEnabled}
         isAudioEnabled={isAudioEnabled}
         isScreenSharing={isScreenSharing}
+        isHandRaised={isLocalHandRaised}
         onToggleVideo={handleToggleVideo}
         onToggleAudio={handleToggleAudio}
         onToggleScreenShare={handleToggleScreenShare}
+        onToggleRaiseHand={toggleRaiseHand}
         onLeave={onLeave}
       />
     </div>

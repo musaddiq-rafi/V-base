@@ -223,12 +223,14 @@ export function MeetingRoom({
   // Generate participant identity from user ID
   const participantIdentity = user.id;
   const participantName = user.fullName || user.username || "Anonymous User";
+  const participantAvatar = user.imageUrl;
 
   return (
     <LiveKitProvider
       roomName={livekitRoomName}
       participantName={participantName}
       participantIdentity={participantIdentity}
+      participantAvatar={participantAvatar}
       videoEnabled={isVideoEnabled}
       audioEnabled={isAudioEnabled}
       onDisconnected={() => {

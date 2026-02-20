@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+import Image from "next/image";
 import {
   useParticipants,
   useLocalParticipant,
@@ -8,11 +10,33 @@ import {
   AudioTrack,
 } from "@livekit/components-react";
 import { Track, Participant, TrackPublication } from "livekit-client";
-import { Mic, MicOff, VideoOff, Pin, MoreVertical } from "lucide-react";
+import { Mic, MicOff, VideoOff, Pin, MoreVertical, Hand } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-export function LiveKitParticipantGrid() {
+// Parse participant metadata to extract avatar URL
+function parseParticipantMetadata(metadata: string | undefined): {
+  avatar?: string;
+  handRaised?: boolean;
+  handRaisedAt?: number;
+} {
+  if (!metadata) return {};
+  try {
+    return JSON.parse(metadata);
+  } catch {
+    return {};
+  }
+}
+
+interface LiveKitParticipantGridProps {
+  getQueuePosition: (participantId: string) => number | null;
+  isHandRaised: (participantId: string) => boolean;
+}
+
+export function LiveKitParticipantGrid({
+  getQueuePosition,
+  isHandRaised,
+}: LiveKitParticipantGridProps) {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
 
@@ -68,6 +92,8 @@ export function LiveKitParticipantGrid() {
             isLocal={participant.isLocal}
             cameraTrack={cameraTrack}
             screenShareTrack={screenShareTrack}
+            handRaisedPosition={getQueuePosition(participant.identity)}
+            isHandRaised={isHandRaised(participant.identity)}
           />
         );
       })}
@@ -88,6 +114,8 @@ interface ParticipantTileProps {
     publication: TrackPublication;
     source: Track.Source;
   };
+  handRaisedPosition: number | null;
+  isHandRaised: boolean;
 }
 
 function ParticipantTile({
@@ -95,10 +123,19 @@ function ParticipantTile({
   isLocal,
   cameraTrack,
   screenShareTrack,
+  handRaisedPosition,
+  isHandRaised,
 }: ParticipantTileProps) {
   const isCameraEnabled = participant.isCameraEnabled;
   const isMicEnabled = participant.isMicrophoneEnabled;
   const isScreenSharing = participant.isScreenShareEnabled;
+
+  // Parse metadata to get avatar
+  const metadata = useMemo(
+    () => parseParticipantMetadata(participant.metadata),
+    [participant.metadata],
+  );
+  const avatarUrl = metadata.avatar;
 
   // Get display name
   const displayName = participant.name || participant.identity;
@@ -142,9 +179,21 @@ function ParticipantTile({
         </div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">{initials}</span>
-          </div>
+          {avatarUrl ? (
+            <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-gray-700/50 shadow-xl">
+              <Image
+                src={avatarUrl}
+                alt={displayName}
+                width={96}
+                height={96}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-gray-700/50 shadow-xl">
+              <span className="text-3xl font-bold text-white">{initials}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -164,31 +213,69 @@ function ParticipantTile({
         </div>
       )}
 
+      {/* Raised Hand Indicator - Google Meet style */}
+      {isHandRaised && handRaisedPosition !== null && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          className="absolute top-2 right-2 z-10"
+        >
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500 rounded-full shadow-lg">
+            <span className="text-xs font-bold text-white">
+              {handRaisedPosition}
+            </span>
+            <Hand className="w-3.5 h-3.5 text-white" />
+          </div>
+        </motion.div>
+      )}
+
       {/* Bottom info bar */}
       <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white truncate">
-              {displayName}
-              {isLocal && <span className="text-gray-400 ml-1">(You)</span>}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            {isMicEnabled ? (
-              <div className="w-6 h-6 rounded-full bg-gray-700/80 flex items-center justify-center">
-                <Mic className="w-3 h-3 text-white" />
+        <div className="flex flex-col gap-1.5">
+          {/* Raised hand banner (alternative position at bottom) */}
+          {isHandRaised && (
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="flex items-center gap-1.5"
+            >
+              <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-500/90 rounded-lg">
+                <Hand className="w-3 h-3 text-white" />
+                <span className="text-xs font-medium text-white">
+                  Hand raised
+                </span>
               </div>
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center">
-                <MicOff className="w-3 h-3 text-white" />
-              </div>
-            )}
+            </motion.div>
+          )}
+
+          {/* Name and mic status row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-white truncate">
+                {displayName}
+                {isLocal && <span className="text-gray-400 ml-1">(You)</span>}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {isMicEnabled ? (
+                <div className="w-6 h-6 rounded-full bg-gray-700/80 flex items-center justify-center">
+                  <Mic className="w-3 h-3 text-white" />
+                </div>
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center">
+                  <MicOff className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Hover actions */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div
+        className={`absolute top-2 ${isHandRaised ? "right-16" : "right-2"} opacity-0 group-hover:opacity-100 transition-opacity`}
+      >
         <button className="w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white">
           <MoreVertical className="w-4 h-4" />
         </button>
