@@ -14,6 +14,7 @@ interface LiveKitProviderProps {
   roomName: string;
   participantName: string;
   participantIdentity: string;
+  participantAvatar?: string;
   onConnected?: () => void;
   onDisconnected?: () => void;
   onError?: (error: Error) => void;
@@ -25,12 +26,17 @@ async function fetchToken(
   roomName: string,
   participantName: string,
   participantIdentity: string,
+  participantAvatar?: string,
 ): Promise<string> {
   const params = new URLSearchParams({
     room: roomName,
     username: participantName,
     identity: participantIdentity,
   });
+
+  if (participantAvatar) {
+    params.set("avatar", participantAvatar);
+  }
 
   console.log(
     "[LiveKit] Fetching token for room:",
@@ -62,6 +68,7 @@ export function LiveKitProvider({
   roomName,
   participantName,
   participantIdentity,
+  participantAvatar,
   onConnected,
   onDisconnected,
   onError,
@@ -84,7 +91,12 @@ export function LiveKitProvider({
 
     console.log("[LiveKit] Initializing connection to room:", roomName);
 
-    fetchToken(roomName, participantName, participantIdentity)
+    fetchToken(
+      roomName,
+      participantName,
+      participantIdentity,
+      participantAvatar,
+    )
       .then((token) => {
         console.log("[LiveKit] Token received successfully");
         setToken(token);
@@ -96,7 +108,13 @@ export function LiveKitProvider({
         setIsLoading(false);
         onError?.(err);
       });
-  }, [roomName, participantName, participantIdentity, onError]);
+  }, [
+    roomName,
+    participantName,
+    participantIdentity,
+    participantAvatar,
+    onError,
+  ]);
 
   const handleConnected = useCallback(() => {
     console.log("[LiveKit] Connected to room:", roomName);
@@ -123,7 +141,9 @@ export function LiveKitProvider({
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Connecting to meeting...</p>
-          <p className="text-muted-foreground/70 text-sm mt-2">Room: {roomName}</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">
+            Room: {roomName}
+          </p>
         </div>
       </div>
     );
@@ -142,7 +162,9 @@ export function LiveKitProvider({
           <p className="text-muted-foreground text-sm">
             {error?.message || "Unable to get meeting token"}
           </p>
-          <p className="text-muted-foreground/60 text-xs mt-2">Room: {roomName}</p>
+          <p className="text-muted-foreground/60 text-xs mt-2">
+            Room: {roomName}
+          </p>
         </div>
       </div>
     );
@@ -158,7 +180,9 @@ export function LiveKitProvider({
           <h2 className="text-xl font-semibold text-foreground mb-2">
             Configuration Error
           </h2>
-          <p className="text-muted-foreground text-sm">LiveKit URL is not configured</p>
+          <p className="text-muted-foreground text-sm">
+            LiveKit URL is not configured
+          </p>
         </div>
       </div>
     );

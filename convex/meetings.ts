@@ -80,6 +80,17 @@ export const createMeeting = mutation({
       participantCount: 0,
     });
 
+    // Create a chat channel for this meeting
+    await ctx.db.insert("channels", {
+      workspaceId: room.workspaceId,
+      name: `meeting-chat-${args.name.trim()}`,
+      type: "meeting",
+      contextType: "meeting",
+      contextId: meetingId,
+      createdAt: Date.now(),
+      createdBy: identity.subject,
+    });
+
     // Return both meetingId and livekitRoomName to avoid race condition
     return { meetingId, livekitRoomName };
   },
@@ -132,6 +143,37 @@ export const leaveMeeting = mutation({
     const newCount = Math.max(0, meeting.participantCount - 1);
 
     if (newCount === 0) {
+      // Delete the meeting chat channel and all messages first
+      const linkedChannel = await ctx.db
+        .query("channels")
+        .withIndex("by_context", (q) =>
+          q.eq("contextType", "meeting").eq("contextId", args.meetingId),
+        )
+        .unique();
+
+      if (linkedChannel) {
+        // Delete all messages in this channel
+        const messages = await ctx.db
+          .query("messages")
+          .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+          .collect();
+        for (const msg of messages) {
+          await ctx.db.delete(msg._id);
+        }
+
+        // Delete lastRead records for this channel
+        const readReceipts = await ctx.db
+          .query("lastRead")
+          .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+          .collect();
+        for (const receipt of readReceipts) {
+          await ctx.db.delete(receipt._id);
+        }
+
+        // Delete the channel
+        await ctx.db.delete(linkedChannel._id);
+      }
+
       // Delete the meeting when last person leaves (keeps DB clean)
       await ctx.db.delete(args.meetingId);
     } else {
@@ -163,6 +205,34 @@ export const endMeeting = mutation({
     // Only the creator can end the meeting
     if (meeting.createdBy !== identity.subject) {
       throw new Error("Only the meeting creator can end this meeting");
+    }
+
+    // Delete the meeting chat channel and all messages first
+    const linkedChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", "meeting").eq("contextId", args.meetingId),
+      )
+      .unique();
+
+    if (linkedChannel) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      await ctx.db.delete(linkedChannel._id);
     }
 
     // Delete the meeting record (keeps DB clean)
@@ -199,6 +269,34 @@ export const forceEndMeeting = mutation({
 
     if (!canForceEnd) {
       throw new Error("Cannot force end this meeting");
+    }
+
+    // Delete the meeting chat channel and all messages first
+    const linkedChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", "meeting").eq("contextId", args.meetingId),
+      )
+      .unique();
+
+    if (linkedChannel) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      await ctx.db.delete(linkedChannel._id);
     }
 
     // Delete the meeting record (keeps DB clean)

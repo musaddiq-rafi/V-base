@@ -147,14 +147,14 @@ export const getDirectChannels = query({
 
     // Filter to only DMs that include the current user
     const userDMs = allDMs.filter((channel) =>
-      channel.participantIds?.includes(currentUserId)
+      channel.participantIds?.includes(currentUserId),
     );
 
     // Enrich with other user's info
     const enrichedDMs = await Promise.all(
       userDMs.map(async (dm) => {
         const otherUserId = dm.participantIds?.find(
-          (id) => id !== currentUserId
+          (id) => id !== currentUserId,
         );
 
         // Get other user's info from users table
@@ -174,7 +174,7 @@ export const getDirectChannels = query({
           otherUserId,
           otherUserName,
         };
-      })
+      }),
     );
 
     return enrichedDMs;
@@ -222,7 +222,8 @@ export const getChannelByContext = query({
       v.literal("document"),
       v.literal("codeFile"),
       v.literal("whiteboard"),
-      v.literal("spreadsheet")
+      v.literal("spreadsheet"),
+      v.literal("meeting"),
     ),
     contextId: v.string(),
   },
@@ -230,7 +231,7 @@ export const getChannelByContext = query({
     const channel = await ctx.db
       .query("channels")
       .withIndex("by_context", (q) =>
-        q.eq("contextType", args.contextType).eq("contextId", args.contextId)
+        q.eq("contextType", args.contextType).eq("contextId", args.contextId),
       )
       .unique();
     return channel;

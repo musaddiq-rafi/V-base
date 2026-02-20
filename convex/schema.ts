@@ -28,7 +28,7 @@ export default defineSchema({
       v.literal("whiteboard"),
       v.literal("conference"),
       v.literal("kanban"),
-      v.literal("spreadsheet")
+      v.literal("spreadsheet"),
     ),
     // Optional: Access control list (array of Clerk user IDs)
     // If empty, everyone in workspace can access
@@ -43,21 +43,25 @@ export default defineSchema({
       v.literal("general"), // Workspace-wide channel
       v.literal("direct"), // 1-on-1 DM
       v.literal("group"), // Future: custom group channels
-      v.literal("file") // File-based chat (linked to documents/code/whiteboards)
+      v.literal("file"), // File-based chat (linked to documents/code/whiteboards)
+      v.literal("meeting"), // Meeting chat (linked to meetings)
     ),
     // For DM channels: the two participant user IDs (Clerk IDs)
     participantIds: v.optional(v.array(v.string())),
-    
+
     // For file-based chat channels: context binding
-    contextType: v.optional(v.union(
-      v.literal("document"),
-      v.literal("codeFile"),
-      v.literal("whiteboard"),
-      v.literal("kanbanBoard"),
-      v.literal("spreadsheet")
-    )),
+    contextType: v.optional(
+      v.union(
+        v.literal("document"),
+        v.literal("codeFile"),
+        v.literal("whiteboard"),
+        v.literal("kanbanBoard"),
+        v.literal("spreadsheet"),
+        v.literal("meeting"),
+      ),
+    ),
     contextId: v.optional(v.string()), // The _id of the linked entity
-    
+
     createdAt: v.number(),
     createdBy: v.string(), // Clerk User ID
   })
@@ -79,7 +83,7 @@ export default defineSchema({
         like: v.optional(v.array(v.string())),
         dislike: v.optional(v.array(v.string())),
         haha: v.optional(v.array(v.string())),
-      })
+      }),
     ),
     // Optional attachments
     attachments: v.optional(
@@ -88,8 +92,8 @@ export default defineSchema({
           url: v.string(),
           type: v.string(),
           name: v.string(),
-        })
-      )
+        }),
+      ),
     ),
     // For threaded replies (optional)
     parentMessageId: v.optional(v.id("messages")),
@@ -129,13 +133,13 @@ export default defineSchema({
     name: v.string(), // Kanban board name (e.g., "Sprint Tasks")
     createdBy: v.string(), // Clerk User ID
     createdAt: v.number(),
-    updatedAt: v.number(),  
+    updatedAt: v.number(),
     lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
     // For simplicity, we'll store the entire kanban state as a JSON string
     content: v.optional(v.string()), // Serialized kanban data (JSON string)
   })
     .index("by_room", ["roomId"])
-    .index("by_workspace", ["workspaceId"]),  
+    .index("by_workspace", ["workspaceId"]),
 
   // Code files and folders within code rooms
   codeFiles: defineTable({
