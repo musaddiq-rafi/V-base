@@ -11,13 +11,13 @@ The spreadsheet room provides a Google Sheets-like collaborative experience wher
 ### Key Features
 
 - ✅ **Real-time collaboration** — Changes propagate instantly to all participants
+- ✅ **Live cursor presence** — See other users' selected cells with colored highlights
 - ✅ **Formula support** — SUM, AVERAGE, COUNT, MAX, MIN with cell/range references
 - ✅ **Cell styling** — Bold, italic, underline, strikethrough, colors, alignment
 - ✅ **Number formatting** — Currency, percent, number formats
 - ✅ **Selection statistics** — Sum, average, min, max, count for selected ranges
 - ✅ **Row/column operations** — Insert and delete rows/columns
 - ✅ **Resizable columns** — Drag column borders to resize
-- ✅ **Chat integration** — Auto-created chat channel per spreadsheet
 
 ---
 
@@ -29,8 +29,8 @@ The spreadsheet room provides a Google Sheets-like collaborative experience wher
 |-----------|------------------|-------------|
 | Cell values, formulas, styles | **Liveblocks Storage** (LiveMap) | Persisted per Liveblocks room |
 | Column widths | **Liveblocks Storage** (LiveMap) | Persisted per Liveblocks room |
+| User cell selections | **Liveblocks Presence** | Ephemeral (real-time only) |
 | Spreadsheet metadata | **Convex** (`spreadsheets` table) | Persistent database |
-| Chat messages | **Convex** (`messages` table) | Persistent database |
 
 ### Component Hierarchy
 
@@ -118,6 +118,17 @@ Storage: {
     columnWidths?: LiveMap<string, number>;          // Key: "colIndex"
 };
 ```
+
+### Liveblocks Presence (`liveblocks.config.ts`)
+
+```typescript
+Presence: {
+    cursor: { x: number; y: number } | null;
+    selectedCell: { row: number; col: number } | null; // Spreadsheet active cell
+};
+```
+
+The `selectedCell` presence is used to show other users' selected cells with colored highlights in real-time.
 
 ### Convex Schema (`convex/schema.ts`)
 

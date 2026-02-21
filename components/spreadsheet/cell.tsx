@@ -11,6 +11,7 @@ interface CellComponentProps {
     data: CellType | undefined;
     isActive: boolean;
     isSelected: boolean;
+    otherUserSelection?: { name: string; color: string };
     onUpdate: (val: string) => void;
     onFocus: () => void;
     getCellValue: (row: number, col: number) => string | number;
@@ -23,6 +24,7 @@ export function CellComponent({
     data,
     isActive,
     isSelected,
+    otherUserSelection,
     onUpdate,
     onFocus,
     getCellValue,
@@ -142,11 +144,32 @@ export function CellComponent({
             className={`relative min-w-[80px] h-8 border-b border-r border-border text-sm flex items-center px-1 overflow-visible
         ${isActive ? "ring-2 ring-emerald-500 z-20" : ""}
         ${isSelected && !isActive ? "bg-emerald-200/50 dark:bg-emerald-900/40" : ""}
+        ${otherUserSelection && !isActive ? "z-10" : ""}
         `}
-            style={{ textAlign, fontWeight, fontStyle, textDecoration, color, backgroundColor }}
+            style={{ 
+                textAlign, 
+                fontWeight, 
+                fontStyle, 
+                textDecoration, 
+                color, 
+                backgroundColor,
+                // Other user's selection border
+                ...(otherUserSelection && !isActive ? {
+                    boxShadow: `inset 0 0 0 2px ${otherUserSelection.color}`,
+                } : {}),
+            }}
             onClick={onFocus}
             onDoubleClick={handleDoubleClick}
         >
+            {/* Other user's name badge */}
+            {otherUserSelection && !isActive && (
+                <div 
+                    className="absolute -top-5 left-0 px-1.5 py-0.5 text-[10px] font-medium text-white rounded-t-sm whitespace-nowrap z-30"
+                    style={{ backgroundColor: otherUserSelection.color }}
+                >
+                    {otherUserSelection.name}
+                </div>
+            )}
             {isEditing ? (
                 <>
                     <input

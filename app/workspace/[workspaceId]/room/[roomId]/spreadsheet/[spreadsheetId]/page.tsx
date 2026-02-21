@@ -58,6 +58,7 @@ export default function SpreadsheetPage() {
             id={liveblocksRoomId}
             initialPresence={{
                 cursor: null,
+                selectedCell: null,
             }}
             initialStorage={{
                 spreadsheet: new LiveMap(),

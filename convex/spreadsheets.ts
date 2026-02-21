@@ -24,17 +24,6 @@ export const createSpreadsheet = mutation({
             lastEditedBy: identity.subject,
         });
 
-        // Auto-create linked chat channel
-        await ctx.db.insert("channels", {
-            workspaceId: args.workspaceId,
-            name: `sheet-chat-${args.name}`,
-            type: "file",
-            contextType: "spreadsheet",
-            contextId: spreadsheetId, // Link to the spreadsheet
-            createdAt: Date.now(),
-            createdBy: identity.subject,
-        });
-
         return spreadsheetId;
     },
 });

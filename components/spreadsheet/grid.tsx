@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useMutation, useStorage } from "@liveblocks/react/suspense";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useMutation, useStorage, useOthers, useUpdateMyPresence } from "@liveblocks/react/suspense";
 import { LiveObject } from "@liveblocks/client";
 import { CellComponent } from "./cell";
 import { Cell as CellType, CellPos } from "./types";
@@ -39,6 +39,31 @@ export function Grid({
 
     // Liveblocks storage
     const cells = useStorage((root) => root.spreadsheet);
+
+    // Presence for other users' selections
+    const others = useOthers();
+    const updateMyPresence = useUpdateMyPresence();
+
+    // Update my presence when active cell changes
+    useEffect(() => {
+        updateMyPresence({ selectedCell: activeCell });
+    }, [activeCell, updateMyPresence]);
+
+    // Build a map of other users' selected cells for quick lookup
+    const otherUserSelections = useMemo(() => {
+        const selections = new Map<string, { name: string; color: string }>();
+        others.forEach((other) => {
+            const cell = other.presence.selectedCell;
+            if (cell) {
+                const cellId = `${cell.row},${cell.col}`;
+                selections.set(cellId, {
+                    name: other.info?.name || "Anonymous",
+                    color: other.info?.color || "#6366f1",
+                });
+            }
+        });
+        return selections;
+    }, [others]);
 
     // Helper to get column width
     const getColWidth = (col: number) => {
@@ -231,6 +256,7 @@ export function Grid({
                                     const cellData = cells?.get(cellId);
                                     const isActive = activeCell?.row === row && activeCell?.col === col;
                                     const isSelected = isInSelection(row, col);
+                                    const otherUser = otherUserSelections.get(cellId);
 
                                     return (
                                         <div
@@ -246,6 +272,7 @@ export function Grid({
                                                 data={cellData}
                                                 isActive={isActive}
                                                 isSelected={isSelected}
+                                                otherUserSelection={otherUser}
                                                 onFocus={() => {
                                                     if (!isSelectingRange) {
                                                         onActiveCellChange({ row, col });
