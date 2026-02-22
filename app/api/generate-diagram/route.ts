@@ -44,6 +44,61 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
   }
 
-  // TODO: call Gemini API using SYSTEM_PROMPT and return diagram JSON
-  return NextResponse.json({ message: "Not implemented yet" }, { status: 501 });
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `${SYSTEM_PROMPT}\n\nUser request: ${prompt}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 2048,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("[generate-diagram] Gemini API error:", err);
+      return NextResponse.json({ error: "Gemini API request failed", details: err }, { status: 502 });
+    }
+
+    const data = await response.json();
+    const rawText: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    if (!rawText) {
+      return NextResponse.json({ error: "Empty response from Gemini" }, { status: 502 });
+    }
+
+    // Strip any accidental markdown fences
+    const cleaned = rawText
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+
+    let diagram: unknown;
+    try {
+      diagram = JSON.parse(cleaned);
+    } catch {
+      console.error("[generate-diagram] Failed to parse Gemini output:", cleaned);
+      return NextResponse.json({ error: "Gemini returned invalid JSON", raw: cleaned }, { status: 502 });
+    }
+
+    return NextResponse.json(diagram);
+  } catch (err) {
+    console.error("[generate-diagram] Unexpected error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
