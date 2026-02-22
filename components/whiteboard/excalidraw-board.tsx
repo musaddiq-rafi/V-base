@@ -49,6 +49,74 @@ const SHAPE_COLORS: Record<string, { bg: string; stroke: string }> = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function rnd()  { return Math.floor(Math.random() * 999983) + 1; }
+function uid()  { return Math.random().toString(36).substring(2, 10); }
+function now()  { return Date.now(); }
+
+function wrapText(text: string, max = 20): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let line = "";
+  for (const w of words) {
+    const c = line ? `${line} ${w}` : w;
+    if (c.length <= max) { line = c; }
+    else { if (line) lines.push(line); line = w; }
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [text];
+}
+
+function computeLayout(
+  nodes: DiagramNode[],
+  edges: DiagramEdge[]
+): Map<string, { x: number; y: number }> {
+  const inDeg    = new Map<string, number>();
+  const children = new Map<string, string[]>();
+  nodes.forEach(n => { inDeg.set(n.id, 0); children.set(n.id, []); });
+  edges.forEach(e => {
+    inDeg.set(e.to, (inDeg.get(e.to) ?? 0) + 1);
+    children.get(e.from)?.push(e.to);
+  });
+
+  const roots   = nodes.filter(n => (inDeg.get(n.id) ?? 0) === 0).map(n => n.id);
+  const queue   = roots.length ? [...roots] : [nodes[0]?.id].filter(Boolean) as string[];
+  const layers: string[][] = [];
+  const visited = new Set<string>();
+  const pending = [...queue];
+
+  while (pending.length) {
+    const size  = pending.length;
+    const layer: string[] = [];
+    for (let i = 0; i < size; i++) {
+      const id = pending.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      layer.push(id);
+      children.get(id)?.forEach(c => { if (!visited.has(c)) pending.push(c); });
+    }
+    if (layer.length) layers.push(layer);
+  }
+
+  const unvisited = nodes.filter(n => !visited.has(n.id));
+  if (unvisited.length) layers.push(unvisited.map(n => n.id));
+
+  const maxCount = Math.max(...layers.map(l => l.length));
+  const totalW   = maxCount * (NODE_W + GAP_X) - GAP_X;
+  const pos      = new Map<string, { x: number; y: number }>();
+
+  layers.forEach((layer, li) => {
+    const lw     = layer.length * (NODE_W + GAP_X) - GAP_X;
+    const startX = (totalW - lw) / 2;
+    layer.forEach((id, ni) => {
+      pos.set(id, { x: startX + ni * (NODE_W + GAP_X), y: li * (NODE_H + GAP_Y) });
+    });
+  });
+
+  return pos;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const { user } = useUser();
   const updateMyPresence = useUpdateMyPresence();
