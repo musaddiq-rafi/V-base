@@ -115,6 +115,40 @@ function computeLayout(
   return pos;
 }
 
+function makeShapeEl(node: DiagramNode, x: number, y: number): object {
+  const c = SHAPE_COLORS[node.shape] ?? SHAPE_COLORS.rectangle;
+  return {
+    id: uid(), type: node.shape, x, y,
+    width: NODE_W, height: NODE_H, angle: 0,
+    strokeColor: c.stroke, backgroundColor: c.bg,
+    fillStyle: "solid", strokeWidth: 2, strokeStyle: "solid",
+    roughness: 1, opacity: 100, groupIds: [], frameId: null,
+    roundness: node.shape === "rectangle" ? { type: 3 } : null,
+    seed: rnd(), version: 1, versionNonce: rnd(), isDeleted: false,
+    boundElements: [], updated: now(), link: null, locked: false,
+  };
+}
+
+function makeTextEl(label: string, x: number, y: number): object {
+  const lines = wrapText(label);
+  const lineH = 14 * 1.25;
+  const th    = lines.length * lineH;
+  return {
+    id: uid(), type: "text",
+    x: x + (NODE_W - 160) / 2,
+    y: y + (NODE_H - th) / 2,
+    width: 160, height: th, angle: 0,
+    strokeColor: "#1e1e2e", backgroundColor: "transparent",
+    fillStyle: "solid", strokeWidth: 1, strokeStyle: "solid",
+    roughness: 1, opacity: 100, groupIds: [], frameId: null,
+    roundness: null, seed: rnd(), version: 1, versionNonce: rnd(),
+    isDeleted: false, boundElements: [], updated: now(), link: null, locked: false,
+    text: lines.join("\n"), fontSize: 14, fontFamily: 1,
+    textAlign: "center", verticalAlign: "middle",
+    containerId: null, originalText: label, lineHeight: 1.25,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
