@@ -149,6 +149,28 @@ function makeTextEl(label: string, x: number, y: number): object {
   };
 }
 
+function makeArrowEl(fx: number, fy: number, tx: number, ty: number): object {
+  const sx = fx + NODE_W / 2;
+  const sy = fy + NODE_H;
+  const ex = tx + NODE_W / 2;
+  const ey = ty;
+  const ox = Math.min(sx, ex);
+  const oy = Math.min(sy, ey);
+  return {
+    id: uid(), type: "arrow",
+    x: ox, y: oy,
+    width: Math.abs(ex - sx), height: Math.abs(ey - sy), angle: 0,
+    strokeColor: "#9ca3af", backgroundColor: "transparent",
+    fillStyle: "solid", strokeWidth: 2, strokeStyle: "solid",
+    roughness: 1, opacity: 100, groupIds: [], frameId: null,
+    roundness: { type: 2 }, seed: rnd(), version: 1, versionNonce: rnd(),
+    isDeleted: false, boundElements: [], updated: now(), link: null, locked: false,
+    points: [[sx - ox, sy - oy], [ex - ox, ey - oy]],
+    startBinding: null, endBinding: null,
+    startArrowhead: null, endArrowhead: "arrow",
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
