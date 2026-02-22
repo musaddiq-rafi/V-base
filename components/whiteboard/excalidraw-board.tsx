@@ -485,6 +485,99 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
 
   return (
     <div className="absolute inset-0">
+      {/* ── AI Diagram Panel ── bottom-right corner */}
+      <div className="absolute bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+        <AnimatePresence>
+          {showAIPanel && (
+            <motion.div
+              key="ai-panel"
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              transition={{ duration: 0.15 }}
+              className="w-72 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-4"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-white">Generate Diagram</span>
+                </div>
+                <button
+                  onClick={() => { setShowAIPanel(false); setAiError(null); }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <textarea
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerateDiagram();
+                  }
+                }}
+                placeholder="e.g. user login flow, CI/CD pipeline, REST API lifecycle..."
+                rows={3}
+                disabled={isGenerating}
+                className="w-full text-sm border border-gray-200 dark:border-zinc-600 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-xl p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 placeholder:text-gray-400 disabled:opacity-60"
+              />
+
+              {aiError && (
+                <div className="mt-2 flex items-start gap-1.5 text-xs text-red-500">
+                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>{aiError}</span>
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => { setShowAIPanel(false); setAiError(null); }}
+                  className="flex-1 text-sm py-2 rounded-xl border border-gray-200 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGenerateDiagram}
+                  disabled={isGenerating || !aiPrompt.trim()}
+                  className="flex-1 text-sm py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Drawing...</>
+                  ) : (
+                    <><Send className="w-3.5 h-3.5" /> Generate</>
+                  )}
+                </button>
+              </div>
+
+              {!isGenerating && (
+                <p className="mt-2 text-[11px] text-gray-400 text-center">
+                  Shapes appear live on canvas · Enter to generate
+                </p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          whileHover={{ scale: 1.07 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => { setShowAIPanel(v => !v); setAiError(null); }}
+          title="Generate diagram with AI"
+          className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-colors duration-200 ${
+            showAIPanel
+              ? "bg-purple-600 text-white"
+              : "bg-white dark:bg-zinc-800 text-purple-600 border border-purple-200 dark:border-zinc-600 hover:border-purple-400"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+        </motion.button>
+      </div>
+
       {/* Cloud Save Status - Bottom left corner */}
       <div className="absolute bottom-4 left-4 z-50">
         <div
