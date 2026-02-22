@@ -27,7 +27,6 @@ import {
   GripVertical,
   LayoutGrid,
   List,
-  AlertCircle,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useDroppable } from "@dnd-kit/core";
@@ -110,6 +109,10 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
   const [newCardTitleByColumn, setNewCardTitleByColumn] = useState<
     Record<string, string>
   >({});
+  const [newTaskTitleListView, setNewTaskTitleListView] = useState("");
+  const [selectedColumnForListView, setSelectedColumnForListView] = useState(
+    () => board.columns[0]?.id || ""
+  );
 
   const lastSyncedRef = useRef<string>(JSON.stringify(parseContent(content)));
 
@@ -147,6 +150,16 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
     }
     return map;
   }, [board.columns]);
+
+  // Ensure selectedColumnForListView is always valid
+  useEffect(() => {
+    if (
+      !selectedColumnForListView ||
+      !board.columns.find((col) => col.id === selectedColumnForListView)
+    ) {
+      setSelectedColumnForListView(board.columns[0]?.id || "");
+    }
+  }, [board.columns, selectedColumnForListView]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const id = String(event.active.id);
@@ -256,7 +269,12 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
   };
 
   const handleAddCard = (columnId: string) => {
-    const title = (newCardTitleByColumn[columnId] || "").trim();
+    // Check both board view and list view inputs
+    const title = (
+      newCardTitleByColumn[columnId] ||
+      newTaskTitleListView ||
+      ""
+    ).trim();
     if (!title) return;
     const id = `card-${Date.now()}`;
     const now = Date.now();
@@ -359,12 +377,6 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-amber-400" />
-            <span className="text-xs text-amber-400 font-medium">
-              Real-time collaboration not available for Kanban boards
-            </span>
-          </div>
         </div>
       </div>
 
@@ -424,9 +436,53 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
                 )}
               </tbody>
             </table>
+            
+            {/* Add New Task Form */}
+            <div className="mt-6 bg-white/5 border border-white/10 rounded-xl p-4">
+              <h3 className="text-white font-semibold text-sm mb-3">Add New Task</h3>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newTaskTitleListView}
+                  onChange={(e) => setNewTaskTitleListView(e.target.value)}
+                  placeholder="Task title"
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newTaskTitleListView.trim()) {
+                      handleAddCard(selectedColumnForListView);
+                      setNewTaskTitleListView("");
+                    }
+                  }}
+                />
+                <select
+                  value={selectedColumnForListView}
+                  onChange={(e) => setSelectedColumnForListView(e.target.value)}
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                >
+                  {board.columns.map((col) => (
+                    <option key={col.id} value={col.id} className="bg-[#0a0f1a] text-white">
+                      {col.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    if (newTaskTitleListView.trim()) {
+                      handleAddCard(selectedColumnForListView);
+                      setNewTaskTitleListView("");
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Task
+                </button>
+              </div>
+            </div>
+            
             {board.columns.every((col) => col.cardIds.length === 0) && (
               <div className="text-center py-12">
-                <p className="text-white/40 text-sm">No tasks yet. Switch to Board view to add tasks.</p>
+                <p className="text-white/40 text-sm">No tasks yet. Use the form above to add your first task.</p>
               </div>
             )}
           </div>
