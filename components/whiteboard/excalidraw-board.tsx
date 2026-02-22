@@ -192,6 +192,12 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const [isReady, setIsReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
+  // AI diagram state
+  const [showAIPanel, setShowAIPanel]   = useState(false);
+  const [aiPrompt, setAiPrompt]         = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError]           = useState<string | null>(null);
+
   // Convex queries and mutations
   const whiteboard = useQuery(api.whiteboards.getWhiteboardById, { whiteboardId });
   const saveContentMutation = useMutation(api.whiteboards.saveWhiteboardContent);
@@ -351,6 +357,89 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
       }
     }
   }, [broadcast, isReady, user, performSave]);
+
+  // AI: generate diagram and stagger-inject elements onto canvas
+  const handleGenerateDiagram = useCallback(async () => {
+    if (!aiPrompt.trim() || isGenerating || !excalidrawAPIRef.current) return;
+    setIsGenerating(true);
+    setAiError(null);
+
+    try {
+      const res = await fetch("/api/generate-diagram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt.trim() }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Generation failed");
+      }
+
+      const diagram: DiagramData = await res.json();
+      if (!Array.isArray(diagram.nodes) || !Array.isArray(diagram.edges)) {
+        throw new Error("Invalid diagram returned by AI");
+      }
+
+      const positions = computeLayout(diagram.nodes, diagram.edges);
+      const existing  = excalidrawAPIRef.current.getSceneElements() as any[];
+      const maxY      = existing.length
+        ? Math.max(...existing.map((el: any) => el.y + (el.height ?? 0)))
+        : 0;
+      const offsetY   = maxY > 0 ? maxY + 120 : 80;
+      const offsetX   = 100;
+
+      const nodePairs: [object, object][] = [];
+      for (const node of diagram.nodes) {
+        const p = positions.get(node.id);
+        if (!p) continue;
+        nodePairs.push([
+          makeShapeEl(node, p.x + offsetX, p.y + offsetY),
+          makeTextEl(node.label, p.x + offsetX, p.y + offsetY),
+        ]);
+      }
+
+      const arrows: object[] = [];
+      for (const edge of diagram.edges) {
+        const fp = positions.get(edge.from);
+        const tp = positions.get(edge.to);
+        if (!fp || !tp) continue;
+        arrows.push(makeArrowEl(fp.x + offsetX, fp.y + offsetY, tp.x + offsetX, tp.y + offsetY));
+      }
+
+      const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+      let live = [...existing];
+
+      for (const pair of nodePairs) {
+        await delay(150);
+        live = [...live, ...pair];
+        excalidrawAPIRef.current.updateScene({ elements: live });
+        currentElementsRef.current = live;
+      }
+
+      await delay(350);
+      for (const arrow of arrows) {
+        await delay(180);
+        live = [...live, arrow];
+        excalidrawAPIRef.current.updateScene({ elements: live });
+        currentElementsRef.current = live;
+      }
+
+      await delay(200);
+      const allEls = excalidrawAPIRef.current.getSceneElements();
+      if (allEls.length) {
+        excalidrawAPIRef.current.scrollToContent(allEls, { fitToContent: true, animate: true });
+      }
+
+      setTimeout(() => performSave(), 600);
+      setShowAIPanel(false);
+      setAiPrompt("");
+    } catch (err: any) {
+      setAiError(err.message ?? "Something went wrong. Try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [aiPrompt, isGenerating, performSave]);
 
   // Handle cursor updates
   const handlePointerUpdate = useCallback((payload: any) => {
