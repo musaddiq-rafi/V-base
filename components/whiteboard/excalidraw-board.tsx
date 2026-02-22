@@ -30,6 +30,25 @@ const ExcalidrawWrapper = dynamic(
   }
 );
 
+// ─── AI Diagram Types & Constants ────────────────────────────────────────────
+
+type DiagramNode = { id: string; label: string; shape: "rectangle" | "diamond" | "ellipse" };
+type DiagramEdge = { from: string; to: string; label: string };
+type DiagramData  = { title?: string; nodes: DiagramNode[]; edges: DiagramEdge[] };
+
+const NODE_W = 185;
+const NODE_H = 80;
+const GAP_X  = 75;
+const GAP_Y  = 90;
+
+const SHAPE_COLORS: Record<string, { bg: string; stroke: string }> = {
+  rectangle: { bg: "#dbeafe", stroke: "#3b82f6" },
+  diamond:   { bg: "#fef3c7", stroke: "#f59e0b" },
+  ellipse:   { bg: "#dcfce7", stroke: "#22c55e" },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   const { user } = useUser();
   const updateMyPresence = useUpdateMyPresence();
