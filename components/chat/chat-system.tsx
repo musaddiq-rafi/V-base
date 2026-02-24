@@ -359,7 +359,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
       </AnimatePresence>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div id="chat-fab" className="fixed bottom-6 right-6 z-50">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

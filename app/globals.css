@@ -490,6 +490,17 @@ html.dark * {
   outline: none;
 }
 
+/* Whiteboard room: reposition the global chat FAB to form a right-angle
+   triangle with the Excalidraw help (?) button and the AI Generate button.
+   Help (?) = bottom-right corner of canvas (~right:6px, bottom:6px),
+   Generate (✨) = directly above Help,
+   Chat (💬) = to the left of Help at the same level.
+   The right angle is at the Help (?) button. */
+body:has(.whiteboard-room) #chat-fab {
+  right: 4.0rem !important;
+  bottom: 0.375rem !important;
+}
+
 /* Selection highlight */
 .ProseMirror ::selection {
   background-color: #d2e3fc;

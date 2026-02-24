@@ -485,8 +485,8 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
 
   return (
     <div className="absolute inset-0">
-      {/* ── AI Diagram Panel ── bottom-right corner */}
-      <div className="absolute bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+      {/* ── AI Diagram Panel ── directly above the Excalidraw help (?) button */}
+      <div className="absolute bottom-[65px] right-[15px] z-[101] flex flex-col items-end gap-2">
         <AnimatePresence>
           {showAIPanel && (
             <motion.div
