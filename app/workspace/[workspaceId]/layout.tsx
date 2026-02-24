@@ -3,7 +3,10 @@
 import { useEffect } from "react";
 import { useOrganization, useOrganizationList } from "@clerk/nextjs";
 import { useRouter, useParams } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Loader2 } from "lucide-react";
+import { ChatSystem } from "@/components/chat/chat-system";
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode;
@@ -16,6 +19,12 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   const { setActive, isLoaded: isOrgListLoaded } = useOrganizationList();
   const { organization, isLoaded: isOrgLoaded } = useOrganization();
+
+  // Get the Convex workspace for the ChatSystem
+  const workspace = useQuery(
+    api.workspaces.getWorkspaceByClerkOrgId,
+    organization ? { clerkOrgId: organization.id } : "skip"
+  );
 
   // Set the active organization when entering a workspace
   useEffect(() => {
@@ -63,5 +72,11 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {/* Global Chat System - available on every workspace page */}
+      {workspace && <ChatSystem workspaceId={workspace._id} />}
+    </>
+  );
 }
