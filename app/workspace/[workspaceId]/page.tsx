@@ -17,7 +17,6 @@ import {
   X,
   DoorOpen,
 } from "lucide-react";
-import { ChatSystem } from "@/components/chat/chat-system";
 import { RoomList } from "@/components/rooms/room-list";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -264,8 +263,6 @@ export default function WorkspacePage() {
         )}
       </AnimatePresence>
 
-      {/* Chat System */}
-      {workspace && <ChatSystem workspaceId={workspace._id} />}
     </div>
   );
 }

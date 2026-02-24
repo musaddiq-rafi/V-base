@@ -83,7 +83,7 @@ export default function WhiteboardPage() {
       }}
       initialStorage={{}}
     >
-      <div className="fixed inset-0 flex flex-col">
+      <div className="fixed inset-0 flex flex-col whiteboard-room">
         {/* Header */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
