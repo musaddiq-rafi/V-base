@@ -33,7 +33,7 @@ export const createFile = mutation({
     const fileCount = existingFiles.filter((f) => f.type === "file").length;
     if (fileCount >= MAX_FILES_PER_ROOM) {
       throw new Error(
-        `File limit reached (Max ${MAX_FILES_PER_ROOM} files per room)`
+        `File limit reached (Max ${MAX_FILES_PER_ROOM} files per room)`,
       );
     }
 
@@ -50,6 +50,78 @@ export const createFile = mutation({
       roomId: args.roomId,
       workspaceId: args.workspaceId,
       name: args.name,
+      type: "file",
+      parentId: args.parentId,
+      language: args.language,
+      createdBy: identity.subject,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return fileId;
+  },
+});
+
+// Language to default extension mapping
+const LANGUAGE_EXTENSIONS: Record<string, string> = {
+  javascript: "js",
+  python: "py",
+  java: "java",
+  cpp: "cpp",
+  c: "c",
+};
+
+/**
+ * Create a new code file instantly with a generated default name (Google Docs style)
+ * Returns the file ID so the user can be navigated to the editor immediately
+ */
+export const createFileQuick = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    workspaceId: v.id("workspaces"),
+    language: v.string(),
+    parentId: v.optional(v.id("codeFiles")),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check file limit (only count files, not folders)
+    const existingFiles = await ctx.db
+      .query("codeFiles")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const fileCount = existingFiles.filter((f) => f.type === "file").length;
+    if (fileCount >= MAX_FILES_PER_ROOM) {
+      throw new Error(
+        `File limit reached (Max ${MAX_FILES_PER_ROOM} files per room)`,
+      );
+    }
+
+    // Verify parent folder exists if provided
+    if (args.parentId) {
+      const parent = await ctx.db.get(args.parentId);
+      if (!parent || parent.type !== "folder") {
+        throw new Error("Parent folder not found");
+      }
+    }
+
+    // Generate a default placeholder name like "untitled-1.js"
+    const ext = LANGUAGE_EXTENSIONS[args.language] || "txt";
+    const existingUntitled = existingFiles.filter(
+      (f) => f.type === "file" && f.name.startsWith("untitled"),
+    );
+    const nextNumber = existingUntitled.length + 1;
+    const defaultName = `untitled-${nextNumber}.${ext}`;
+
+    const now = Date.now();
+    const fileId = await ctx.db.insert("codeFiles", {
+      roomId: args.roomId,
+      workspaceId: args.workspaceId,
+      name: defaultName,
       type: "file",
       parentId: args.parentId,
       language: args.language,
@@ -141,7 +213,7 @@ export const getFiles = query({
           ...item,
           creatorName: creator?.name || "Unknown",
         };
-      })
+      }),
     );
 
     // Sort: folders first, then files, alphabetically within each group
@@ -312,7 +384,7 @@ export const deleteNode = mutation({
         const children = await ctx.db
           .query("codeFiles")
           .withIndex("by_room_parent", (q) =>
-            q.eq("roomId", currentItem.roomId).eq("parentId", itemId)
+            q.eq("roomId", currentItem.roomId).eq("parentId", itemId),
           )
           .collect();
 
@@ -322,8 +394,18 @@ export const deleteNode = mutation({
       }
 
       // If it's a file, add to the list for Liveblocks cleanup
+      // and delete associated AI chat messages
       if (currentItem.type === "file") {
         deletedFileIds.push(currentItem._id);
+
+        // Cascade: delete AI chat messages for this file
+        const aiMessages = await ctx.db
+          .query("aiChatMessages")
+          .withIndex("by_file", (q) => q.eq("fileId", itemId))
+          .collect();
+        for (const msg of aiMessages) {
+          await ctx.db.delete(msg._id);
+        }
       }
 
       // Delete the item itself
@@ -358,10 +440,19 @@ export const deleteAllFilesForRoom = mutation({
 
     const deletedFileIds: string[] = [];
 
-    // Collect file IDs for Liveblocks cleanup
+    // Collect file IDs for Liveblocks cleanup and delete AI chat messages
     for (const item of allItems) {
       if (item.type === "file") {
         deletedFileIds.push(item._id);
+
+        // Cascade: delete AI chat messages for this file
+        const aiMessages = await ctx.db
+          .query("aiChatMessages")
+          .withIndex("by_file", (q) => q.eq("fileId", item._id))
+          .collect();
+        for (const msg of aiMessages) {
+          await ctx.db.delete(msg._id);
+        }
       }
     }
 
@@ -371,6 +462,44 @@ export const deleteAllFilesForRoom = mutation({
     }
 
     return { success: true, deletedFileIds };
+  },
+});
+
+/**
+ * Update the language of a code file
+ */
+export const updateLanguage = mutation({
+  args: {
+    fileId: v.id("codeFiles"),
+    language: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const file = await ctx.db.get(args.fileId);
+    if (!file || file.type !== "file") {
+      throw new Error("File not found");
+    }
+
+    // Update extension in the name if it's still untitled
+    const ext = LANGUAGE_EXTENSIONS[args.language] || "txt";
+    let newName = file.name;
+    if (file.name.startsWith("untitled")) {
+      // Replace extension in untitled files
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      newName = `${baseName}.${ext}`;
+    }
+
+    await ctx.db.patch(args.fileId, {
+      language: args.language,
+      name: newName,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
   },
 });
 

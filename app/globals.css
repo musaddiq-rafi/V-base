@@ -6,40 +6,40 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
- 
+
  :root {
    /* Light Mode Defaults */
    --background: #f8fafc;
    --background-secondary: #ffffff;
    --foreground: #0f172a;
- 
+
    --card: #ffffff;
    --card-foreground: #0f172a;
    --card-border: #e2e8f0;
- 
+
    --popover: #ffffff;
    --popover-foreground: #0f172a;
- 
+
    --primary: #0ea5e9;
    --primary-foreground: #ffffff;
- 
+
    --secondary: #f1f5f9;
    --secondary-foreground: #0f172a;
- 
+
    --muted: #f1f5f9;
    --muted-foreground: #64748b;
- 
+
    --accent: #e0f2fe;
    --accent-foreground: #0369a1;
- 
+
    --destructive: #ef4444;
    --destructive-foreground: #ffffff;
- 
+
    --border: #e2e8f0;
    --input: #e2e8f0;
    --ring: #0ea5e9;
    --radius: 0.3rem; /* Boxier look */
- 
+
    /* Sidebar */
    --sidebar: #f8fafc;
    --sidebar-foreground: #0f172a;
@@ -49,15 +49,15 @@
    --sidebar-accent-foreground: #0369a1;
    --sidebar-border: #e2e8f0;
    --sidebar-ring: #0ea5e9;
- 
+
    /* Chat/Surface specific */
    --surface: #f1f5f9;
    --surface-hover: #e2e8f0;
    --surface-elevated: #ffffff;
-   
+
    /* Badge border */
    --badge-border: #ffffff;
- 
+
    /* Chart colors */
    --chart-1: #0ea5e9;
    --chart-2: #8b5cf6;
@@ -65,39 +65,39 @@
    --chart-4: #f59e0b;
    --chart-5: #ef4444;
  }
- 
+
  .dark {
    /* Dark Galaxy Theme */
    --background: #0b0f1a;
    --background-secondary: #0f1520;
    --foreground: #ffffff;
- 
+
    --card: rgba(255, 255, 255, 0.05);
    --card-foreground: #ffffff;
    --card-border: rgba(255, 255, 255, 0.1);
- 
+
    --popover: rgba(15, 20, 30, 0.95);
    --popover-foreground: #ffffff;
- 
+
    --primary: #0ea5e9;
    --primary-foreground: #ffffff;
- 
+
    --secondary: rgba(255, 255, 255, 0.1);
    --secondary-foreground: #ffffff;
- 
+
    --muted: rgba(255, 255, 255, 0.05);
    --muted-foreground: rgba(255, 255, 255, 0.6);
- 
+
    --accent: rgba(56, 189, 248, 0.15);
    --accent-foreground: #38bdf8;
- 
+
    --destructive: #ef4444;
    --destructive-foreground: #ffffff;
- 
+
    --border: rgba(255, 255, 255, 0.1);
    --input: rgba(255, 255, 255, 0.08);
    --ring: #0ea5e9;
- 
+
    /* Sidebar */
    --sidebar: rgba(10, 14, 23, 0.95);
    --sidebar-foreground: #ffffff;
@@ -107,12 +107,12 @@
    --sidebar-accent-foreground: #ffffff;
    --sidebar-border: rgba(255, 255, 255, 0.08);
    --sidebar-ring: #0ea5e9;
-   
+
    /* Chat/Surface specific */
    --surface: rgba(255, 255, 255, 0.05);
    --surface-hover: rgba(255, 255, 255, 0.1);
    --surface-elevated: #0f1520;
-   
+
    /* Badge border */
    --badge-border: #0b0f1a;
  }
@@ -504,6 +504,22 @@ body:has(.whiteboard-room) #chat-fab {
 /* Selection highlight */
 .ProseMirror ::selection {
   background-color: #d2e3fc;
+}
+
+/* AI Sparkle button animation */
+@keyframes sparkle-spin {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-8deg) scale(1.12);
+  }
+  50% {
+    transform: rotate(8deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(-4deg) scale(1.1);
+  }
 }
 
 

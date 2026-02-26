@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
@@ -34,7 +34,8 @@ export function FileExplorer({
     Id<"codeFiles"> | undefined
   >(undefined);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createType, setCreateType] = useState<"file" | "folder">("file");
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const createFileQuick = useMutation(api.codeFiles.createFileQuick);
 
   const files = useQuery(api.codeFiles.getFiles, {
     roomId,
@@ -57,13 +58,25 @@ export function FileExplorer({
     }
   };
 
-  const handleCreateFile = () => {
-    setCreateType("file");
-    setShowCreateModal(true);
+  const handleCreateFile = async () => {
+    if (isCreatingFile) return;
+    setIsCreatingFile(true);
+    try {
+      const fileId = await createFileQuick({
+        roomId,
+        workspaceId: convexWorkspaceId,
+        language: "python",
+        parentId: currentFolderId,
+      });
+      router.push(`/workspace/${workspaceId}/room/${roomId}/code/${fileId}`);
+    } catch (err) {
+      console.error("Failed to create file:", err);
+    } finally {
+      setIsCreatingFile(false);
+    }
   };
 
   const handleCreateFolder = () => {
-    setCreateType("folder");
     setShowCreateModal(true);
   };
 
@@ -115,10 +128,14 @@ export function FileExplorer({
             </button>
             <button
               onClick={handleCreateFile}
-              disabled={fileCount.remaining === 0}
+              disabled={fileCount.remaining === 0 || isCreatingFile}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/25 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-5 h-5" />
+              {isCreatingFile ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
               New File
             </button>
           </div>
@@ -182,10 +199,14 @@ export function FileExplorer({
               </button>
               <button
                 onClick={handleCreateFile}
-                disabled={fileCount.remaining === 0}
+                disabled={fileCount.remaining === 0 || isCreatingFile}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-5 h-5" />
+                {isCreatingFile ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Plus className="w-5 h-5" />
+                )}
                 Create First File
               </button>
             </div>
@@ -208,13 +229,13 @@ export function FileExplorer({
         )}
       </div>
 
-      {/* Modal */}
+      {/* Folder creation modal (files now use QuickLanguagePicker) */}
       {showCreateModal && (
         <CreateCodeFileModal
           roomId={roomId}
           workspaceId={convexWorkspaceId}
           parentId={currentFolderId}
-          type={createType}
+          type="folder"
           onClose={() => setShowCreateModal(false)}
         />
       )}

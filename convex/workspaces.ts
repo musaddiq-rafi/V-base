@@ -330,6 +330,15 @@ export const deleteWorkspaceFromWebhook = internalMutation({
         await ctx.db.delete(file._id);
       }
 
+      // B2. Delete all AI chat messages for code files in this room
+      const aiMessages = await ctx.db
+        .query("aiChatMessages")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const msg of aiMessages) {
+        await ctx.db.delete(msg._id);
+      }
+
       // C. Delete all whiteboards in whiteboard rooms
       const whiteboards = await ctx.db
         .query("whiteboards")

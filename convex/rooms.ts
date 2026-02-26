@@ -12,7 +12,7 @@ export const createRoom = mutation({
       v.literal("whiteboard"),
       v.literal("conference"),
       v.literal("kanban"),
-      v.literal("spreadsheet")
+      v.literal("spreadsheet"),
     ),
   },
   handler: async (ctx, args) => {
@@ -29,18 +29,18 @@ export const createRoom = mutation({
 
     if (existingRooms.length >= 10) {
       throw new Error(
-        "This workspace has reached the maximum limit of 10 rooms. Please delete an existing room to create a new one."
+        "This workspace has reached the maximum limit of 10 rooms. Please delete an existing room to create a new one.",
       );
     }
 
     // Check if trying to create a conference room when one already exists
     if (args.type === "conference") {
       const existingConferenceRoom = existingRooms.find(
-        (room) => room.type === "conference"
+        (room) => room.type === "conference",
       );
       if (existingConferenceRoom) {
         throw new Error(
-          "This workspace already has a meeting room. Only one meeting room is allowed per workspace."
+          "This workspace already has a meeting room. Only one meeting room is allowed per workspace.",
         );
       }
     }
@@ -137,6 +137,15 @@ export const deleteRoom = mutation({
 
     // Handle different room types
     if (room.type === "code") {
+      // Delete all AI chat messages for this room
+      const aiMessages = await ctx.db
+        .query("aiChatMessages")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+      for (const msg of aiMessages) {
+        await ctx.db.delete(msg._id);
+      }
+
       // Delete all code files in this room and collect their IDs
       const codeFiles = await ctx.db
         .query("codeFiles")

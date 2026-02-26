@@ -25,12 +25,14 @@ import {
   Circle,
   X,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { Terminal } from "./terminal";
 import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
 import { executeCodeVBase, VBASE_LANGUAGE_VERSIONS } from "@/lib/vbase-rce";
 import { EditorSettingsModal, EditorTheme } from "./editor-settings-modal";
+import { AIChatSidebar } from "./ai-chat-sidebar";
 
 // RCE Engine types
 type RCEEngine = "piston" | "vbase";
@@ -85,10 +87,25 @@ function getLanguageExtension(language: string) {
 
 interface CodeEditorProps {
   fileId: Id<"codeFiles">;
+  roomId: Id<"rooms">;
+  workspaceId: Id<"workspaces">;
   language: string;
   fileName: string;
   closeUrl: string;
+  /** If provided, called instead of standard Link navigation for the close button */
+  onClose?: () => void;
+  /** Called when user changes the language from the dropdown */
+  onLanguageChange?: (language: string) => void;
 }
+
+// Supported languages for the picker
+const SUPPORTED_LANGUAGES = [
+  { value: "python", label: "Python", ext: ".py" },
+  { value: "javascript", label: "JavaScript", ext: ".js" },
+  { value: "java", label: "Java", ext: ".java" },
+  { value: "cpp", label: "C++", ext: ".cpp" },
+  { value: "c", label: "C", ext: ".c" },
+];
 
 // Language icon colors mapping
 const languageColors: Record<string, string> = {
@@ -101,9 +118,13 @@ const languageColors: Record<string, string> = {
 
 export function CodeEditor({
   fileId,
+  roomId,
+  workspaceId,
   language,
   fileName,
   closeUrl,
+  onClose,
+  onLanguageChange,
 }: CodeEditorProps) {
   const languageColor = languageColors[language] || "#6b7280";
   const room = useRoom();
@@ -123,6 +144,12 @@ export function CodeEditor({
   const [rceEngine, setRceEngine] = useState<RCEEngine>("vbase");
   const [isEngineDropdownOpen, setIsEngineDropdownOpen] = useState(false);
 
+  // Language picker state
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const currentLang =
+    SUPPORTED_LANGUAGES.find((l) => l.value === language) ||
+    SUPPORTED_LANGUAGES[0];
+
   // Execution State
   const [isRunning, setIsRunning] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
@@ -132,6 +159,22 @@ export function CodeEditor({
   // Check if language is supported for execution (must be supported by both engines)
   const isExecutionSupported =
     language in LANGUAGE_VERSIONS && language in VBASE_LANGUAGE_VERSIONS;
+
+  // AI Sidebar State
+  const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
+
+  const getEditorContent = useCallback(() => {
+    return editorViewRef.current?.state.doc.toString() ?? "";
+  }, []);
+
+  const setEditorContent = useCallback((code: string) => {
+    const view = editorViewRef.current;
+    if (view) {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: code },
+      });
+    }
+  }, []);
 
   const updateLastEdited = useMutation(api.codeFiles.updateLastEdited);
 
@@ -312,12 +355,21 @@ export function CodeEditor({
             stroke={languageColor}
           />
           <span className="truncate">{fileName}</span>
-          <Link
-            href={closeUrl}
-            className="ml-auto p-0.5 hover:bg-[#3c3c3c] rounded opacity-60 hover:opacity-100 transition-opacity"
-          >
-            <X className="w-3.5 h-3.5" />
-          </Link>
+          {onClose ? (
+            <button
+              onClick={onClose}
+              className="ml-auto p-0.5 hover:bg-[#3c3c3c] rounded opacity-60 hover:opacity-100 transition-opacity"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <Link
+              href={closeUrl}
+              className="ml-auto p-0.5 hover:bg-[#3c3c3c] rounded opacity-60 hover:opacity-100 transition-opacity"
+            >
+              <X className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
 
         {/* Spacer */}
@@ -337,6 +389,64 @@ export function CodeEditor({
               <span className="opacity-70">Synced</span>
             </div>
           )}
+
+          <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+
+          {/* Language Picker Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#3c3c3c] text-gray-300 text-xs font-medium rounded transition-colors"
+              title="Change language"
+            >
+              <Circle
+                className="w-2.5 h-2.5 shrink-0"
+                fill={languageColor}
+                stroke={languageColor}
+              />
+              <span>{currentLang.label}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {isLangDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setIsLangDropdownOpen(false)}
+                />
+                <div className="absolute top-full left-0 mt-1 w-44 bg-[#252526] border border-[#3c3c3c] rounded-lg shadow-xl z-20 overflow-hidden">
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.value}
+                      onClick={() => {
+                        if (lang.value !== language) {
+                          onLanguageChange?.(lang.value);
+                        }
+                        setIsLangDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs hover:bg-[#3c3c3c] transition-colors ${
+                        language === lang.value
+                          ? "bg-[#3c3c3c] text-emerald-400"
+                          : "text-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Circle
+                          className="w-2.5 h-2.5 shrink-0"
+                          fill={languageColors[lang.value] || "#6b7280"}
+                          stroke={languageColors[lang.value] || "#6b7280"}
+                        />
+                        <span className="font-medium">{lang.label}</span>
+                        <span className="text-gray-500">{lang.ext}</span>
+                      </div>
+                      {language === lang.value && (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
 
@@ -443,20 +553,63 @@ export function CodeEditor({
               </button>
             </>
           )}
+
+          <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+
+          {/* AI Assistant Button */}
+          <button
+            onClick={() => setIsAISidebarOpen(!isAISidebarOpen)}
+            className={`group/ai relative p-1.5 rounded-md transition-all duration-200 ${
+              isAISidebarOpen
+                ? "bg-gradient-to-r from-purple-500/25 to-pink-500/25 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]"
+                : "text-gray-500 hover:text-purple-300 hover:bg-purple-500/10 hover:shadow-[0_0_8px_rgba(168,85,247,0.15)]"
+            }`}
+            title="AI Assistant"
+          >
+            <Sparkles
+              className={`w-4 h-4 transition-transform duration-300 ${
+                isAISidebarOpen
+                  ? "animate-[sparkle-spin_2s_ease-in-out_infinite]"
+                  : "group-hover/ai:scale-110 group-hover/ai:rotate-12"
+              }`}
+            />
+            {/* Glow dot */}
+            <span
+              className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full transition-opacity duration-300 ${
+                isAISidebarOpen
+                  ? "opacity-100 bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.6)] animate-pulse"
+                  : "opacity-0"
+              }`}
+            />
+          </button>
         </div>
       </div>
 
-      {/* CodeMirror Editor Container */}
-      <div className="flex-1 relative min-h-0 overflow-hidden">
-        <div ref={ref} className="h-full w-full" />
+      {/* CodeMirror Editor Container + AI Sidebar */}
+      <div className="flex-1 relative min-h-0 overflow-hidden flex">
+        {/* Editor + Terminal */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div ref={ref} className="flex-1 min-h-0 overflow-hidden" />
 
-        {/* Terminal Panel */}
-        <Terminal
-          isOpen={isTerminalOpen}
-          onToggle={() => setIsTerminalOpen(!isTerminalOpen)}
-          output={output}
-          isError={isError}
-          isRunning={isRunning}
+          {/* Terminal Panel */}
+          <Terminal
+            isOpen={isTerminalOpen}
+            onToggle={() => setIsTerminalOpen(!isTerminalOpen)}
+            output={output}
+            isError={isError}
+            isRunning={isRunning}
+          />
+        </div>
+
+        {/* AI Chat Sidebar */}
+        <AIChatSidebar
+          isOpen={isAISidebarOpen}
+          language={language}
+          fileId={fileId}
+          roomId={roomId}
+          workspaceId={workspaceId}
+          getEditorContent={getEditorContent}
+          setEditorContent={setEditorContent}
         />
       </div>
 

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as aiChat from "../aiChat.js";
 import type * as channels from "../channels.js";
 import type * as clerk from "../clerk.js";
 import type * as codeFiles from "../codeFiles.js";
@@ -29,6 +30,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  aiChat: typeof aiChat;
   channels: typeof channels;
   clerk: typeof clerk;
   codeFiles: typeof codeFiles;
