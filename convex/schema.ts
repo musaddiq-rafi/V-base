@@ -197,4 +197,18 @@ export default defineSchema({
   })
     .index("by_room", ["roomId"])
     .index("by_workspace", ["workspaceId"]),
+
+  // AI Chat messages for code editor (per code file)
+  aiChatMessages: defineTable({
+    fileId: v.id("codeFiles"), // The code file this chat belongs to
+    roomId: v.id("rooms"), // Parent code room (denormalized for cascading)
+    workspaceId: v.id("workspaces"), // Workspace (denormalized for cascading)
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    content: v.string(),
+    mode: v.union(v.literal("ask"), v.literal("agent")),
+    timestamp: v.number(),
+  })
+    .index("by_file", ["fileId", "timestamp"])
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
 });
