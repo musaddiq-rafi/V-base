@@ -34,3 +34,8 @@
     - designed the overall UI flow of the app
     - improved the landing page
     - redesigned page components for a modern, clean look
+
+### 27 Feb 2026
+#### Suggestions:
+- Write a complete usage guide for your Application
+- Complete the formal final report of DP-1
