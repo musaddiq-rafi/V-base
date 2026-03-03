@@ -18,6 +18,7 @@ import { useErrorListener, useStatus, useSyncStatus } from "@liveblocks/react/su
 import { Toolbar } from "./toolbar";
 import { Ruler } from "./ruler";
 import { DocumentHeader } from "./document-header";
+import { AiPopover } from "./ai-popover";
 import { Id } from "@/convex/_generated/dataModel";
 
 // Custom extension to add fontSize support to TextStyle
@@ -76,6 +77,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
   const [showPageNumbers, setShowPageNumbers] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showAiPopover, setShowAiPopover] = useState(false);
 
   // Connection status (WebSocket) and sync status (storage)
   const status = useStatus();
@@ -229,7 +231,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
 
         {/* Toolbar Container */}
         <div className="flex justify-center px-4 pb-2">
-          <Toolbar editor={editor} />
+          <Toolbar editor={editor} onAiClick={() => setShowAiPopover(true)} />
         </div>
       </div>
 
@@ -287,6 +289,13 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
               className="prose prose-sm sm:prose max-w-none [&_.ProseMirror]:min-h-[calc(1123px-192px)]"
             />
           </div>
+
+          {/* AI Popover */}
+          <AiPopover
+            editor={editor}
+            isOpen={showAiPopover}
+            onClose={() => setShowAiPopover(false)}
+          />
 
           {/* Page number indicators */}
           {showPageNumbers &&
