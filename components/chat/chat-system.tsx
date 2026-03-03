@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Edit2, Send } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
@@ -30,6 +30,12 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
   const [showNewDmModal, setShowNewDmModal] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
+  const [fabSide, setFabSide] = useState<"left" | "right">("right");
+  const [fabY, setFabY] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startFabX: number; startFabY: number; moved: boolean } | null>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
   const [messagePreview, setMessagePreview] = useState<{
     channelId: Id<"channels">;
     channelName: string;
@@ -38,6 +44,83 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
   } | null>(null);
   const hasInitializedGeneral = useRef(false);
   const closedBubblesRef = useRef<Set<Id<"channels">>>(new Set());
+
+  // Drag handlers for FAB
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startFabX: rect.left,
+      startFabY: rect.top,
+      moved: false,
+    };
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (!dragRef.current.moved && Math.abs(dx) + Math.abs(dy) > 5) {
+      dragRef.current.moved = true;
+      setIsDragging(true);
+      // Capture pointer only once drag starts, so clicks still work normally
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    if (!dragRef.current.moved) return;
+
+    // Follow cursor: compute absolute screen position of the FAB
+    const newX = dragRef.current.startFabX + dx;
+    const newY = dragRef.current.startFabY + dy;
+    setDragPos({
+      x: Math.max(0, Math.min(newX, window.innerWidth - 56)),
+      y: Math.max(24, Math.min(newY, window.innerHeight - 80)),
+    });
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    const wasDrag = dragRef.current?.moved ?? false;
+    dragRef.current = null;
+    if (wasDrag && dragPos) {
+      // Determine which side to snap to
+      const midX = window.innerWidth / 2;
+      const newSide = dragPos.x + 28 < midX ? "left" : "right";
+      setFabSide(newSide);
+      setFabY(dragPos.y);
+      // Clear drag position so it returns to the fixed style (animated via transition)
+      setDragPos(null);
+      // Prevent the click that follows pointerup from toggling bubbles
+      setTimeout(() => setIsDragging(false), 50);
+    } else {
+      setDragPos(null);
+      setIsDragging(false);
+    }
+  }, [dragPos]);
+
+  // Compute FAB styles — always use `left` so CSS can animate between any two positions
+  const restLeft = fabSide === "right"
+    ? `calc(100vw - ${56 + 24}px)` // 56px button + 24px margin
+    : "24px";
+
+  const fabStyle: React.CSSProperties = dragPos
+    ? {
+        // While dragging: follow cursor exactly
+        position: "fixed" as const,
+        left: dragPos.x,
+        top: dragPos.y,
+        zIndex: 50,
+        touchAction: "none",
+        transition: "none",
+      }
+    : {
+        // At rest: snap to side with smooth animation
+        position: "fixed" as const,
+        left: restLeft,
+        ...(fabY !== null ? { top: fabY } : { bottom: 24 }),
+        zIndex: 50,
+        touchAction: "none",
+        transition: "left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+      };
 
   // Get all channels
   const workspaceChannels = useQuery(api.channels.getWorkspaceChannels, {
@@ -248,6 +331,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
           chat={currentChat}
           onClose={closeChat}
           workspaceId={workspaceId}
+          side={fabSide}
         />
       )}
 
@@ -258,7 +342,8 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-24 right-6 bg-background-secondary rounded-xl shadow-2xl p-4 w-80 cursor-pointer z-50 border border-border backdrop-blur-xl"
+            className={`fixed bg-background-secondary rounded-xl shadow-2xl p-4 w-80 cursor-pointer z-50 border border-border backdrop-blur-xl ${fabSide === "right" ? "right-6" : "left-6"}`}
+            style={{ bottom: fabY !== null ? `calc(100vh - ${fabY}px + 16px)` : 96 }}
             onClick={() => {
               const bubble = chatBubbles.find(
                 (b) => b.channelId === messagePreview.channelId
@@ -326,8 +411,10 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
       {/* Chat Bubbles */}
       <AnimatePresence>
         {showBubbles && (
-          <div className="fixed bottom-24 right-6 flex flex-col-reverse gap-2 z-50">
-            {/* New DM Bubble */}
+          <div
+            className={`fixed flex flex-col-reverse gap-2 z-50 ${fabSide === "right" ? "right-6" : "left-6"}`}
+            style={{ bottom: fabY !== null ? `calc(100vh - ${fabY}px + 16px)` : 96 }}
+          >            {/* New DM Bubble */}
             <ChatBubbleComponent
               type="new-dm"
               onMouseEnter={() => setHoveredBubble("new-dm")}
@@ -358,13 +445,20 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
         )}
       </AnimatePresence>
 
-      {/* Floating Action Button */}
-      <div id="chat-fab" className="fixed bottom-6 right-6 z-50">
+      {/* Floating Action Button - Draggable */}
+      <div
+        id="chat-fab"
+        ref={fabRef}
+        style={fabStyle}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={toggleBubbles}
-          className="w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-full shadow-lg shadow-sky-500/25 flex items-center justify-center relative overflow-visible"
+          whileHover={isDragging ? undefined : { scale: 1.1 }}
+          whileTap={isDragging ? undefined : { scale: 0.9 }}
+          onClick={() => { if (!isDragging) toggleBubbles(); }}
+          className="w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-full shadow-lg shadow-sky-500/25 flex items-center justify-center relative overflow-visible cursor-grab active:cursor-grabbing select-none"
         >
           {showBubbles ? (
             <X className="w-6 h-6" />
@@ -546,9 +640,10 @@ interface ChatWindowProps {
   chat: ChatBubble;
   onClose: () => void;
   workspaceId: Id<"workspaces">;
+  side: "left" | "right";
 }
 
-function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
+function ChatWindow({ chat, onClose, workspaceId, side }: ChatWindowProps) {
   const { user } = useUser();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -601,7 +696,7 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      className="fixed bottom-6 right-24 w-80 h-[500px] bg-background-secondary rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden z-40 backdrop-blur-xl"
+      className={`fixed bottom-6 w-80 h-[500px] bg-background-secondary rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden z-40 backdrop-blur-xl ${side === "right" ? "right-24" : "left-24"}`}
     >
       {/* Header */}
       <div className="p-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-between">

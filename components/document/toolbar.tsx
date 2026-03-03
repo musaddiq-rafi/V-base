@@ -24,6 +24,7 @@ import {
   Highlighter,
   RemoveFormatting,
   Minus,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -37,6 +38,7 @@ import {
 
 interface ToolbarProps {
   editor: Editor;
+  onAiClick?: () => void;
 }
 
 interface ToolbarButtonProps {
@@ -123,7 +125,7 @@ const TEXT_COLORS = [
   { label: "Purple", value: "#9900ff" },
 ];
 
-export function Toolbar({ editor }: ToolbarProps) {
+export function Toolbar({ editor, onAiClick }: ToolbarProps) {
   const [currentFont, setCurrentFont] = useState("Arial");
   const [currentFontSize, setCurrentFontSize] = useState("11");
 
@@ -468,6 +470,16 @@ export function Toolbar({ editor }: ToolbarProps) {
         title="Clear formatting"
       >
         <RemoveFormatting className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator orientation="vertical" className="h-6 mx-0.5 bg-neutral-300 dark:bg-neutral-700" />
+
+      {/* AI Assistant */}
+      <ToolbarButton
+        onClick={() => onAiClick?.()}
+        title="AI Assistant"
+      >
+        <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
       </ToolbarButton>
     </div>
   );
