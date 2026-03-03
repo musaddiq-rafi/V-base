@@ -5,6 +5,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import type { Editor } from "@tiptap/react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   FileText,
   FilePlus,
@@ -47,7 +49,7 @@ import {
   MenubarSubContent,
   MenubarShortcut,
 } from "@/components/ui/menubar";
-import { Logo } from "@/components/ui/logo";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,6 +97,10 @@ export function DocumentHeader({
   zoom,
   onZoomChange,
 }: DocumentHeaderProps) {
+  const params = useParams();
+  const workspaceId = params.workspaceId as string;
+  const roomId = params.roomId as string;
+
   const document = useQuery(api.documents.getDocumentById, { documentId });
   const updateDocumentName = useMutation(api.documents.updateDocumentName);
   const updateLastEdited = useMutation(api.documents.updateLastEdited);
@@ -190,10 +196,14 @@ export function DocumentHeader({
     <div className="flex items-center justify-between px-3 py-2 bg-[#F9FBFD] dark:bg-background print:hidden">
       {/* Left Section - Logo and Document Name */}
       <div className="flex items-center gap-2">
-        {/* Docs Logo */}
-        <div className="flex items-center justify-center w-10 h-10 shrink-0 mr-2">
-          <Logo />
-        </div>
+        {/* Docs Logo - links back to document list */}
+        <Link
+          href={`/workspace/${workspaceId}/room/${roomId}`}
+          className="flex items-center justify-center w-10 h-10 shrink-0 mr-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+          title="Back to documents"
+        >
+          <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        </Link>
 
         {/* Document Info */}
         <div className="flex flex-col">
