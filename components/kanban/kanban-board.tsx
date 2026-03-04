@@ -14,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
@@ -94,9 +94,10 @@ const toColumnId = (id: string) => id.replace("column:", "");
 export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
   const { user } = useUser();
   const saveKanbanContent = useMutation(api.kanban.saveKanbanContent);
-  const kanbanQuery = useQuery(api.kanban.getKanbanById, { kanbanId });
-
-  const sourceContent = content ?? kanbanQuery?.content;
+  // content is always supplied by the parent page (which already queries
+  // getKanbanById). A second query here was redundant and caused an extra
+  // Convex subscription that could race with the optimistic drag state.
+  const sourceContent = content;
 
   const [board, setBoard] = useState<KanbanContentV1>(() =>
     parseContent(sourceContent),
@@ -114,7 +115,7 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
     () => board.columns[0]?.id || ""
   );
 
-  const lastSyncedRef = useRef<string>(JSON.stringify(parseContent(content)));
+  const lastSyncedRef = useRef<string>(JSON.stringify(parseContent(sourceContent)));
 
   useEffect(() => {
     const parsed = parseContent(sourceContent);
