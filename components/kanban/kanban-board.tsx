@@ -194,7 +194,13 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
     if (!targetColumnId) return;
 
     setBoard((prev) => {
-      const columns = prev.columns.map((col) => ({ ...col }));
+      // Deep-copy cardIds to prevent mutating the previous state arrays,
+      // which would cause cards to be duplicated when the updater runs twice
+      // (React Strict Mode) or when Convex triggers a re-render mid-drag.
+      const columns = prev.columns.map((col) => ({
+        ...col,
+        cardIds: [...col.cardIds],
+      }));
       const sourceColumn = columns.find((col) => col.id === sourceColumnId);
       const targetColumn = columns.find((col) => col.id === targetColumnId);
       if (!sourceColumn || !targetColumn) return prev;
