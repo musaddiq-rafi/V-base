@@ -119,8 +119,15 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
 
   useEffect(() => {
     const parsed = parseContent(sourceContent);
+    const incoming = JSON.stringify(parsed);
+    // Skip if the incoming server content is identical to what we last
+    // confirmed saved/loaded. This prevents Convex echo-backs (the server
+    // returning the content we just saved) from calling setBoard and
+    // overwriting an in-flight optimistic drag state while the debounced
+    // save is still pending.
+    if (incoming === lastSyncedRef.current) return;
     setBoard(parsed);
-    lastSyncedRef.current = JSON.stringify(parsed);
+    lastSyncedRef.current = incoming;
   }, [sourceContent]);
 
   useEffect(() => {
