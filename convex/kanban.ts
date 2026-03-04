@@ -151,6 +151,56 @@ export const deleteKanban = mutation({
   },
 });
 
+// Create a kanban board instantly with a generated default name (Google Docs style)
+export const createKanbanQuick = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Count existing untitled boards in this room
+    const existingBoards = await ctx.db
+      .query("kanbans")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const existingUntitled = existingBoards.filter((b) =>
+      b.name.startsWith("Untitled board"),
+    );
+
+    const defaultName =
+      existingUntitled.length === 0
+        ? "Untitled board"
+        : `Untitled board ${existingUntitled.length + 1}`;
+
+    const now = Date.now();
+    const kanbanId = await ctx.db.insert("kanbans", {
+      roomId: args.roomId,
+      workspaceId: args.workspaceId,
+      name: defaultName,
+      createdBy: identity.subject,
+      createdAt: now,
+      updatedAt: now,
+      content: JSON.stringify({
+        version: 1,
+        columns: [
+          { id: "todo", title: "To do", cardIds: [] },
+          { id: "in-progress", title: "In progress", cardIds: [] },
+          { id: "done", title: "Done", cardIds: [] },
+        ],
+        cards: {},
+      }),
+    });
+
+    return kanbanId;
+  },
+});
+
 // Record that a user edited a kanban board
 export const recordKanbanEdit = mutation({
   args: {

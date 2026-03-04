@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -11,6 +11,7 @@ import { useOrganization } from "@clerk/nextjs";
 import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { CollaborativeEditor } from "@/components/document/collaborative-editor";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
 
 export default function DocumentPage() {
   const params = useParams();
@@ -22,6 +23,20 @@ export default function DocumentPage() {
 
   const document = useQuery(api.documents.getDocumentById, { documentId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
+  const renameMutation = useMutation(api.documents.updateDocumentName);
+
+  const backUrl = `/workspace/${organization?.id || workspaceId}/room/${roomId}`;
+
+  const { handleBackNavigation, RenameModal } = useRenameOnExit({
+    currentName: document?.name ?? "",
+    untitledPrefix: "Untitled document",
+    onRename: async (newName) => {
+      await renameMutation({ documentId, name: newName });
+    },
+    accentGradient: "from-sky-500 to-indigo-600",
+    accentRing: "focus:ring-sky-500",
+    entityLabel: "document",
+  });
 
   // Presence heartbeat — track user is editing this document
   usePresenceHeartbeat(
@@ -86,13 +101,13 @@ export default function DocumentPage() {
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
-              <Link
-                href={`/workspace/${organization.id}/room/${roomId}`}
+              <button
+                onClick={() => handleBackNavigation(backUrl)}
                 className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back to Documents</span>
-              </Link>
+              </button>
               <div className="h-6 w-px bg-gray-200 dark:bg-white/10" />
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-900 dark:text-white">
@@ -116,6 +131,8 @@ export default function DocumentPage() {
           </ClientSideSuspense>
         </div>
       </div>
+
+      {RenameModal}
     </RoomProvider>
   );
 }

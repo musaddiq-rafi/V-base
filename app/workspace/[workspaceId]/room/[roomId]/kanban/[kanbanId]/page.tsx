@@ -11,6 +11,7 @@ import { useOrganization, useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
 
 export default function KanbanPage() {
   const params = useParams();
@@ -24,6 +25,19 @@ export default function KanbanPage() {
   const kanban = useQuery(api.kanban.getKanbanById, { kanbanId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const updateKanban = useMutation(api.kanban.updateKanban);
+
+  const backUrl = `/workspace/${organization?.id || workspaceId}/room/${roomId}`;
+
+  const { handleBackNavigation, RenameModal } = useRenameOnExit({
+    currentName: kanban?.name ?? "",
+    untitledPrefix: "Untitled board",
+    onRename: async (newName) => {
+      await updateKanban({ kanbanId, name: newName, lastEditedBy: user?.id });
+    },
+    accentGradient: "from-emerald-500 to-green-600",
+    accentRing: "focus:ring-emerald-500",
+    entityLabel: "board",
+  });
 
   // Presence heartbeat — track user is editing this kanban board
   usePresenceHeartbeat(
@@ -97,13 +111,13 @@ export default function KanbanPage() {
       >
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-4">
-            <Link
-              href={`/workspace/${organization.id}/room/${roomId}`}
+            <button
+              onClick={() => handleBackNavigation(backUrl)}
               className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
-            </Link>
+            </button>
             <div className="h-6 w-px bg-white/10" />
             <div className="flex items-center gap-2">
               <input
@@ -123,6 +137,8 @@ export default function KanbanPage() {
       <div className="flex-1">
         <KanbanBoard kanbanId={kanbanId} content={kanban.content} />
       </div>
+
+      {RenameModal}
     </div>
   );
 }

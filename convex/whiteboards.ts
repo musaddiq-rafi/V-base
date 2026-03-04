@@ -146,6 +146,47 @@ export const deleteWhiteboard = mutation({
   },
 });
 
+// Create a whiteboard instantly with a generated default name (Google Docs style)
+export const createWhiteboardQuick = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Count existing untitled whiteboards in this room
+    const existingBoards = await ctx.db
+      .query("whiteboards")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const existingUntitled = existingBoards.filter((b) =>
+      b.name.startsWith("Untitled whiteboard"),
+    );
+
+    const defaultName =
+      existingUntitled.length === 0
+        ? "Untitled whiteboard"
+        : `Untitled whiteboard ${existingUntitled.length + 1}`;
+
+    const now = Date.now();
+    const whiteboardId = await ctx.db.insert("whiteboards", {
+      roomId: args.roomId,
+      workspaceId: args.workspaceId,
+      name: defaultName,
+      createdBy: identity.subject,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return whiteboardId;
+  },
+});
+
 // Record that a user edited a whiteboard (for tracking last editor)
 export const recordWhiteboardEdit = mutation({
   args: {

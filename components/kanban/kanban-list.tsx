@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
@@ -13,7 +14,6 @@ import {
   SortAsc,
 } from "lucide-react";
 import { KanbanCard } from "./kanban-card";
-import { CreateKanbanModal } from "./create-kanban-modal";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface KanbanListProps {
@@ -27,12 +27,27 @@ export function KanbanList({
   workspaceId,
   convexWorkspaceId,
 }: KanbanListProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "name">("recent");
+  const [isCreating, setIsCreating] = useState(false);
 
+  const router = useRouter();
+  const createKanbanQuick = useMutation(api.kanban.createKanbanQuick);
   const kanbans = useQuery(api.kanban.getKanbansByRoom, { roomId });
+
+  const handleQuickCreate = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const kanbanId = await createKanbanQuick({ roomId, workspaceId: convexWorkspaceId });
+      router.push(`/workspace/${workspaceId}/room/${roomId}/kanban/${kanbanId}`);
+    } catch (error) {
+      console.error("Failed to create board:", error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   if (kanbans === undefined) {
     return (
@@ -72,12 +87,17 @@ export function KanbanList({
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setShowCreateModal(true)}
+              onClick={handleQuickCreate}
+              disabled={isCreating}
               className="group flex flex-col items-center"
             >
               <div className="w-[120px] h-[160px] bg-white/5 border-2 border-white/10 rounded-lg flex items-center justify-center hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-500/10 transition-all relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-emerald-500/10" />
-                <Plus className="w-10 h-10 text-white/30 group-hover:text-emerald-400 transition-colors relative z-10" />
+                {isCreating ? (
+                  <Loader2 className="w-10 h-10 text-emerald-400 animate-spin relative z-10" />
+                ) : (
+                  <Plus className="w-10 h-10 text-white/30 group-hover:text-emerald-400 transition-colors relative z-10" />
+                )}
                 <div className="absolute inset-4 border border-white/10 rounded" />
               </div>
               <span className="mt-3 text-sm text-white/70 group-hover:text-emerald-400 transition-colors">
@@ -156,11 +176,12 @@ export function KanbanList({
                   Create your first board to start tracking tasks.
                 </p>
                 <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
+                  onClick={handleQuickCreate}
+                  disabled={isCreating}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50"
                 >
-                  <Plus className="w-5 h-5" />
-                  Create Board
+                  {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                  {isCreating ? "Creating..." : "Create Board"}
                 </button>
               </motion.div>
             )}
@@ -206,13 +227,6 @@ export function KanbanList({
         </div>
       </div>
 
-      <CreateKanbanModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        roomId={roomId}
-        workspaceId={workspaceId}
-        convexWorkspaceId={convexWorkspaceId}
-      />
     </div>
   );
 }

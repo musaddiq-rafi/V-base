@@ -13,6 +13,7 @@ import { RoomProvider } from "@liveblocks/react/suspense";
 import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
 
 export default function WhiteboardPage() {
   const params = useParams();
@@ -26,6 +27,20 @@ export default function WhiteboardPage() {
   const whiteboard = useQuery(api.whiteboards.getWhiteboardById, { whiteboardId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const recordEdit = useMutation(api.whiteboards.recordWhiteboardEdit);
+  const renameMutation = useMutation(api.whiteboards.updateWhiteboard);
+
+  const backUrl = `/workspace/${workspaceId}/room/${roomId}`;
+
+  const { handleBackNavigation, RenameModal } = useRenameOnExit({
+    currentName: whiteboard?.name ?? "",
+    untitledPrefix: "Untitled whiteboard",
+    onRename: async (newName) => {
+      await renameMutation({ whiteboardId, name: newName });
+    },
+    accentGradient: "from-orange-500 to-amber-600",
+    accentRing: "focus:ring-orange-500",
+    entityLabel: "whiteboard",
+  });
 
   // Presence heartbeat — track user is editing this whiteboard
   usePresenceHeartbeat(
@@ -109,13 +124,13 @@ export default function WhiteboardPage() {
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
-              <Link
-                href={`/workspace/${workspaceId}/room/${roomId}`}
+              <button
+                onClick={() => handleBackNavigation(backUrl)}
                 className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
-              </Link>
+              </button>
               <div className="h-6 w-px bg-gray-200 dark:bg-white/10" />
               <div className="flex items-center gap-2">
                 <Presentation className="w-5 h-5 text-orange-600" />
@@ -144,6 +159,8 @@ export default function WhiteboardPage() {
           </Suspense>
         </div>
       </div>
+
+      {RenameModal}
     </RoomProvider>
   );
 }
