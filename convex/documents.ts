@@ -157,6 +157,47 @@ export const deleteAllDocumentsForRoom = mutation({
   },
 });
 
+// Create a document instantly with a generated default name (Google Docs style)
+export const createDocumentQuick = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Count existing untitled documents in this room to generate a unique name
+    const existingDocs = await ctx.db
+      .query("documents")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const existingUntitled = existingDocs.filter((d) =>
+      d.name.startsWith("Untitled document"),
+    );
+
+    const defaultName =
+      existingUntitled.length === 0
+        ? "Untitled document"
+        : `Untitled document ${existingUntitled.length + 1}`;
+
+    const now = Date.now();
+    const documentId = await ctx.db.insert("documents", {
+      roomId: args.roomId,
+      workspaceId: args.workspaceId,
+      name: defaultName,
+      createdBy: identity.subject,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return documentId;
+  },
+});
+
 // Update last edited info (called periodically while editing)
 export const updateLastEdited = mutation({
   args: {

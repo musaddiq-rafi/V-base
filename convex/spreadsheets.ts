@@ -79,6 +79,67 @@ export const getSpreadsheetById = query({
     },
 });
 
+// Create a spreadsheet instantly with a generated default name (Google Docs style)
+export const createSpreadsheetQuick = mutation({
+    args: {
+        roomId: v.id("rooms"),
+        workspaceId: v.id("workspaces"),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Not authenticated");
+        }
+
+        // Count existing untitled spreadsheets in this room
+        const existingSheets = await ctx.db
+            .query("spreadsheets")
+            .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+            .collect();
+
+        const existingUntitled = existingSheets.filter((s) =>
+            s.name.startsWith("Untitled spreadsheet"),
+        );
+
+        const defaultName =
+            existingUntitled.length === 0
+                ? "Untitled spreadsheet"
+                : `Untitled spreadsheet ${existingUntitled.length + 1}`;
+
+        const now = Date.now();
+        const spreadsheetId = await ctx.db.insert("spreadsheets", {
+            roomId: args.roomId,
+            workspaceId: args.workspaceId,
+            name: defaultName,
+            createdBy: identity.subject,
+            createdAt: now,
+            updatedAt: now,
+            lastEditedBy: identity.subject,
+        });
+
+        return spreadsheetId;
+    },
+});
+
+// Rename a spreadsheet
+export const renameSpreadsheet = mutation({
+    args: {
+        spreadsheetId: v.id("spreadsheets"),
+        name: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Not authenticated");
+        }
+
+        await ctx.db.patch(args.spreadsheetId, {
+            name: args.name,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
 // Delete a spreadsheet
 export const deleteSpreadsheet = mutation({
     args: {
