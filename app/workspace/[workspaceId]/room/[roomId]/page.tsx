@@ -17,6 +17,7 @@ import { MeetingRoom } from "@/components/meeting/meeting-room";
 // Merged Imports
 import { KanbanList } from "@/components/kanban/kanban-list";
 import { SpreadsheetList } from "@/components/spreadsheet/spreadsheet-list";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 export default function RoomPage() {
   const params = useParams();
@@ -36,6 +37,20 @@ export default function RoomPage() {
       router.push(`/workspace/${organization?.id}`);
     }
   }, [room, workspace, router, organization?.id]);
+
+  // Presence heartbeat — track user is viewing this room
+  usePresenceHeartbeat(
+    room && workspace
+      ? {
+          workspaceId: workspace._id,
+          location: room.type === "conference" ? "meeting" : "room",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: room.type,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}`,
+        }
+      : null,
+  );
 
   if (!organization || room === undefined || workspace === undefined) {
     return (

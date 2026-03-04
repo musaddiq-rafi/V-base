@@ -19,6 +19,7 @@ import type * as meetings from "../meetings.js";
 import type * as messages from "../messages.js";
 import type * as rooms from "../rooms.js";
 import type * as spreadsheets from "../spreadsheets.js";
+import type * as userPresence from "../userPresence.js";
 import type * as users from "../users.js";
 import type * as whiteboards from "../whiteboards.js";
 import type * as workspaces from "../workspaces.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   messages: typeof messages;
   rooms: typeof rooms;
   spreadsheets: typeof spreadsheets;
+  userPresence: typeof userPresence;
   users: typeof users;
   whiteboards: typeof whiteboards;
   workspaces: typeof workspaces;

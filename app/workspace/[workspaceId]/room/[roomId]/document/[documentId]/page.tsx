@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
 import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { CollaborativeEditor } from "@/components/document/collaborative-editor";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 export default function DocumentPage() {
   const params = useParams();
@@ -21,6 +22,22 @@ export default function DocumentPage() {
 
   const document = useQuery(api.documents.getDocumentById, { documentId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
+
+  // Presence heartbeat — track user is editing this document
+  usePresenceHeartbeat(
+    document && room
+      ? {
+          workspaceId: document.workspaceId,
+          location: "file",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "document",
+          fileId: documentId,
+          fileName: document.name,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/document/${documentId}`,
+        }
+      : null,
+  );
 
   if (!organization || document === undefined || room === undefined) {
     return (

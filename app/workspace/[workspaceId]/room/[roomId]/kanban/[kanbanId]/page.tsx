@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useOrganization, useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 export default function KanbanPage() {
   const params = useParams();
@@ -23,6 +24,22 @@ export default function KanbanPage() {
   const kanban = useQuery(api.kanban.getKanbanById, { kanbanId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const updateKanban = useMutation(api.kanban.updateKanban);
+
+  // Presence heartbeat — track user is editing this kanban board
+  usePresenceHeartbeat(
+    kanban && room
+      ? {
+          workspaceId: kanban.workspaceId,
+          location: "file",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "kanban",
+          fileId: kanbanId,
+          fileName: kanban.name,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/kanban/${kanbanId}`,
+        }
+      : null,
+  );
 
   const [name, setName] = useState("");
 

@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useOrganization } from "@clerk/nextjs";
 import { MeetingRoom } from "@/components/meeting/meeting-room";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 export default function MeetingPage() {
   const params = useParams();
@@ -19,6 +20,21 @@ export default function MeetingPage() {
   const workspace = useQuery(
     api.workspaces.getWorkspaceByClerkOrgId,
     organization ? { clerkOrgId: organization.id } : "skip"
+  );
+
+  // Presence heartbeat — track user is in a meeting
+  usePresenceHeartbeat(
+    room && workspace
+      ? {
+          workspaceId: workspace._id,
+          location: "meeting",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "conference",
+          meetingName: room.name,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/meeting`,
+        }
+      : null,
   );
 
   if (!organization || room === undefined || workspace === undefined) {

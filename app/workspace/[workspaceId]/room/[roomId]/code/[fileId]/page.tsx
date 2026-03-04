@@ -21,6 +21,7 @@ import { CodeEditor } from "@/components/code/code-editor";
 import { ClientSideSuspense } from "@liveblocks/react";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 // Editable filename component (Google Docs style)
 function EditableFileName({
@@ -148,6 +149,22 @@ export default function CodeFilePage() {
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const rename = useMutation(api.codeFiles.rename);
   const updateLanguage = useMutation(api.codeFiles.updateLanguage);
+
+  // Presence heartbeat — track user is editing this code file
+  usePresenceHeartbeat(
+    file && room
+      ? {
+          workspaceId: file.workspaceId,
+          location: "file",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "code",
+          fileId: fileId,
+          fileName: file.name,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/code/${fileId}`,
+        }
+      : null,
+  );
 
   // Fetch parent folder name if file is in a folder
   const parentFolder = useQuery(

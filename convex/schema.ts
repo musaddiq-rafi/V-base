@@ -211,4 +211,28 @@ export default defineSchema({
     .index("by_file", ["fileId", "timestamp"])
     .index("by_room", ["roomId"])
     .index("by_workspace", ["workspaceId"]),
+
+  // User presence tracking for workspace activity
+  userPresence: defineTable({
+    workspaceId: v.id("workspaces"),
+    clerkId: v.string(), // Clerk User ID
+    userName: v.string(), // Cached display name
+    userAvatar: v.optional(v.string()), // Cached avatar URL
+    location: v.union(
+      v.literal("workspace"), // On workspace main page
+      v.literal("room"), // Viewing a room's file list
+      v.literal("file"), // Inside a specific editor (doc/code/whiteboard/etc.)
+      v.literal("meeting"), // In a meeting
+    ),
+    roomId: v.optional(v.id("rooms")), // Which room (null if on workspace page)
+    roomName: v.optional(v.string()), // Cached room name
+    roomType: v.optional(v.string()), // "document", "code", "whiteboard", etc.
+    fileId: v.optional(v.string()), // Specific file/document/whiteboard ID
+    fileName: v.optional(v.string()), // Cached file/entity name
+    meetingName: v.optional(v.string()), // If in a meeting
+    path: v.string(), // Full Next.js route path for "Go" navigation
+    lastHeartbeat: v.number(), // Date.now() timestamp
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_user_workspace", ["clerkId", "workspaceId"]),
 });
