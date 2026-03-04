@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ArrowLeft, Loader2, Table } from "lucide-react";
@@ -12,6 +12,7 @@ import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { SpreadsheetEditor } from "@/components/spreadsheet/spreadsheet-editor";
 import { LiveMap } from "@liveblocks/client";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
 
 export default function SpreadsheetPage() {
     const params = useParams();
@@ -23,6 +24,20 @@ export default function SpreadsheetPage() {
     const spreadsheet = useQuery(api.spreadsheets.getSpreadsheetById, { spreadsheetId });
     const room = useQuery(api.rooms.getRoomById, { roomId });
     const workspace = useQuery(api.workspaces.getWorkspaceById, { workspaceId: room?.workspaceId as Id<"workspaces"> || "skip" as any });
+    const renameMutation = useMutation(api.spreadsheets.renameSpreadsheet);
+
+    const backUrl = `/workspace/${organization?.id || workspaceId}/room/${roomId}`;
+
+    const { handleBackNavigation, RenameModal } = useRenameOnExit({
+        currentName: spreadsheet?.name ?? "",
+        untitledPrefix: "Untitled spreadsheet",
+        onRename: async (newName) => {
+            await renameMutation({ spreadsheetId, name: newName });
+        },
+        accentGradient: "from-emerald-500 to-green-600",
+        accentRing: "focus:ring-emerald-500",
+        entityLabel: "spreadsheet",
+    });
 
     // Presence heartbeat — track user is editing this spreadsheet
     usePresenceHeartbeat(
@@ -90,13 +105,13 @@ export default function SpreadsheetPage() {
                 >
                     <div className="flex items-center justify-between h-14 px-4">
                         <div className="flex items-center gap-4">
-                            <Link
-                                href={`/workspace/${organization.id}/room/${roomId}`}
+                            <button
+                                onClick={() => handleBackNavigation(backUrl)}
                                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5" />
                                 <span className="font-medium">Back to Room</span>
-                            </Link>
+                            </button>
                             <div className="h-6 w-px bg-border" />
                             <div className="flex items-center gap-2">
                                 <Table className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -121,6 +136,8 @@ export default function SpreadsheetPage() {
                     </ClientSideSuspense>
                 </div>
             </div>
+
+            {RenameModal}
         </RoomProvider>
     );
 }
