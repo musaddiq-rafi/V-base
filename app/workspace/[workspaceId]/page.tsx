@@ -21,6 +21,8 @@ import { RoomList } from "@/components/rooms/room-list";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ModeToggle } from "@/components/mode-toggle";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { UserActivityStack } from "@/components/workspace/user-activity-stack";
 
 export default function WorkspacePage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -45,6 +47,17 @@ export default function WorkspacePage() {
   );
 
   const createWorkspace = useMutation(api.workspaces.createWorkspace);
+
+  // Presence heartbeat — track that this user is on the workspace main page
+  usePresenceHeartbeat(
+    workspace
+      ? {
+          workspaceId: workspace._id,
+          location: "workspace",
+          path: `/workspace/${organization?.id || ""}`,
+        }
+      : null,
+  );
 
   // Create workspace in Convex if it doesn't exist
   useEffect(() => {
@@ -138,6 +151,8 @@ export default function WorkspacePage() {
             </motion.button>
             {/* Theme Toggle */}
             <ModeToggle />
+            {/* User Activity */}
+            {workspace && <UserActivityStack workspaceId={workspace._id} />}
             {/* User Button */}
             <UserButton
               afterSignOutUrl="/"

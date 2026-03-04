@@ -12,6 +12,7 @@ import { Suspense, useEffect } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
 import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 export default function WhiteboardPage() {
   const params = useParams();
@@ -25,6 +26,22 @@ export default function WhiteboardPage() {
   const whiteboard = useQuery(api.whiteboards.getWhiteboardById, { whiteboardId });
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const recordEdit = useMutation(api.whiteboards.recordWhiteboardEdit);
+
+  // Presence heartbeat — track user is editing this whiteboard
+  usePresenceHeartbeat(
+    whiteboard && room
+      ? {
+          workspaceId: whiteboard.workspaceId,
+          location: "file",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "whiteboard",
+          fileId: whiteboardId,
+          fileName: whiteboard.name,
+          path: `/workspace/${workspaceId}/room/${roomId}/whiteboard/${whiteboardId}`,
+        }
+      : null,
+  );
 
   // Record edit when user interacts with whiteboard
   useEffect(() => {

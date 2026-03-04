@@ -11,6 +11,7 @@ import { useOrganization } from "@clerk/nextjs";
 import { ClientSideSuspense, RoomProvider } from "@liveblocks/react/suspense";
 import { SpreadsheetEditor } from "@/components/spreadsheet/spreadsheet-editor";
 import { LiveMap } from "@liveblocks/client";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 export default function SpreadsheetPage() {
     const params = useParams();
@@ -22,6 +23,22 @@ export default function SpreadsheetPage() {
     const spreadsheet = useQuery(api.spreadsheets.getSpreadsheetById, { spreadsheetId });
     const room = useQuery(api.rooms.getRoomById, { roomId });
     const workspace = useQuery(api.workspaces.getWorkspaceById, { workspaceId: room?.workspaceId as Id<"workspaces"> || "skip" as any });
+
+    // Presence heartbeat — track user is editing this spreadsheet
+    usePresenceHeartbeat(
+        spreadsheet && room && workspace
+            ? {
+                  workspaceId: workspace._id,
+                  location: "file",
+                  roomId: room._id,
+                  roomName: room.name,
+                  roomType: "spreadsheet",
+                  fileId: spreadsheetId,
+                  fileName: spreadsheet.name,
+                  path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/spreadsheet/${spreadsheetId}`,
+              }
+            : null,
+    );
 
 
     if (!organization || spreadsheet === undefined || room === undefined) {
