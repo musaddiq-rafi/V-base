@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Plus, Table, Loader2, Search, Grid, List, SortAsc } from "lucide-react";
 import { SpreadsheetCard } from "./spreadsheet-card";
-import { CreateSpreadsheetModal } from "./create-spreadsheet-modal";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SpreadsheetListProps {
@@ -16,12 +16,27 @@ interface SpreadsheetListProps {
 }
 
 export function SpreadsheetList({ roomId, workspaceId, convexWorkspaceId }: SpreadsheetListProps) {
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [sortBy, setSortBy] = useState<"recent" | "name">("recent");
+    const [isCreating, setIsCreating] = useState(false);
 
+    const router = useRouter();
+    const createSpreadsheetQuick = useMutation(api.spreadsheets.createSpreadsheetQuick);
     const spreadsheets = useQuery(api.spreadsheets.getSpreadsheetsByRoom, { roomId });
+
+    const handleQuickCreate = async () => {
+        if (isCreating) return;
+        setIsCreating(true);
+        try {
+            const sheetId = await createSpreadsheetQuick({ roomId, workspaceId: convexWorkspaceId });
+            router.push(`/workspace/${workspaceId}/room/${roomId}/spreadsheet/${sheetId}`);
+        } catch (error) {
+            console.error("Failed to create spreadsheet:", error);
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
     if (spreadsheets === undefined) {
         return (
@@ -60,12 +75,17 @@ export function SpreadsheetList({ roomId, workspaceId, convexWorkspaceId }: Spre
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setShowCreateModal(true)}
+                            onClick={handleQuickCreate}
+                            disabled={isCreating}
                             className="group flex flex-col items-center"
                         >
                             <div className="w-[120px] h-[160px] bg-surface border-2 border-border rounded-lg flex items-center justify-center hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-500/10 transition-all relative overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-muted/50" />
-                                <Plus className="w-10 h-10 text-muted-foreground/50 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors relative z-10" />
+                                {isCreating ? (
+                                    <Loader2 className="w-10 h-10 text-emerald-500 animate-spin relative z-10" />
+                                ) : (
+                                    <Plus className="w-10 h-10 text-muted-foreground/50 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors relative z-10" />
+                                )}
                                 {/* Spreadsheet grid decoration */}
                                 <div className="absolute inset-0 p-3 opacity-10">
                                     <div className="w-full h-full border-l border-t border-muted-foreground grid grid-cols-3 grid-rows-6">
@@ -152,11 +172,12 @@ export function SpreadsheetList({ roomId, workspaceId, convexWorkspaceId }: Spre
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={() => setShowCreateModal(true)}
-                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
+                                    onClick={handleQuickCreate}
+                                    disabled={isCreating}
+                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50"
                                 >
-                                    <Plus className="w-5 h-5" />
-                                    Create Spreadsheet
+                                    {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                                    {isCreating ? "Creating..." : "Create Spreadsheet"}
                                 </motion.button>
                             </motion.div>
                         ) : noResults ? (
@@ -206,17 +227,6 @@ export function SpreadsheetList({ roomId, workspaceId, convexWorkspaceId }: Spre
                 </div>
             </div>
 
-            {/* Modal */}
-            <AnimatePresence>
-                {showCreateModal && (
-                    <CreateSpreadsheetModal
-                        roomId={roomId}
-                        workspaceId={convexWorkspaceId}
-                        clerkOrgId={workspaceId}
-                        onClose={() => setShowCreateModal(false)}
-                    />
-                )}
-            </AnimatePresence>
         </div>
     );
 }

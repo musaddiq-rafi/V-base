@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Plus, FileText, Loader2, Search, Grid, List, SortAsc } from "lucide-react";
 import { DocumentCard } from "./document-card";
-import { CreateDocumentModal } from "./create-document-modal";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface DocumentListProps {
@@ -16,12 +16,27 @@ interface DocumentListProps {
 }
 
 export function DocumentList({ roomId, workspaceId, convexWorkspaceId }: DocumentListProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "name">("recent");
-  
+  const [isCreating, setIsCreating] = useState(false);
+
+  const router = useRouter();
+  const createDocumentQuick = useMutation(api.documents.createDocumentQuick);
   const documents = useQuery(api.documents.getDocumentsByRoom, { roomId });
+
+  const handleQuickCreate = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const docId = await createDocumentQuick({ roomId, workspaceId: convexWorkspaceId });
+      router.push(`/workspace/${workspaceId}/room/${roomId}/document/${docId}`);
+    } catch (error) {
+      console.error("Failed to create document:", error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   if (documents === undefined) {
     return (
@@ -60,12 +75,17 @@ export function DocumentList({ roomId, workspaceId, convexWorkspaceId }: Documen
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setShowCreateModal(true)}
+              onClick={handleQuickCreate}
+              disabled={isCreating}
               className="group flex flex-col items-center"
             >
               <div className="w-[120px] h-[160px] bg-surface border-2 border-border rounded-lg flex items-center justify-center hover:border-sky-400/50 hover:shadow-lg hover:shadow-sky-500/10 transition-all relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-muted/50" />
-                <Plus className="w-10 h-10 text-muted-foreground/50 group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors relative z-10" />
+                {isCreating ? (
+                  <Loader2 className="w-10 h-10 text-sky-500 animate-spin relative z-10" />
+                ) : (
+                  <Plus className="w-10 h-10 text-muted-foreground/50 group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors relative z-10" />
+                )}
                 {/* Document lines decoration */}
                 <div className="absolute top-4 left-4 right-4 space-y-2">
                   <div className="h-1 bg-muted rounded w-3/4" />
@@ -150,11 +170,12 @@ export function DocumentList({ roomId, workspaceId, convexWorkspaceId }: Documen
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full hover:shadow-lg hover:shadow-sky-500/25 transition-all"
+                  onClick={handleQuickCreate}
+                  disabled={isCreating}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full hover:shadow-lg hover:shadow-sky-500/25 transition-all disabled:opacity-50"
                 >
-                  <Plus className="w-5 h-5" />
-                  Create Document
+                  {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                  {isCreating ? "Creating..." : "Create Document"}
                 </motion.button>
               </motion.div>
             ) : noResults ? (
@@ -204,17 +225,6 @@ export function DocumentList({ roomId, workspaceId, convexWorkspaceId }: Documen
         </div>
       </div>
 
-      {/* Modal */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <CreateDocumentModal
-            roomId={roomId}
-            workspaceId={convexWorkspaceId}
-            clerkOrgId={workspaceId}
-            onClose={() => setShowCreateModal(false)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
