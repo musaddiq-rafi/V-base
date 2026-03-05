@@ -18,20 +18,26 @@ interface PresenceLocation {
   path: string;
 }
 
-const HEARTBEAT_INTERVAL = 15_000; // 15 seconds
-
 /**
- * Custom hook that sends periodic heartbeats to track user presence
- * within a workspace. Updates on mount, on location change, and
- * every 15 seconds. Clears presence on unmount and tab close.
+ * Custom hook that tracks user presence within a workspace using an
+ * event-driven approach (no polling). Presence is updated only when:
+ *  - The user navigates to a new location (mount / location change)
+ *  - The tab becomes visible again after being hidden
  *
- * Pass `null` or `undefined` to skip heartbeats (e.g., while data loads).
+ * Presence is cleared when:
+ *  - The hook unmounts (e.g., navigating away)
+ *  - The tab is closed (`beforeunload`)
+ *  - The tab becomes hidden (`visibilitychange`)
+ *
+ * A server-side Convex cron job cleans up orphaned records from
+ * browser crashes where cleanup events never fire.
+ *
+ * Pass `null` or `undefined` to skip updates (e.g., while data loads).
  */
 export function usePresenceHeartbeat(location: PresenceLocation | null | undefined) {
   const { user } = useUser();
-  const heartbeat = useMutation(api.userPresence.heartbeat);
+  const updatePresence = useMutation(api.userPresence.heartbeat);
   const clearPresence = useMutation(api.userPresence.clearPresence);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const workspaceIdRef = useRef<Id<"workspaces"> | null>(null);
 
   // Track the latest workspaceId so we can clear on unmount even if location becomes null
@@ -39,10 +45,10 @@ export function usePresenceHeartbeat(location: PresenceLocation | null | undefin
     workspaceIdRef.current = location.workspaceId;
   }
 
-  const sendHeartbeat = useCallback(() => {
+  const sendPresence = useCallback(() => {
     if (!user || !location) return;
 
-    heartbeat({
+    updatePresence({
       workspaceId: location.workspaceId,
       userName: user.fullName || user.firstName || "Unknown",
       userAvatar: user.imageUrl,
@@ -55,11 +61,11 @@ export function usePresenceHeartbeat(location: PresenceLocation | null | undefin
       meetingName: location.meetingName,
       path: location.path,
     }).catch(() => {
-      // Silently ignore heartbeat failures (e.g. auth expired)
+      // Silently ignore failures (e.g. auth expired)
     });
   }, [
     user,
-    heartbeat,
+    updatePresence,
     location?.workspaceId,
     location?.location,
     location?.roomId,
@@ -82,35 +88,37 @@ export function usePresenceHeartbeat(location: PresenceLocation | null | undefin
     });
   }, [user, clearPresence]);
 
+  // Send presence update on mount / location change (event-driven, no interval)
   useEffect(() => {
     if (!location) return;
+    sendPresence();
+    // No interval — purely event-driven
+  }, [sendPresence, location]);
 
-    // Send heartbeat immediately on mount / location change
-    sendHeartbeat();
-
-    // Set up periodic heartbeat
-    intervalRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
-
-    // Cleanup on unmount or location change
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+  // Handle tab visibility + tab close + unmount
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // Tab hidden → clear presence so others see user as offline
+        clear();
+      } else if (document.visibilityState === "visible") {
+        // Tab visible again → re-announce presence
+        sendPresence();
       }
     };
-  }, [sendHeartbeat, location]);
 
-  // Clear presence on tab close / navigation away
-  useEffect(() => {
     const handleBeforeUnload = () => {
       clear();
     };
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
       // Also clear when the hook unmounts (e.g., navigating away from workspace)
       clear();
     };
-  }, [clear]);
+  }, [clear, sendPresence]);
 }
