@@ -104,12 +104,13 @@ export const clearPresence = mutation({
 
 /**
  * Get all active presence records for a workspace.
- * Filters out stale entries (>10 minutes without an update)
- * and excludes the requesting user.
+ * Excludes the requesting user.
  *
  * With event-driven presence, records are created/updated on navigation
- * and deleted on unmount/tab-close. The stale threshold is a safety net
- * for orphaned records (e.g. browser crash). A cron job also cleans these.
+ * and deleted on unmount/tab-close. Orphaned records (e.g. browser crash)
+ * are cleaned up by the cron job, so no time-based filtering is needed here.
+ * This keeps the query purely data-dependent — Convex only re-evaluates it
+ * when the userPresence table actually changes.
  */
 export const getWorkspacePresence = query({
   args: {
@@ -120,17 +121,14 @@ export const getWorkspacePresence = query({
     if (!identity) return [];
 
     const clerkId = identity.subject;
-    const staleThreshold = Date.now() - 10 * 60_000; // 10 minutes
 
     const allPresence = await ctx.db
       .query("userPresence")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .collect();
 
-    // Filter out stale entries and the current user
-    return allPresence.filter(
-      (p) => p.lastHeartbeat > staleThreshold && p.clerkId !== clerkId,
-    );
+    // Exclude the current user — stale cleanup is handled by cron
+    return allPresence.filter((p) => p.clerkId !== clerkId);
   },
 });
 
