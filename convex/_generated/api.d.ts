@@ -12,6 +12,7 @@ import type * as aiChat from "../aiChat.js";
 import type * as channels from "../channels.js";
 import type * as clerk from "../clerk.js";
 import type * as codeFiles from "../codeFiles.js";
+import type * as crons from "../crons.js";
 import type * as documents from "../documents.js";
 import type * as http from "../http.js";
 import type * as kanban from "../kanban.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   channels: typeof channels;
   clerk: typeof clerk;
   codeFiles: typeof codeFiles;
+  crons: typeof crons;
   documents: typeof documents;
   http: typeof http;
   kanban: typeof kanban;
