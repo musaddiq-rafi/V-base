@@ -1,309 +1,190 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useOrganizationList } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { motion } from "framer-motion";
-import { Plus, FolderOpen, Users, Crown, Loader2, Info } from "lucide-react";
+import { useOrganizationList, CreateOrganization, useUser } from "@clerk/nextjs";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useState } from "react";
+import {
+  Plus,
+  Loader2,
+  Sparkles,
+  Users,
+  ArrowRight,
+  Building2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-type FilterType = "all" | "owned" | "joined";
+const MAX_OWNED = 5;
 
 export default function DashboardPage() {
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [workspaceName, setWorkspaceName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-
-  const { userMemberships, isLoaded, createOrganization } = useOrganizationList(
-    {
-      userMemberships: {
-        infinite: true,
-      },
-    }
-  );
-
-  const createWorkspace = useMutation(api.workspaces.createWorkspace);
-  const workspaceStats = useQuery(api.workspaces.getOwnedWorkspaceCount);
-
-  // Revalidate memberships when page becomes visible (handles navigation from other pages)
-  const revalidateMemberships = useCallback(() => {
-    if (userMemberships?.revalidate) {
-      userMemberships.revalidate();
-    }
-  }, [userMemberships]);
-
-  useEffect(() => {
-    // Revalidate on mount (handles redirects and navigation)
-    revalidateMemberships();
-
-    // Also revalidate when the page becomes visible again
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        revalidateMemberships();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [revalidateMemberships]);
-
-  const handleCreateWorkspace = async () => {
-    if (!workspaceName.trim() || !createOrganization) return;
-
-    setIsCreating(true);
-    try {
-      // 1. Create Clerk Organization first
-      const org = await createOrganization({ name: workspaceName.trim() });
-
-      // 2. Immediately sync to Convex (don't wait for webhook)
-      await createWorkspace({
-        name: workspaceName.trim(),
-        clerkOrgId: org.id,
-      });
-
-      // 3. Close modal and revalidate the memberships list
-      setWorkspaceName("");
-      setIsCreateModalOpen(false);
-
-      // 4. Revalidate to refresh the workspace list
-      if (userMemberships?.revalidate) {
-        await userMemberships.revalidate();
-      }
-    } catch (error) {
-      console.error("Error creating workspace:", error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // Filter workspaces based on role
-  const filteredMemberships = userMemberships?.data?.filter((membership) => {
-    if (filter === "owned") {
-      return membership.role === "org:admin";
-    }
-    if (filter === "joined") {
-      return membership.role !== "org:admin";
-    }
-    return true;
+  const { user } = useUser();
+  const { userMemberships, isLoaded } = useOrganizationList({
+    userMemberships: { infinite: true },
   });
+  const [showCreate, setShowCreate] = useState(false);
 
-  const workspaceCount = userMemberships?.data?.length || 0;
+  const workspaces = userMemberships?.data ?? [];
+  const ownedCount = workspaces.filter((m) => m.role === "org:admin").length;
+  const atLimit = ownedCount >= MAX_OWNED;
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Header */}
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* Page Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 lg:mb-10">
-        <div className="space-y-1">
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            My Workspaces
+        className="flex items-start justify-between gap-4 flex-wrap"
+      >
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
           </h1>
-          <p className="text-sm lg:text-base text-muted-foreground">
-            Create, manage, and collaborate in your team workspaces
+          <p className="text-muted-foreground mt-1">
+            {workspaces.length === 0
+              ? "Create your first workspace to get started"
+              : `You are a member of ${workspaces.length} workspace${workspaces.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          size="lg"
-          className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all w-full sm:w-auto gap-2"
+          onClick={() => setShowCreate(true)}
+          disabled={atLimit}
+          className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25"
         >
-          <Plus className="w-5 h-5" />
-          Create Workspace
+          <Plus className="w-4 h-4" />
+          New Workspace
         </Button>
       </motion.div>
 
-      {/* Filter Tabs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
-        className="flex gap-2 mb-6 lg:mb-8 overflow-x-auto pb-2"
-      >
-        {[
-          { key: "all", label: "All" },
-          { key: "owned", label: "Owned" },
-          { key: "joined", label: "Joined" },
-        ].map((tab) => (
-          <Button
-            key={tab.key}
-            onClick={() => setFilter(tab.key as FilterType)}
-            variant={filter === tab.key ? "default" : "outline"}
-            size="sm"
-            className={`${filter === tab.key
-                ? "bg-sky-500/20 text-sky-500 dark:text-sky-400 border-sky-500/30 hover:bg-sky-500/30 hover:text-sky-400 dark:hover:text-sky-300"
-                : "bg-transparent border-border text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border"
-              }`}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </motion.div>
+      {atLimit && (
+        <p className="text-sm text-amber-500 dark:text-amber-400">
+          You have reached the {MAX_OWNED} owned workspaces limit.
+        </p>
+      )}
 
-      {/* Workspaces Grid */}
-      {!isLoaded ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
-        </div>
-      ) : workspaceCount === 0 ? (
-        /* Empty State */
+      {/* Workspace Grid */}
+      {workspaces.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="flex flex-col items-center justify-center py-20 bg-muted rounded-2xl border border-border"
+          className="flex flex-col items-center justify-center py-24 rounded-2xl border-2 border-dashed border-border bg-muted/30"
         >
-          <div className="w-20 h-20 rounded-2xl bg-muted-foreground/10 flex items-center justify-center mb-6">
-            <FolderOpen className="w-10 h-10 text-muted-foreground" />
+          <div className="w-16 h-16 rounded-2xl bg-sky-500/20 flex items-center justify-center mb-4">
+            <Building2 className="w-8 h-8 text-sky-500 dark:text-sky-400" />
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            No workspaces yet
-          </h3>
-          <p className="text-muted-foreground mb-6 text-center max-w-md">
-            Create your first workspace to start collaborating with your team
+          <h3 className="text-lg font-semibold text-foreground mb-1">No workspaces yet</h3>
+          <p className="text-muted-foreground text-sm mb-6 text-center max-w-xs">
+            Create a workspace to start collaborating with your team
           </p>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-medium rounded-xl shadow-lg shadow-sky-500/25"
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25"
           >
-            <Plus className="w-5 h-5" />
-            Create your first workspace
-          </motion.button>
+            <Plus className="w-4 h-4" />
+            Create Workspace
+          </Button>
         </motion.div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredMemberships?.map((membership, index) => (
-            <motion.div
-              key={membership.organization.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 * index, duration: 0.4 }}
-            >
-              <Link href={`/workspace/${membership.organization.id}`}>
-                <div className="group glass-card p-6 rounded-2xl hover:border-primary/50 transition-all cursor-pointer overflow-hidden">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-sky-500/20 group-hover:scale-110 transition-transform">
-                        {membership.organization.name.charAt(0).toUpperCase()}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {workspaces.map((membership, index) => {
+            const org = membership.organization;
+            const isAdmin = membership.role === "org:admin";
+            return (
+              <motion.div
+                key={org.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Link href={`/workspace/${org.id}`}>
+                  <Card className="group hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-500/10 transition-all cursor-pointer py-5">
+                    <CardContent className="flex flex-col gap-4 px-5">
+                      <div className="flex items-start justify-between">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-sky-500/20 flex-shrink-0">
+                          {org.name.charAt(0).toUpperCase()}
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={isAdmin
+                            ? "border-amber-500/30 text-amber-500 dark:text-amber-400 bg-amber-500/10"
+                            : "text-muted-foreground"}
+                        >
+                          {isAdmin ? "Admin" : "Member"}
+                        </Badge>
                       </div>
-                      {membership.role === "org:admin" && (
-                        <span className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
-                          <Crown className="w-3 h-3" />
-                          Admin
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors">
-                      {membership.organization.name}
-                    </h3>
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span>
-                        {membership.organization.membersCount || 1} member
-                        {(membership.organization.membersCount || 1) !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors truncate">
+                          {org.name}
+                        </h3>
+                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                          <Users className="w-3 h-3" />
+                          <span>{org.membersCount ?? "—"} member{(org.membersCount ?? 0) !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+                          <span className="text-xs text-muted-foreground">VBase Workspace</span>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
 
       {/* Create Workspace Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-md"
-            onClick={() => setIsCreateModalOpen(false)}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative glass-card rounded-2xl p-8 shadow-2xl w-full max-w-md border-border"
-          >
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">
-                  Create Workspace
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  Give your workspace a name to get started
-                </p>
-              </div>
-
-              {/* Workspace Count Info */}
-              {/* {workspaceStats && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${workspaceStats.maxLimit - workspaceStats.count === 0
-                    ? "bg-red-500/10 border-red-500/30 text-red-500 dark:text-red-400"
-                    : "bg-sky-500/10 border-sky-500/30 text-sky-500 dark:text-sky-400"
-                  }`}>
-                  <Info className="w-4 h-4 shrink-0" />
-                  <span className="text-sm font-medium">
-                    {workspaceStats.maxLimit - workspaceStats.count}/5 workspaces remaining
-                  </span>
-                </div>
-              )} */}
-
-              <input
-                type="text"
-                value={workspaceName}
-                onChange={(e) => setWorkspaceName(e.target.value)}
-                placeholder="Enter workspace name"
-                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-foreground placeholder-muted-foreground transition-all"
-                autoFocus
+      <AnimatePresence>
+        {showCreate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowCreate(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="relative z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CreateOrganization
+                afterCreateOrganizationUrl="/workspace/:id"
+                skipInvitationScreen={false}
+                appearance={{
+                  elements: {
+                    rootBox: "shadow-2xl rounded-2xl overflow-hidden",
+                    card: "bg-background border border-border shadow-none",
+                    headerTitle: "text-foreground",
+                    headerSubtitle: "text-muted-foreground",
+                    formButtonPrimary:
+                      "bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500",
+                  },
+                }}
               />
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => setIsCreateModalOpen(false)}
-                  variant="outline"
-                  className="flex-1 bg-muted border-border hover:bg-muted/80 text-foreground"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateWorkspace}
-                  disabled={
-                    !workspaceName.trim() ||
-                    isCreating ||
-                    (workspaceStats && workspaceStats.count >= workspaceStats.maxLimit)
-                  }
-                  className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 gap-2"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : workspaceStats && workspaceStats.count >= workspaceStats.maxLimit ? (
-                    "Limit Reached"
-                  ) : (
-                    "Create Workspace"
-                  )}
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

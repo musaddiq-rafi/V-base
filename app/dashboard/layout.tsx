@@ -15,6 +15,8 @@ import {
   X,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -87,34 +89,36 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               : pathname.startsWith(item.href);
 
             return (
-              <Link
+              <Button
                 key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 rounded-xl transition-all ${
+                variant="ghost"
+                asChild
+                className={`w-full justify-start gap-3 rounded-xl h-auto transition-all ${
                   isCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5"
                 } ${
                   isActive
-                    ? "bg-sky-500/20 text-sky-500 dark:text-sky-400 border border-sky-500/30"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
+                    ? "bg-sky-500/20 text-sky-500 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/25 hover:text-sky-500"
+                    : "text-muted-foreground border border-transparent"
                 }`}
-                title={isCollapsed ? item.label : undefined}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <>
-                    <span className="font-medium text-sm">{item.label}</span>
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <span className="ml-auto px-2 py-0.5 text-xs font-medium bg-sky-500 text-white rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
-                {isCollapsed && item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-sky-500 rounded-full" />
-                )}
-              </Link>
+                <Link
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="font-medium text-sm">{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <Badge className="ml-auto bg-sky-500 text-white text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </Link>
+              </Button>
             );
           })}
         </nav>
@@ -123,9 +127,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div
           className={`border-t border-border ${isCollapsed ? "p-2" : "p-3"}`}
         >
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`hidden lg:flex items-center px-3 py-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all ${
+            className={`hidden lg:flex ${
               isCollapsed ? "w-full justify-center" : "ml-auto"
             }`}
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -135,7 +141,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             ) : (
               <ChevronLeft className="w-5 h-5" />
             )}
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -152,16 +158,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         >
           <div className="flex justify-between items-center h-14 px-4 lg:px-6">
             {/* Mobile Menu Button */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              className="lg:hidden"
             >
               {isMobileMenuOpen ? (
                 <X className="w-5 h-5" />
               ) : (
                 <Menu className="w-5 h-5" />
               )}
-            </button>
+            </Button>
             <div className="flex-1" />
             <div className="flex items-center gap-3">
               <ModeToggle />

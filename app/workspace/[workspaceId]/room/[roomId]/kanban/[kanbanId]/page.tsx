@@ -4,7 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization, useUser } from "@clerk/nextjs";
@@ -62,11 +63,7 @@ export default function KanbanPage() {
   }, [kanban?.name]);
 
   if (!organization || kanban === undefined || room === undefined) {
-    return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (kanban === null || room === null) {

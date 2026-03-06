@@ -13,16 +13,20 @@ import {
   Settings,
   Users,
   Crown,
-  Loader2,
   X,
   DoorOpen,
 } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
 import { RoomList } from "@/components/rooms/room-list";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ModeToggle } from "@/components/mode-toggle";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { UserActivityStack } from "@/components/workspace/user-activity-stack";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function WorkspacePage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -71,11 +75,7 @@ export default function WorkspacePage() {
   }, [organization, workspace, createWorkspace]);
 
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!organization) {
@@ -122,7 +122,7 @@ export default function WorkspacePage() {
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back to Dashboard</span>
             </Link>
-            <div className="h-6 w-px bg-border" />
+            <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/20">
                 {organization.name.charAt(0).toUpperCase()}
@@ -131,24 +131,23 @@ export default function WorkspacePage() {
                 {organization.name}
               </span>
               {isAdmin && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
+                <Badge className="bg-amber-500/20 text-amber-500 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/30">
                   <Crown className="w-3 h-3" />
                   Admin
-                </span>
+                </Badge>
               )}
             </div>
           </div>
           <div className="flex items-center gap-4">
             {/* Settings Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors border border-border"
               title="Workspace Settings"
             >
               <Settings className="w-5 h-5" />
-            </motion.button>
+            </Button>
             {/* Theme Toggle */}
             <ModeToggle />
             {/* User Activity */}
@@ -174,32 +173,36 @@ export default function WorkspacePage() {
           className="grid grid-cols-2 gap-4 mb-8"
         >
           {/* Rooms Stat */}
-          <div className="bg-card backdrop-blur-sm rounded-xl border border-border p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-sky-500/20 flex items-center justify-center">
-              <DoorOpen className="w-6 h-6 text-sky-500 dark:text-sky-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Rooms</p>
-              <p className="text-xl font-bold text-foreground">
-                {roomStats ? `${roomStats.count}/${roomStats.maxLimit}` : "--"}
-              </p>
-            </div>
-          </div>
+          <Card className="flex-row items-center gap-4 py-4 px-4">
+            <CardContent className="flex items-center gap-4 p-0">
+              <div className="w-12 h-12 rounded-xl bg-sky-500/20 flex items-center justify-center flex-shrink-0">
+                <DoorOpen className="w-6 h-6 text-sky-500 dark:text-sky-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Rooms</p>
+                <p className="text-xl font-bold text-foreground">
+                  {roomStats ? `${roomStats.count}/${roomStats.maxLimit}` : "--"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Members Stat */}
-          <div className="bg-card backdrop-blur-sm rounded-xl border border-border p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <Users className="w-6 h-6 text-green-500 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Members</p>
-              <p className="text-xl font-bold text-foreground">
-                {memberships?.count !== undefined
-                  ? `${memberships.count}/10`
-                  : "--"}
-              </p>
-            </div>
-          </div>
+          <Card className="flex-row items-center gap-4 py-4 px-4">
+            <CardContent className="flex items-center gap-4 p-0">
+              <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Users className="w-6 h-6 text-green-500 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Members</p>
+                <p className="text-xl font-bold text-foreground">
+                  {memberships?.count !== undefined
+                    ? `${memberships.count}/10`
+                    : "--"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* Room List */}

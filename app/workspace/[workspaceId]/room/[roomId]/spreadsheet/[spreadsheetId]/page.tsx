@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, Table } from "lucide-react";
+import { ArrowLeft, Table } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization } from "@clerk/nextjs";
@@ -13,6 +13,7 @@ import { SpreadsheetEditor } from "@/components/spreadsheet/spreadsheet-editor";
 import { LiveMap } from "@liveblocks/client";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
+import { PageLoader, InlineLoader } from "@/components/shared/page-loader";
 
 export default function SpreadsheetPage() {
     const params = useParams();
@@ -57,11 +58,7 @@ export default function SpreadsheetPage() {
 
 
     if (!organization || spreadsheet === undefined || room === undefined) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-            </div>
-        );
+        return <PageLoader label="Loading spreadsheet..." />;
     }
 
     if (spreadsheet === null || room === null) {
@@ -127,9 +124,7 @@ export default function SpreadsheetPage() {
                 <div className="flex-1 overflow-hidden relative">
                     <ClientSideSuspense
                         fallback={
-                            <div className="absolute inset-0 flex items-center justify-center bg-background">
-                                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-                            </div>
+                            <InlineLoader label="Loading spreadsheet..." />
                         }
                     >
                         <SpreadsheetEditor spreadsheetId={spreadsheetId} />

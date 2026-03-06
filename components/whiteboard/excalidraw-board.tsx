@@ -7,10 +7,11 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
-import { Cloud, CloudOff, Loader2, Check, Sparkles, Send, AlertCircle, X } from "lucide-react";
+import { Cloud, CloudOff, Check, Sparkles, Send, AlertCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import "@excalidraw/excalidraw/index.css";
+import { InlineLoader } from "@/components/shared/page-loader";
 
 interface WhiteboardProps {
   roomId: string;
@@ -476,11 +477,7 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
 
   // Loading state - wait for whiteboard data
   if (whiteboard === undefined) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
-      </div>
-    );
+    return <InlineLoader />;
   }
 
   return (

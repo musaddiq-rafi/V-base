@@ -20,7 +20,8 @@ import {
 import { MeetingChat } from "./meeting-chat";
 import { ParticipantsList } from "./participants-list";
 import { useRaisedHands, RaisedHandInfo } from "./use-raised-hands";
-import { MessageSquare, Users, X, Loader2, Hand } from "lucide-react";
+import { MessageSquare, Users, X, Hand } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
 
 interface MeetingStageProps {
   roomId: Id<"rooms">;
@@ -402,12 +403,5 @@ export function MeetingStage({
   onToggleAudio,
   onLeave,
 }: MeetingStageProps) {
-  return (
-    <div className="h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="w-10 h-10 text-sky-500 animate-spin mx-auto mb-4" />
-        <p className="text-muted-foreground">Connecting to meeting...</p>
-      </div>
-    </div>
-  );
+  return <PageLoader label="Connecting to meeting..." />;
 }

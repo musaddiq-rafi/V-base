@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Plus, Table, Loader2, Search, Grid, List, SortAsc } from "lucide-react";
+import { InlineLoader } from "@/components/shared/page-loader";
 import { SpreadsheetCard } from "./spreadsheet-card";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -39,14 +40,7 @@ export function SpreadsheetList({ roomId, workspaceId, convexWorkspaceId }: Spre
     };
 
     if (spreadsheets === undefined) {
-        return (
-            <div className="flex items-center justify-center h-full bg-background">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400 animate-spin" />
-                    <span className="text-sm text-muted-foreground">Loading spreadsheets...</span>
-                </div>
-            </div>
-        );
+        return <InlineLoader label="Loading spreadsheets..." />;
     }
 
     // Filter and sort spreadsheets

@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Sparkles,
 } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
 
 export default function InvitePage() {
   const params = useParams();
@@ -77,11 +78,7 @@ export default function InvitePage() {
   };
 
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!isAdmin) {
