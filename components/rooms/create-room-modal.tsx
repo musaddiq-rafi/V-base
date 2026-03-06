@@ -19,6 +19,9 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -118,19 +121,15 @@ export function CreateRoomModal({
             <form onSubmit={handleCreate} className="space-y-5">
               {/* Room Name Input */}
               <div>
-                <label
-                  htmlFor="roomName"
-                  className="block text-sm font-medium text-muted-foreground mb-2"
-                >
+                <Label htmlFor="roomName" className="mb-2">
                   Room Name
-                </label>
-                <input
+                </Label>
+                <Input
                   id="roomName"
                   type="text"
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder="e.g., Design Brainstorm"
-                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all text-foreground placeholder-muted-foreground"
                   disabled={isCreating}
                   autoFocus
                 />
@@ -195,18 +194,19 @@ export function CreateRoomModal({
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  className="flex-1"
                   onClick={onClose}
                   disabled={isCreating}
-                  className="flex-1 px-4 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={isCreateDisabled}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl hover:from-sky-400 hover:to-indigo-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white"
                 >
                   {isCreating ? (
                     <>
@@ -218,7 +218,7 @@ export function CreateRoomModal({
                   ) : (
                     "Create Room"
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.div>
