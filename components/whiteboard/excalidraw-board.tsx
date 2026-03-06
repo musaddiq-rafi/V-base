@@ -477,7 +477,7 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
   // Loading state - wait for whiteboard data
   if (whiteboard === undefined) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-white">
+      <div className="absolute inset-0 flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
       </div>
     );

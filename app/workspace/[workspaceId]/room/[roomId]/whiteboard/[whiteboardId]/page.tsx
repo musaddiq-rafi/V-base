@@ -74,7 +74,7 @@ export default function WhiteboardPage() {
 
   if (!organization || whiteboard === undefined || room === undefined) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-orange-600 animate-spin" />
       </div>
     );
@@ -82,7 +82,7 @@ export default function WhiteboardPage() {
 
   if (whiteboard === null || room === null) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Whiteboard not found
@@ -150,7 +150,7 @@ export default function WhiteboardPage() {
         <div className="flex-1 relative">
           <Suspense
             fallback={
-              <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-background">
+              <div className="absolute inset-0 flex items-center justify-center bg-background">
                 <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
               </div>
             }
