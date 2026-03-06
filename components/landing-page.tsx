@@ -214,12 +214,14 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onGetStarted}
-              className="hidden sm:inline-flex px-3 py-1.5 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-md transition-colors duration-200"
+              className="hidden sm:inline-flex text-white/70 hover:text-white hover:bg-white/10"
             >
               Sign in
-            </button>
+            </Button>
           </div>
         </div>
       </header>
