@@ -13,6 +13,7 @@ import {
   List,
   SortAsc,
 } from "lucide-react";
+import { InlineLoader } from "@/components/shared/page-loader";
 import { KanbanCard } from "./kanban-card";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -50,14 +51,7 @@ export function KanbanList({
   };
 
   if (kanbans === undefined) {
-    return (
-      <div className="flex items-center justify-center h-full bg-[#0b0f1a]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-          <span className="text-sm text-white/50">Loading boards...</span>
-        </div>
-      </div>
-    );
+    return <InlineLoader label="Loading boards..." />;
   }
 
   const filtered = kanbans

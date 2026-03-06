@@ -17,6 +17,7 @@ import {
   Info,
   Trash2,
 } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
 import Link from "next/link";
 
 interface MeetingSelectorProps {
@@ -122,11 +123,7 @@ export function MeetingSelector({
   };
 
   if (activeMeetings === undefined || meetingStats === undefined) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const canCreateMore = meetingStats.canCreateMore;

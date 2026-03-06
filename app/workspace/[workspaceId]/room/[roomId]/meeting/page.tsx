@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Loader2 } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
 import Link from "next/link";
 import { useOrganization } from "@clerk/nextjs";
 import { MeetingRoom } from "@/components/meeting/meeting-room";
@@ -38,11 +38,7 @@ export default function MeetingPage() {
   );
 
   if (!organization || room === undefined || workspace === undefined) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-sky-500 dark:text-sky-400 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (room === null || workspace === null) {
