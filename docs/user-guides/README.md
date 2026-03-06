@@ -47,16 +47,14 @@ Placeholder media to capture during docs QA.
 
 ### Collaboration Guides
 
-- Create and Open Rooms
-- Use Workspace Chat
-- Use Document Rooms
-- Use Code Rooms
-- Use Whiteboard Rooms
-- Use Meeting Rooms
-- Use Spreadsheet Rooms
-- Use Kanban Rooms
-
-These pages are planned next.
+- [Create and Open Rooms](./04-create-and-open-rooms.md)
+- [Use Workspace Chat](./05-use-workspace-chat.md)
+- [Use Document Rooms](./06-use-document-rooms.md)
+- [Use Code Rooms](./07-use-code-rooms.md)
+- [Use Whiteboard Rooms](./08-use-whiteboard-rooms.md)
+- [Use Meeting Rooms](./09-use-meeting-rooms.md)
+- [Use Spreadsheet Rooms](./10-use-spreadsheet-rooms.md)
+- [Use Kanban Rooms](./11-use-kanban-rooms.md)
 
 ---
 
