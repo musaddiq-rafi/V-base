@@ -24,6 +24,9 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { UserActivityStack } from "@/components/workspace/user-activity-stack";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function WorkspacePage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -123,7 +126,7 @@ export default function WorkspacePage() {
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back to Dashboard</span>
             </Link>
-            <div className="h-6 w-px bg-border" />
+            <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/20">
                 {organization.name.charAt(0).toUpperCase()}
@@ -132,24 +135,23 @@ export default function WorkspacePage() {
                 {organization.name}
               </span>
               {isAdmin && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
+                <Badge className="bg-amber-500/20 text-amber-500 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/30">
                   <Crown className="w-3 h-3" />
                   Admin
-                </span>
+                </Badge>
               )}
             </div>
           </div>
           <div className="flex items-center gap-4">
             {/* Settings Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors border border-border"
               title="Workspace Settings"
             >
               <Settings className="w-5 h-5" />
-            </motion.button>
+            </Button>
             {/* Theme Toggle */}
             <ModeToggle />
             {/* User Activity */}
