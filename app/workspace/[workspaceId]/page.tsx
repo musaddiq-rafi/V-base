@@ -23,6 +23,7 @@ import { api } from "@/convex/_generated/api";
 import { ModeToggle } from "@/components/mode-toggle";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { UserActivityStack } from "@/components/workspace/user-activity-stack";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function WorkspacePage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -174,32 +175,36 @@ export default function WorkspacePage() {
           className="grid grid-cols-2 gap-4 mb-8"
         >
           {/* Rooms Stat */}
-          <div className="bg-card backdrop-blur-sm rounded-xl border border-border p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-sky-500/20 flex items-center justify-center">
-              <DoorOpen className="w-6 h-6 text-sky-500 dark:text-sky-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Rooms</p>
-              <p className="text-xl font-bold text-foreground">
-                {roomStats ? `${roomStats.count}/${roomStats.maxLimit}` : "--"}
-              </p>
-            </div>
-          </div>
+          <Card className="flex-row items-center gap-4 py-4 px-4">
+            <CardContent className="flex items-center gap-4 p-0">
+              <div className="w-12 h-12 rounded-xl bg-sky-500/20 flex items-center justify-center flex-shrink-0">
+                <DoorOpen className="w-6 h-6 text-sky-500 dark:text-sky-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Rooms</p>
+                <p className="text-xl font-bold text-foreground">
+                  {roomStats ? `${roomStats.count}/${roomStats.maxLimit}` : "--"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Members Stat */}
-          <div className="bg-card backdrop-blur-sm rounded-xl border border-border p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <Users className="w-6 h-6 text-green-500 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Members</p>
-              <p className="text-xl font-bold text-foreground">
-                {memberships?.count !== undefined
-                  ? `${memberships.count}/10`
-                  : "--"}
-              </p>
-            </div>
-          </div>
+          <Card className="flex-row items-center gap-4 py-4 px-4">
+            <CardContent className="flex items-center gap-4 p-0">
+              <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Users className="w-6 h-6 text-green-500 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Members</p>
+                <p className="text-xl font-bold text-foreground">
+                  {memberships?.count !== undefined
+                    ? `${memberships.count}/10`
+                    : "--"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* Room List */}
