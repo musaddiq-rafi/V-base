@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Badge } from "@/components/ui/badge"
 
 export function SiteHeader() {
   return (
@@ -11,14 +12,16 @@ export function SiteHeader() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 className="text-base font-medium">Documents</h1>
+        <h1 className="text-base font-medium">VBase Dashboard</h1>
+        <Badge variant="outline" className="ml-2 hidden sm:inline-flex text-sky-500 border-sky-500/30">
+          Beta
+        </Badge>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
+          <Button variant="outline" asChild size="sm" className="hidden sm:flex">
             <a
-              href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
+              href="https://github.com/Piobox10/ovoclone"
               rel="noopener noreferrer"
               target="_blank"
-              className="dark:text-foreground"
             >
               GitHub
             </a>
