@@ -161,3 +161,4 @@ Some management actions depend on your role in the workspace.
 - [VBase User Guide](./README.md)
 - [Getting Started with VBase](./01-getting-started.md)
 - [Invite and Join Team Members](./03-invite-and-join-team-members.md)
+- [Create and Open Rooms](./04-create-and-open-rooms.md)

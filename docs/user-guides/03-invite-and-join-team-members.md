@@ -150,3 +150,4 @@ Placeholder media to capture during docs QA.
 - [VBase User Guide](./README.md)
 - [Getting Started with VBase](./01-getting-started.md)
 - [Create and Manage Workspaces](./02-create-and-manage-workspaces.md)
+- [Create and Open Rooms](./04-create-and-open-rooms.md)

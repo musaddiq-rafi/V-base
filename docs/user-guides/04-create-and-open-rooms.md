@@ -173,3 +173,8 @@ Room deletion cannot be undone. Double-check the room name before confirming.
 - [Create and Manage Workspaces](./02-create-and-manage-workspaces.md)
 - [Use Workspace Chat](./05-use-workspace-chat.md)
 - [Use Document Rooms](./06-use-document-rooms.md)
+- [Use Code Rooms](./07-use-code-rooms.md)
+- [Use Whiteboard Rooms](./08-use-whiteboard-rooms.md)
+- [Use Meeting Rooms](./09-use-meeting-rooms.md)
+- [Use Spreadsheet Rooms](./10-use-spreadsheet-rooms.md)
+- [Use Kanban Rooms](./11-use-kanban-rooms.md)

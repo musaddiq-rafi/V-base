@@ -172,3 +172,4 @@ Unread counts clear when the related chat window is opened and marked as read.
 - [VBase User Guide](./README.md)
 - [Create and Open Rooms](./04-create-and-open-rooms.md)
 - [Create and Manage Workspaces](./02-create-and-manage-workspaces.md)
+- [Invite and Join Team Members](./03-invite-and-join-team-members.md)
