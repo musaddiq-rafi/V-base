@@ -6,7 +6,6 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
   ArrowLeft,
-  Loader2,
   FileCode,
   ChevronRight,
   Folder,
@@ -22,6 +21,7 @@ import { ClientSideSuspense } from "@liveblocks/react";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { PageLoader, InlineLoader } from "@/components/shared/page-loader";
 
 // Editable filename component (Google Docs style)
 function EditableFileName({
@@ -249,11 +249,7 @@ export default function CodeFilePage() {
   };
 
   if (!organization || file === undefined || room === undefined) {
-    return (
-      <div className="min-h-screen bg-background-secondary flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
-    );
+    return <PageLoader label="Loading code editor..." />;
   }
 
   if (file === null || room === null) {
@@ -329,14 +325,7 @@ export default function CodeFilePage() {
         <div className="flex-1 relative min-h-0">
           <ClientSideSuspense
             fallback={
-              <div className="absolute inset-0 flex items-center justify-center bg-background-secondary">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                  <span className="text-sm text-muted-foreground">
-                    Loading editor...
-                  </span>
-                </div>
-              </div>
+              <InlineLoader label="Loading editor..." />
             }
           >
             <CodeEditor
