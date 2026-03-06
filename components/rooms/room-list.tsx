@@ -20,6 +20,8 @@ import {
   Table,
 } from "lucide-react";
 import { CreateRoomModal } from "./create-room-modal";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface RoomListProps {
   workspaceId: Id<"workspaces">;
@@ -119,14 +121,14 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
             {rooms.length}/{maxRooms} rooms used
           </p>
         </div>
-        <button
+        <Button
           onClick={() => setIsModalOpen(true)}
           disabled={isAtRoomLimit}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl hover:from-sky-400 hover:to-indigo-500 transition-all font-medium shadow-lg shadow-sky-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25"
         >
           <Plus className="w-5 h-5" />
           {isAtRoomLimit ? "Limit Reached" : "Create Room"}
-        </button>
+        </Button>
       </div>
 
       {/* Rooms Grid */}
@@ -139,13 +141,13 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
           <p className="text-muted-foreground mb-6">
             Create your first room to start collaborating
           </p>
-          <button
+          <Button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl hover:from-sky-400 hover:to-indigo-500 transition-all font-medium shadow-lg shadow-sky-500/25"
+            className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25"
           >
             <Plus className="w-5 h-5" />
             Create First Room
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -173,9 +175,9 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
                     <Icon className="w-6 h-6" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full capitalize">
+                    <Badge variant="outline" className="capitalize">
                       {room.type}
-                    </span>
+                    </Badge>
                     {/* Menu Button */}
                     <div className="relative">
                       <button
@@ -280,18 +282,20 @@ export function RoomList({ workspaceId, clerkOrgId }: RoomListProps) {
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <button
+                <Button
+                  variant="secondary"
+                  className="flex-1"
                   onClick={() => setDeleteConfirmRoom(null)}
-                  className="flex-1 px-4 py-2.5 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-colors font-medium"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
                   onClick={() => handleDeleteRoom(deleteConfirmRoom.id)}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-500 transition-colors font-medium"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </motion.div>
           </div>
