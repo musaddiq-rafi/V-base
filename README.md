@@ -15,6 +15,12 @@
 
 > **A powerful real-time collaborative workspace** where teams can edit documents, write code, brainstorm on whiteboards, and have video meetings — all in one unified platform.
 
+## User Guide
+
+For end-user documentation and feature walkthroughs, start with the user-guide hub:
+
+- [VBase User Guide](./docs/user-guides/README.md)
+
 ---
 
 ## 🌟 Project Overview
