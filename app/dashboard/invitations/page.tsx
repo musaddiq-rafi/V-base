@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useUser, useOrganizationList } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Mail, Check, X, Loader2, Building2, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function InvitationsPage() {
   const { user } = useUser();
@@ -137,12 +138,10 @@ export default function InvitationsPage() {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <Button
                     onClick={() => handleAccept(invitation.id)}
                     disabled={processingId === invitation.id}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:shadow-lg hover:shadow-emerald-500/25 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/25"
                   >
                     {processingId === invitation.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -150,17 +149,15 @@ export default function InvitationsPage() {
                       <Check className="w-4 h-4" />
                     )}
                     Accept
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => handleDecline(invitation.id)}
                     disabled={processingId === invitation.id}
-                    className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-surface-hover text-muted-foreground font-medium rounded-xl transition-all border border-border disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X className="w-4 h-4" />
                     Decline
-                  </motion.button>
+                  </Button>
                 </div>
               </div>
             </motion.div>
