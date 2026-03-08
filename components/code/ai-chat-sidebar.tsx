@@ -40,6 +40,8 @@ interface AIChatSidebarProps {
   proposeEditorContent: (code: string) => void;
   /** Whether a diff proposal is currently being reviewed */
   hasPendingProposal: boolean;
+  /** Whether the editor is in dark mode */
+  isDark: boolean;
 }
 
 export function AIChatSidebar({
@@ -51,6 +53,7 @@ export function AIChatSidebar({
   getEditorContent,
   proposeEditorContent,
   hasPendingProposal,
+  isDark,
 }: AIChatSidebarProps) {
   const [mode, setMode] = useState<ChatMode>("agent");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -233,23 +236,27 @@ export function AIChatSidebar({
           animate={{ width: 380, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: "easeInOut" }}
-          className="h-full border-l border-[#3c3c3c] bg-[#1e1e1e] flex flex-col overflow-hidden shrink-0"
+          className={`h-full ${isDark ? "border-l border-l-[#3c3c3c] bg-[#1e1e1e]" : "border-l border-l-[#e0e0e0] bg-white"} flex flex-col overflow-hidden shrink-0`}
         >
           {/* Header */}
-          <div className="shrink-0 px-4 py-3 border-b border-[#3c3c3c] bg-[#252526]">
+          <div
+            className={`shrink-0 px-4 py-3 ${isDark ? "border-b border-b-[#3c3c3c] bg-[#252526]" : "border-b border-b-[#e0e0e0] bg-[#f3f3f3]"}`}
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center">
                   <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                 </div>
-                <span className="text-sm font-semibold text-gray-200">
+                <span
+                  className={`text-sm font-semibold ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                >
                   AI Assistant
                 </span>
               </div>
               {messages.length > 0 && (
                 <button
                   onClick={handleClear}
-                  className="p-1 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
+                  className={`p-1 rounded ${isDark ? "hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300" : "hover:bg-[#e0e0e0] text-gray-400 hover:text-gray-600"} transition-colors`}
                   title="Clear chat"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -258,13 +265,15 @@ export function AIChatSidebar({
             </div>
 
             {/* Mode Toggle */}
-            <div className="flex bg-[#1e1e1e] rounded-lg p-0.5">
+            <div
+              className={`flex ${isDark ? "bg-[#1e1e1e]" : "bg-[#e8e8e8]"} rounded-lg p-0.5`}
+            >
               <button
                 onClick={() => setMode("ask")}
                 className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all ${
                   mode === "ask"
-                    ? "bg-[#3c3c3c] text-purple-400 shadow-sm"
-                    : "text-gray-500 hover:text-gray-300"
+                    ? `${isDark ? "bg-[#3c3c3c]" : "bg-white"} text-purple-400 shadow-sm`
+                    : `${isDark ? "text-gray-500 hover:text-gray-300" : "text-gray-500 hover:text-gray-700"}`
                 }`}
               >
                 Ask
@@ -273,8 +282,8 @@ export function AIChatSidebar({
                 onClick={() => setMode("agent")}
                 className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all ${
                   mode === "agent"
-                    ? "bg-[#3c3c3c] text-emerald-400 shadow-sm"
-                    : "text-gray-500 hover:text-gray-300"
+                    ? `${isDark ? "bg-[#3c3c3c]" : "bg-white"} text-emerald-400 shadow-sm`
+                    : `${isDark ? "text-gray-500 hover:text-gray-300" : "text-gray-500 hover:text-gray-700"}`
                 }`}
               >
                 Agent
@@ -337,12 +346,20 @@ export function AIChatSidebar({
                 <div
                   className={`relative rounded-lg px-3 py-2.5 text-sm ${
                     msg.role === "user"
-                      ? "bg-[#2d2d2d] text-gray-200"
-                      : "bg-[#252526] text-gray-300 border border-[#3c3c3c]"
+                      ? isDark
+                        ? "bg-[#2d2d2d] text-gray-200"
+                        : "bg-[#f0f0f0] text-gray-800"
+                      : isDark
+                        ? "bg-[#252526] text-gray-300 border border-[#3c3c3c]"
+                        : "bg-[#f5f5f5] text-gray-700 border border-[#e0e0e0]"
                   }`}
                 >
                   {msg.role === "assistant" ? (
-                    <AssistantMessage content={msg.content} mode={msg.mode} />
+                    <AssistantMessage
+                      content={msg.content}
+                      mode={msg.mode}
+                      isDark={isDark}
+                    />
                   ) : (
                     <p className="whitespace-pre-wrap break-words">
                       {msg.content}
@@ -353,7 +370,7 @@ export function AIChatSidebar({
                   {msg.role === "assistant" && (
                     <button
                       onClick={() => handleCopy(msg.content, msg.id)}
-                      className="absolute top-2 right-2 p-1 rounded hover:bg-[#3c3c3c] text-gray-600 hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-all"
+                      className={`absolute top-2 right-2 p-1 rounded ${isDark ? "hover:bg-[#3c3c3c] text-gray-600 hover:text-gray-300" : "hover:bg-[#e0e0e0] text-gray-400 hover:text-gray-600"} opacity-0 group-hover:opacity-100 transition-all`}
                       title="Copy"
                     >
                       {copiedId === msg.id ? (
@@ -394,7 +411,9 @@ export function AIChatSidebar({
           )}
 
           {/* Input Area */}
-          <div className="shrink-0 p-3 border-t border-[#3c3c3c] bg-[#252526]">
+          <div
+            className={`shrink-0 p-3 ${isDark ? "border-t border-t-[#3c3c3c] bg-[#252526]" : "border-t border-t-[#e0e0e0] bg-[#f3f3f3]"}`}
+          >
             <div className="flex gap-2">
               <textarea
                 ref={textareaRef}
@@ -411,7 +430,7 @@ export function AIChatSidebar({
                 }
                 rows={1}
                 disabled={isLoading || hasPendingProposal}
-                className="flex-1 text-sm bg-[#1e1e1e] border border-[#3c3c3c] text-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-purple-500/50 placeholder:text-gray-600 disabled:opacity-50"
+                className={`flex-1 text-sm ${isDark ? "bg-[#1e1e1e] border-[#3c3c3c] text-gray-200 placeholder:text-gray-600" : "bg-white border-[#e0e0e0] text-gray-800 placeholder:text-gray-400"} border rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-purple-500/50 disabled:opacity-50`}
                 style={{ minHeight: "36px", maxHeight: "120px" }}
               />
               <button
@@ -446,9 +465,11 @@ export function AIChatSidebar({
 function AssistantMessage({
   content,
   mode,
+  isDark,
 }: {
   content: string;
   mode: ChatMode;
+  isDark: boolean;
 }) {
   if (mode === "agent") {
     return (
@@ -456,7 +477,9 @@ function AssistantMessage({
         <p className="text-emerald-400/80 text-[10px] mb-1.5 font-medium">
           ✓ Code proposed — review diff in editor
         </p>
-        <pre className="bg-[#1a1a1a] rounded-md p-2.5 overflow-x-auto text-gray-300 max-h-60 overflow-y-auto border border-[#333]">
+        <pre
+          className={`${isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-[#f0f0f0] border-[#d4d4d4]"} rounded-md p-2.5 overflow-x-auto ${isDark ? "text-gray-300" : "text-gray-700"} max-h-60 overflow-y-auto border`}
+        >
           <code>{content}</code>
         </pre>
       </div>
@@ -476,7 +499,7 @@ function AssistantMessage({
             if (isInline) {
               return (
                 <code
-                  className="bg-[#1a1a1a] text-purple-300 px-1.5 py-0.5 rounded text-[12px] font-mono border border-[#333]"
+                  className={`${isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-[#f0f0f0] border-[#d4d4d4]"} ${isDark ? "text-purple-300" : "text-purple-600"} px-1.5 py-0.5 rounded text-[12px] font-mono border`}
                   {...props}
                 >
                   {children}
@@ -485,17 +508,23 @@ function AssistantMessage({
             }
 
             return (
-              <div className="my-2 rounded-md overflow-hidden border border-[#333]">
+              <div
+                className={`my-2 rounded-md overflow-hidden border ${isDark ? "border-[#333]" : "border-[#d4d4d4]"}`}
+              >
                 {match && (
-                  <div className="flex items-center justify-between px-3 py-1 bg-[#1a1a1a] border-b border-[#333]">
+                  <div
+                    className={`flex items-center justify-between px-3 py-1 ${isDark ? "bg-[#1a1a1a] border-b border-b-[#333]" : "bg-[#f0f0f0] border-b border-b-[#d4d4d4]"}`}
+                  >
                     <span className="text-[10px] text-gray-500 font-medium uppercase">
                       {match[1]}
                     </span>
                   </div>
                 )}
-                <pre className="bg-[#0d0d0d] p-3 overflow-x-auto">
+                <pre
+                  className={`${isDark ? "bg-[#0d0d0d]" : "bg-[#f5f5f5]"} p-3 overflow-x-auto`}
+                >
                   <code
-                    className={`text-[12px] leading-relaxed font-mono text-gray-300 ${className || ""}`}
+                    className={`text-[12px] leading-relaxed font-mono ${isDark ? "text-gray-300" : "text-gray-700"} ${className || ""}`}
                     {...props}
                   >
                     {children}
@@ -507,7 +536,9 @@ function AssistantMessage({
           // Paragraphs
           p({ children }) {
             return (
-              <p className="mb-2 last:mb-0 leading-relaxed text-gray-300">
+              <p
+                className={`mb-2 last:mb-0 leading-relaxed ${isDark ? "text-gray-300" : "text-gray-700"}`}
+              >
                 {children}
               </p>
             );
@@ -515,21 +546,27 @@ function AssistantMessage({
           // Headings
           h1({ children }) {
             return (
-              <h1 className="text-base font-bold text-gray-100 mb-2 mt-3 first:mt-0 border-b border-[#333] pb-1">
+              <h1
+                className={`text-base font-bold ${isDark ? "text-gray-100 border-b border-b-[#333]" : "text-gray-900 border-b border-b-[#d4d4d4]"} mb-2 mt-3 first:mt-0 pb-1`}
+              >
                 {children}
               </h1>
             );
           },
           h2({ children }) {
             return (
-              <h2 className="text-sm font-bold text-gray-100 mb-1.5 mt-2.5 first:mt-0">
+              <h2
+                className={`text-sm font-bold ${isDark ? "text-gray-100" : "text-gray-900"} mb-1.5 mt-2.5 first:mt-0`}
+              >
                 {children}
               </h2>
             );
           },
           h3({ children }) {
             return (
-              <h3 className="text-sm font-semibold text-gray-200 mb-1 mt-2 first:mt-0">
+              <h3
+                className={`text-sm font-semibold ${isDark ? "text-gray-200" : "text-gray-800"} mb-1 mt-2 first:mt-0`}
+              >
                 {children}
               </h3>
             );
@@ -537,14 +574,18 @@ function AssistantMessage({
           // Lists
           ul({ children }) {
             return (
-              <ul className="list-disc list-inside mb-2 space-y-0.5 text-gray-300 text-sm ml-1">
+              <ul
+                className={`list-disc list-inside mb-2 space-y-0.5 ${isDark ? "text-gray-300" : "text-gray-700"} text-sm ml-1`}
+              >
                 {children}
               </ul>
             );
           },
           ol({ children }) {
             return (
-              <ol className="list-decimal list-inside mb-2 space-y-0.5 text-gray-300 text-sm ml-1">
+              <ol
+                className={`list-decimal list-inside mb-2 space-y-0.5 ${isDark ? "text-gray-300" : "text-gray-700"} text-sm ml-1`}
+              >
                 {children}
               </ol>
             );
@@ -575,29 +616,43 @@ function AssistantMessage({
           },
           // Horizontal rules
           hr() {
-            return <hr className="border-[#333] my-3" />;
+            return (
+              <hr
+                className={`${isDark ? "border-[#333]" : "border-[#d4d4d4]"} my-3`}
+              />
+            );
           },
           // Tables
           table({ children }) {
             return (
-              <div className="overflow-x-auto my-2 rounded border border-[#333]">
+              <div
+                className={`overflow-x-auto my-2 rounded border ${isDark ? "border-[#333]" : "border-[#d4d4d4]"}`}
+              >
                 <table className="w-full text-xs">{children}</table>
               </div>
             );
           },
           thead({ children }) {
-            return <thead className="bg-[#1a1a1a]">{children}</thead>;
+            return (
+              <thead className={isDark ? "bg-[#1a1a1a]" : "bg-[#f0f0f0]"}>
+                {children}
+              </thead>
+            );
           },
           th({ children }) {
             return (
-              <th className="px-2 py-1.5 text-left text-gray-400 font-medium border-b border-[#333]">
+              <th
+                className={`px-2 py-1.5 text-left font-medium ${isDark ? "text-gray-400 border-b border-b-[#333]" : "text-gray-500 border-b border-b-[#d4d4d4]"}`}
+              >
                 {children}
               </th>
             );
           },
           td({ children }) {
             return (
-              <td className="px-2 py-1.5 text-gray-300 border-b border-[#333]/50">
+              <td
+                className={`px-2 py-1.5 ${isDark ? "text-gray-300 border-b border-b-[#333]/50" : "text-gray-700 border-b border-b-[#d4d4d4]/50"}`}
+              >
                 {children}
               </td>
             );
@@ -605,7 +660,9 @@ function AssistantMessage({
           // Strong / Bold
           strong({ children }) {
             return (
-              <strong className="font-semibold text-gray-100">
+              <strong
+                className={`font-semibold ${isDark ? "text-gray-100" : "text-gray-900"}`}
+              >
                 {children}
               </strong>
             );

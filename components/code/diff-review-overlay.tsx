@@ -135,7 +135,7 @@ export function DiffReviewOverlay({
       className="absolute inset-0 z-20 flex flex-col bg-[#1e1e1e]"
     >
       {/* Header bar */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
+      <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-b-[#3c3c3c]">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -163,7 +163,7 @@ export function DiffReviewOverlay({
       <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden" />
 
       {/* Bottom action bar */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-[#252526] border-t border-[#3c3c3c]">
+      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-[#252526] border-t border-t-[#3c3c3c]">
         <p className="text-[11px] text-gray-500">
           <span className="text-emerald-500">Green</span> = new code &middot;{" "}
           <span className="text-red-500">Red</span> = removed code
