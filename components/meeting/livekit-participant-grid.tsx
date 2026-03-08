@@ -89,13 +89,27 @@ export function LiveKitParticipantGrid({
     };
   }, []);
 
-  // Auto-stage screen sharing participant
+  // Track whether staging was auto-triggered by screen sharing
+  const autoStagedRef = useRef<string | null>(null);
+
+  // Auto-stage screen sharing participant & auto-unstage when sharing stops
   useEffect(() => {
     const screenSharingParticipant = participants.find(
       (p) => p.isScreenShareEnabled,
     );
+
     if (screenSharingParticipant && !stagedParticipantId) {
+      // Auto-stage the screen sharer
       setStagedParticipantId(screenSharingParticipant.identity);
+      autoStagedRef.current = screenSharingParticipant.identity;
+    } else if (
+      !screenSharingParticipant &&
+      autoStagedRef.current &&
+      stagedParticipantId === autoStagedRef.current
+    ) {
+      // Screen sharing stopped — auto-unstage only if it was auto-staged
+      setStagedParticipantId(null);
+      autoStagedRef.current = null;
     }
   }, [participants, stagedParticipantId]);
 
@@ -103,6 +117,8 @@ export function LiveKitParticipantGrid({
     setStagedParticipantId((prev) =>
       prev === participantId ? null : participantId,
     );
+    // Clear auto-stage tracking on manual toggle
+    autoStagedRef.current = null;
   }, []);
 
   const handleFullscreen = useCallback(async (participantId: string) => {
@@ -376,7 +392,7 @@ function ParticipantTile({
         isCarouselItem ? "h-full" : "min-h-[100px]",
         // Discord-style speaking glow
         isSpeaking
-          ? "ring-2 ring-[#23a559] shadow-[0_0_12px_rgba(35,165,89,0.3)]"
+          ? "ring-[3px] ring-[#23a559] shadow-[0_0_16px_rgba(35,165,89,0.45)]"
           : isStaged
             ? "ring-2 ring-[#5865f2]"
             : "ring-1 ring-white/[0.06]",
@@ -394,54 +410,77 @@ function ParticipantTile({
         </div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-[#2b2d31]">
-          {avatarUrl ? (
-            <div
-              className={cn(
-                "rounded-full overflow-hidden ring-4 ring-transparent",
-                isSpeaking && "ring-[#23a559]/40",
-                isCarouselItem
-                  ? "w-14 h-14"
-                  : isStaged
-                    ? "w-28 h-28"
-                    : "w-20 h-20",
-              )}
-            >
-              <Image
-                src={avatarUrl}
-                alt={displayName}
-                width={128}
-                height={128}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "rounded-full flex items-center justify-center",
-                isSpeaking
-                  ? "bg-[#5865f2] ring-4 ring-[#23a559]/40"
-                  : "bg-[#5865f2]",
-                isCarouselItem
-                  ? "w-14 h-14"
-                  : isStaged
-                    ? "w-28 h-28"
-                    : "w-20 h-20",
-              )}
-            >
-              <span
+          <div className="flex flex-col items-center gap-3">
+            {avatarUrl ? (
+              <div
                 className={cn(
-                  "font-semibold text-white",
+                  "rounded-full overflow-hidden ring-4 ring-transparent",
+                  isSpeaking && "ring-[#23a559]/40",
                   isCarouselItem
-                    ? "text-lg"
+                    ? "w-14 h-14"
                     : isStaged
-                      ? "text-3xl"
-                      : "text-xl",
+                      ? "w-28 h-28"
+                      : "w-20 h-20",
                 )}
               >
-                {initials}
-              </span>
-            </div>
-          )}
+                <Image
+                  src={avatarUrl}
+                  alt={displayName}
+                  width={128}
+                  height={128}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "rounded-full flex items-center justify-center",
+                  isSpeaking
+                    ? "bg-[#5865f2] ring-4 ring-[#23a559]/40"
+                    : "bg-[#5865f2]",
+                  isCarouselItem
+                    ? "w-14 h-14"
+                    : isStaged
+                      ? "w-28 h-28"
+                      : "w-20 h-20",
+                )}
+              >
+                <span
+                  className={cn(
+                    "font-semibold text-white",
+                    isCarouselItem
+                      ? "text-lg"
+                      : isStaged
+                        ? "text-3xl"
+                        : "text-xl",
+                  )}
+                >
+                  {initials}
+                </span>
+              </div>
+            )}
+
+            {/* Audio waveform bars when speaking with camera off */}
+            {isSpeaking && isMicEnabled && (
+              <div className="flex items-end gap-[3px] h-6">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-[5px] rounded-full bg-[#23a559]"
+                    animate={{
+                      height: ["6px", `${14 + Math.random() * 10}px`, "6px"],
+                    }}
+                    transition={{
+                      duration: 0.4 + Math.random() * 0.3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.08,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
