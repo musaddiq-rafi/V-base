@@ -7,7 +7,6 @@ import { useState } from "react";
 import {
   Plus,
   Loader2,
-  Sparkles,
   Users,
   ArrowRight,
   Building2,
@@ -106,12 +105,21 @@ export default function DashboardPage() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Link href={`/workspace/${org.id}`}>
-                  <Card className="group hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-500/10 transition-all cursor-pointer py-5">
-                    <CardContent className="flex flex-col gap-4 px-5">
-                      <div className="flex items-start justify-between">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-sky-500/20 flex-shrink-0">
-                          {org.name.charAt(0).toUpperCase()}
+                  <Card className="group hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-500/10 transition-all cursor-pointer">
+                    <CardContent className="flex items-center gap-4 px-4 py-4">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shadow-md shadow-sky-500/20 flex-shrink-0">
+                        {org.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors truncate">
+                          {org.name}
+                        </h3>
+                        <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                          <Users className="w-3 h-3" />
+                          <span>{org.membersCount ?? "—"} member{(org.membersCount ?? 0) !== 1 ? "s" : ""}</span>
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Badge
                           variant="outline"
                           className={isAdmin
@@ -120,23 +128,6 @@ export default function DashboardPage() {
                         >
                           {isAdmin ? "Admin" : "Member"}
                         </Badge>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors truncate">
-                          {org.name}
-                        </h3>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3" />
-                          <span>{org.membersCount ?? "—"} member{(org.membersCount ?? 0) !== 1 ? "s" : ""}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-                          <span className="text-xs text-muted-foreground">VBase Workspace</span>
-                        </div>
                         <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </CardContent>
