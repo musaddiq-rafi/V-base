@@ -129,78 +129,80 @@ export function MeetingSelector({
   const canCreateMore = meetingStats.canCreateMore;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[#313338] flex flex-col">
       {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-between h-16 px-6 border-b border-border bg-background/80 backdrop-blur-xl"
+        className="flex items-center justify-between h-12 px-4 border-b border-[#1e1f22] bg-[#2b2d31]"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             href={`/workspace/${workspaceId}`}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-[#b5bac1] hover:text-[#f2f3f5] transition-colors text-[13px] font-medium"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Back</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
           </Link>
-          <div className="h-6 w-px bg-border" />
+          <div className="h-4 w-px bg-[#3f4147]" />
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
-              <Video className="w-4 h-4 text-rose-400" />
+            <div className="w-7 h-7 rounded-lg bg-[#5865f2]/20 flex items-center justify-center">
+              <Video className="w-3.5 h-3.5 text-[#5865f2]" />
             </div>
-            <span className="font-semibold text-white">{roomName}</span>
+            <span className="font-semibold text-[#f2f3f5] text-[15px]">
+              {roomName}
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-white/50">
+        <div className="flex items-center gap-2 text-xs text-[#b5bac1]">
           <span>
-            {meetingStats.activeCount}/{meetingStats.maxLimit} meetings active
+            {meetingStats.activeCount}/{meetingStats.maxLimit} active
           </span>
         </div>
       </motion.header>
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="max-w-2xl w-full">
+        <div className="max-w-xl w-full">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-8"
           >
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Join or Create a Meeting
+            <h1 className="text-2xl font-bold text-[#f2f3f5] mb-2">
+              Voice & Video
             </h1>
-            <p className="text-muted-foreground">
-              Select an ongoing meeting to join or start a new one
+            <p className="text-[#b5bac1] text-sm">
+              Join an active meeting or start a new one
             </p>
           </motion.div>
 
           {/* Active Meetings */}
-          <div className="space-y-4 mb-8">
+          <div className="space-y-2 mb-6">
             {activeMeetings.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-surface border border-border rounded-2xl p-8 text-center"
+                className="bg-[#2b2d31] border border-[#1e1f22] rounded-xl p-8 text-center"
               >
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                  <Video className="w-8 h-8 text-muted-foreground/50" />
+                <div className="w-14 h-14 rounded-full bg-[#1e1f22] flex items-center justify-center mx-auto mb-4">
+                  <Video className="w-7 h-7 text-[#4e5058]" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  No active meetings
+                <h3 className="text-base font-semibold text-[#f2f3f5] mb-1">
+                  No active calls
                 </h3>
-                <p className="text-muted-foreground text-sm">
-                  Be the first to start a meeting in this room
+                <p className="text-[#b5bac1] text-sm">
+                  Start a new meeting to get things going
                 </p>
               </motion.div>
             ) : (
               activeMeetings.map((meeting, index) => (
                 <motion.div
                   key={meeting._id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-surface hover:bg-surface-hover border border-border hover:border-border rounded-xl p-4 cursor-pointer transition-all group"
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-[#2b2d31] hover:bg-[#35373c] border border-[#1e1f22] rounded-lg p-3.5 cursor-pointer transition-all group"
                   onClick={() =>
                     onSelectMeeting(
                       meeting._id,
@@ -211,39 +213,35 @@ export function MeetingSelector({
                   }
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#23a559]/15 flex items-center justify-center">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#23a559] animate-pulse" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors">
+                        <h3 className="font-semibold text-[#f2f3f5] text-[15px] group-hover:text-[#5865f2] transition-colors">
                           {meeting.name}
                         </h3>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <div className="flex items-center gap-2.5 text-xs text-[#b5bac1] mt-0.5">
                           <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {meeting.participantCount} participant
-                            {meeting.participantCount !== 1 ? "s" : ""}
+                            <Users className="w-3.5 h-3.5" />
+                            {meeting.participantCount}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
+                            <Clock className="w-3.5 h-3.5" />
                             {formatDuration(meeting.createdAt)}
                           </span>
+                          <span>by {meeting.createdByName}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">
-                        Started by {meeting.createdByName}
-                      </span>
-                      {/* Force End button for abandoned meetings or meeting creator */}
+                    <div className="flex items-center gap-2">
                       {(isAbandonedMeeting(meeting) ||
                         meeting.createdBy === user?.id) && (
                         <button
                           onClick={(e) => handleForceEndMeeting(meeting._id, e)}
                           disabled={endingMeetingId === meeting._id}
-                          className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 font-medium rounded-lg transition-colors text-sm flex items-center gap-1"
-                          title="End this meeting"
+                          className="p-2 hover:bg-[#ed4245]/20 text-[#ed4245] rounded-md transition-colors"
+                          title="End meeting"
                         >
                           {endingMeetingId === meeting._id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -252,7 +250,7 @@ export function MeetingSelector({
                           )}
                         </button>
                       )}
-                      <button className="px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:shadow-lg hover:shadow-sky-500/25 text-white font-medium rounded-lg transition-all text-sm">
+                      <button className="px-3.5 py-1.5 bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium rounded-md transition-colors text-[13px]">
                         Join
                       </button>
                     </div>
@@ -266,23 +264,20 @@ export function MeetingSelector({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.15 }}
           >
             <button
               onClick={() => setIsCreateModalOpen(true)}
               disabled={!canCreateMore}
-              className="w-full py-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:shadow-lg hover:shadow-sky-500/25 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-[#5865f2] hover:bg-[#4752c4] disabled:bg-[#4e5058] disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-[15px]"
             >
               <Plus className="w-5 h-5" />
-              {canCreateMore
-                ? "Create New Meeting"
-                : "Maximum Meetings Reached"}
+              {canCreateMore ? "Start a Call" : "Max Meetings Reached"}
             </button>
             {!canCreateMore && (
-              <p className="text-center text-sm text-muted-foreground mt-3">
-                This room can host up to {meetingStats.maxLimit} simultaneous
-                meetings. Please wait for one to end or join an existing
-                meeting.
+              <p className="text-center text-xs text-[#b5bac1] mt-3">
+                Max {meetingStats.maxLimit} concurrent meetings. Wait for one to
+                end or join an existing call.
               </p>
             )}
           </motion.div>
@@ -297,27 +292,22 @@ export function MeetingSelector({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/70"
               onClick={() => setIsCreateModalOpen(false)}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-background-secondary rounded-2xl shadow-2xl p-6 mx-4 border border-border"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md bg-[#313338] rounded-xl shadow-2xl p-5 mx-4 border border-[#1e1f22]"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
-                    <Video className="w-5 h-5 text-sky-500 dark:text-sky-400" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    Create New Meeting
-                  </h2>
-                </div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold text-[#f2f3f5]">
+                  Create a Call
+                </h2>
                 <button
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-[#b5bac1] hover:text-[#f2f3f5] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -325,15 +315,15 @@ export function MeetingSelector({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  <label className="block text-xs font-bold uppercase text-[#b5bac1] mb-2 tracking-wider">
                     Meeting Name
                   </label>
                   <input
                     type="text"
                     value={newMeetingName}
                     onChange={(e) => setNewMeetingName(e.target.value)}
-                    placeholder="e.g., Code Base Updates"
-                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder="e.g., Sprint Planning"
+                    className="w-full px-3 py-2.5 bg-[#1e1f22] border border-[#1e1f22] rounded-md text-[#f2f3f5] placeholder-[#4e5058] focus:outline-none focus:ring-2 focus:ring-[#5865f2] text-[15px]"
                     autoFocus
                     onKeyDown={(e) => {
                       if (
@@ -347,26 +337,25 @@ export function MeetingSelector({
                   />
                 </div>
 
-                <div className="flex items-start gap-2 p-3 bg-sky-500/10 border border-sky-500/20 rounded-lg">
-                  <Info className="w-4 h-4 text-sky-500 dark:text-sky-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-sky-600 dark:text-sky-300">
-                    You can have up to {meetingStats.maxLimit} meetings running
-                    simultaneously in this room. Currently{" "}
+                <div className="flex items-start gap-2 p-3 bg-[#5865f2]/10 rounded-lg">
+                  <Info className="w-4 h-4 text-[#5865f2] mt-0.5 shrink-0" />
+                  <p className="text-xs text-[#b5bac1]">
+                    Up to {meetingStats.maxLimit} concurrent calls. Currently{" "}
                     {meetingStats.activeCount} active.
                   </p>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="flex-1 px-4 py-3 bg-muted hover:bg-muted/80 text-foreground font-medium rounded-xl transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-transparent hover:bg-[#3f4147] text-[#f2f3f5] font-medium rounded-md transition-colors text-[15px]"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreateMeeting}
                     disabled={!newMeetingName.trim() || isCreating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:shadow-lg hover:shadow-sky-500/25 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2.5 bg-[#5865f2] hover:bg-[#4752c4] disabled:bg-[#4e5058] disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors flex items-center justify-center gap-2 text-[15px]"
                   >
                     {isCreating ? (
                       <>
@@ -374,7 +363,7 @@ export function MeetingSelector({
                         Creating...
                       </>
                     ) : (
-                      "Proceed"
+                      "Create"
                     )}
                   </button>
                 </div>
