@@ -361,18 +361,18 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0b0f1a]">
+    <div className="h-full flex flex-col bg-background">
       {/* View Toggle & Info Banner */}
-      <div className="flex-shrink-0 bg-[#0f1520] border-b border-white/10 px-6 py-3">
+      <div className="flex-shrink-0 bg-[var(--background-secondary)] border-b border-border px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
               <button
                 onClick={() => setIsListView(false)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
                   !isListView
                     ? "bg-emerald-500 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -383,7 +383,7 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
                 className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
                   isListView
                     ? "bg-emerald-500 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <List className="w-4 h-4" />
@@ -400,11 +400,11 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
           <div className="max-w-7xl mx-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Task</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Description</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Column</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-white/70">Actions</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Task</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Description</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Column</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -415,10 +415,10 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
                     return (
                       <tr
                         key={card.id}
-                        className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                        className="border-b border-border/50 hover:bg-muted transition-colors"
                       >
-                        <td className="py-3 px-4 text-white font-medium">{card.title}</td>
-                        <td className="py-3 px-4 text-white/60 text-sm">
+                        <td className="py-3 px-4 text-foreground font-medium">{card.title}</td>
+                        <td className="py-3 px-4 text-muted-foreground text-sm">
                           {card.description || "No description"}
                         </td>
                         <td className="py-3 px-4">
@@ -430,14 +430,14 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => openEditCard(card.id)}
-                              className="text-white/40 hover:text-emerald-400 transition-colors"
+                              className="text-muted-foreground hover:text-emerald-400 transition-colors"
                               title="Edit card"
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteCard(card.id)}
-                              className="text-white/40 hover:text-red-400 transition-colors"
+                              className="text-muted-foreground hover:text-red-400 transition-colors"
                               title="Delete card"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -452,15 +452,15 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
             </table>
             
             {/* Add New Task Form */}
-            <div className="mt-6 bg-white/5 border border-white/10 rounded-xl p-4">
-              <h3 className="text-white font-semibold text-sm mb-3">Add New Task</h3>
+            <div className="mt-6 bg-card border border-border rounded-xl p-4">
+              <h3 className="text-foreground font-semibold text-sm mb-3">Add New Task</h3>
               <div className="flex gap-3">
                 <input
                   type="text"
                   value={newTaskTitleListView}
                   onChange={(e) => setNewTaskTitleListView(e.target.value)}
                   placeholder="Task title"
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newTaskTitleListView.trim()) {
                       handleAddCard(selectedColumnForListView);
@@ -471,10 +471,10 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
                 <select
                   value={selectedColumnForListView}
                   onChange={(e) => setSelectedColumnForListView(e.target.value)}
-                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 >
                   {board.columns.map((col) => (
-                    <option key={col.id} value={col.id} className="bg-[#0a0f1a] text-white">
+                    <option key={col.id} value={col.id} className="bg-background text-foreground">
                       {col.title}
                     </option>
                   ))}
@@ -496,7 +496,7 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
             
             {board.columns.every((col) => col.cardIds.length === 0) && (
               <div className="text-center py-12">
-                <p className="text-white/40 text-sm">No tasks yet. Use the form above to add your first task.</p>
+                <p className="text-muted-foreground text-sm">No tasks yet. Use the form above to add your first task.</p>
               </div>
             )}
           </div>
@@ -532,14 +532,14 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
             ))}
 
             <div className="w-72 flex-shrink-0">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-sm text-white/60 mb-2">New column</div>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <div className="text-sm text-muted-foreground mb-2">New column</div>
                 <input
                   type="text"
                   value={newColumnTitle}
                   onChange={(e) => setNewColumnTitle(e.target.value)}
                   placeholder="Column title"
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
                 <button
                   onClick={handleAddColumn}
@@ -555,8 +555,8 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
 
         <DragOverlay>
           {activeCardId ? (
-            <div className="bg-[#151b28] border border-white/10 rounded-lg p-3 w-64 shadow-xl">
-              <div className="text-sm text-white font-medium">
+            <div className="bg-card border border-border rounded-lg p-3 w-64 shadow-xl">
+              <div className="text-sm text-foreground font-medium">
                 {board.cards[activeCardId]?.title || "Card"}
               </div>
             </div>
@@ -568,43 +568,43 @@ export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
 
       {editingCardId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#0f1520] border border-white/10 rounded-xl p-6">
+          <div className="w-full max-w-md bg-[var(--background-secondary)] border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Edit card</h3>
+              <h3 className="text-lg font-semibold text-foreground">Edit card</h3>
               <button
                 onClick={() => setEditingCardId(null)}
-                className="text-white/40 hover:text-white transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Title
                 </label>
                 <input
                   value={editingTitle}
                   onChange={(e) => setEditingTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Description
                 </label>
                 <textarea
                   value={editingDescription}
                   onChange={(e) => setEditingDescription(e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setEditingCardId(null)}
-                className="flex-1 px-4 py-2.5 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
               >
                 Cancel
               </button>
@@ -651,16 +651,16 @@ function KanbanColumnView({
 
   return (
     <div ref={setNodeRef} className="w-72 flex-shrink-0">
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+      <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <input
             defaultValue={column.title}
             onBlur={(e) => onRename(column.id, e.target.value)}
-            className="bg-transparent text-white font-semibold text-sm w-full focus:outline-none"
+            className="bg-transparent text-foreground font-semibold text-sm w-full focus:outline-none"
           />
           <button
             onClick={() => onDelete(column.id)}
-            className="text-white/30 hover:text-red-400 transition-colors"
+            className="text-muted-foreground/50 hover:text-red-400 transition-colors"
             title="Delete column"
           >
             <Trash2 className="w-4 h-4" />
@@ -689,11 +689,11 @@ function KanbanColumnView({
             value={newCardTitle}
             onChange={(e) => setNewCardTitle(e.target.value)}
             placeholder="Add a card"
-            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
           <button
             onClick={() => onAddCard(column.id)}
-            className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+            className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
           >
             <Plus className="w-3 h-3" />
             Add Card
@@ -728,27 +728,27 @@ function KanbanCardItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-[#151b28] border border-white/10 rounded-lg p-3 text-sm text-white shadow-sm"
+      className="bg-card border border-border rounded-lg p-3 text-sm text-foreground shadow-sm"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="font-medium">{card.title}</div>
         <div className="flex items-center gap-1">
           <button
             onClick={onEdit}
-            className="text-white/40 hover:text-white transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             title="Edit card"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onDelete}
-            className="text-white/40 hover:text-red-400 transition-colors"
+            className="text-muted-foreground hover:text-red-400 transition-colors"
             title="Delete card"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
           <span
-            className="text-white/30 cursor-grab"
+            className="text-muted-foreground/50 cursor-grab"
             {...attributes}
             {...listeners}
             title="Drag"
@@ -758,7 +758,7 @@ function KanbanCardItem({
         </div>
       </div>
       {card.description && (
-        <p className="text-xs text-white/60 mt-2">{card.description}</p>
+        <p className="text-xs text-muted-foreground mt-2">{card.description}</p>
       )}
     </div>
   );

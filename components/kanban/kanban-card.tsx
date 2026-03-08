@@ -72,19 +72,18 @@ export function KanbanCard({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
         onClick={handleOpen}
-        className="group flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-lg cursor-pointer transition-all"
+        className="group flex items-center gap-4 p-4 bg-card border border-border rounded-lg cursor-pointer hover:bg-muted transition-all"
       >
         <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-lg flex items-center justify-center">
           <div className="w-5 h-5 rounded bg-emerald-400/30" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-white truncate group-hover:text-emerald-300 transition-colors">
+          <h3 className="font-medium text-foreground truncate group-hover:text-emerald-300 transition-colors">
             {kanban.name}
           </h3>
-          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <User className="w-3 h-3" />
               {kanban.lastEditorName || kanban.creatorName}
@@ -99,7 +98,7 @@ export function KanbanCard({
         <button
           onClick={handleDelete}
           disabled={isDeleting}
-          className="opacity-0 group-hover:opacity-100 p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+          className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -115,12 +114,12 @@ export function KanbanCard({
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ y: -4 }}
       onClick={handleOpen}
-      className="group relative bg-white/5 border-2 border-white/10 rounded-xl p-5 cursor-pointer hover:border-emerald-400/50 hover:shadow-xl hover:shadow-emerald-500/10 transition-all"
+      className="group relative bg-card border-2 border-border rounded-xl p-5 cursor-pointer hover:border-emerald-400/50 hover:shadow-xl hover:shadow-emerald-500/10 transition-all"
     >
       <button
         onClick={handleDelete}
         disabled={isDeleting}
-        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all z-10 disabled:opacity-50"
+          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all z-10 disabled:opacity-50"
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -129,18 +128,18 @@ export function KanbanCard({
         <div className="w-6 h-6 rounded bg-emerald-400/40" />
       </div>
 
-      <h3 className="font-semibold text-white truncate mb-2 group-hover:text-emerald-300 transition-colors">
+      <h3 className="font-semibold text-foreground truncate mb-2 group-hover:text-emerald-300 transition-colors">
         {kanban.name}
       </h3>
 
       <div className="space-y-1">
-        <div className="flex items-center gap-2 text-xs text-white/50">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <User className="w-3 h-3" />
           <span className="truncate">
             {kanban.lastEditorName || kanban.creatorName}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-white/50">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="w-3 h-3" />
           <span>{formatDate(kanban.updatedAt)}</span>
         </div>
