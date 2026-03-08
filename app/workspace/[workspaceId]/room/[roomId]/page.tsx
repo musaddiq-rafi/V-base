@@ -191,26 +191,26 @@ export default function RoomPage() {
   // Kanban Rooms (from rafi-dev)
   if (room.type === "kanban") {
     return (
-      <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
+      <div className="fixed inset-0 flex flex-col bg-background">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex-shrink-0 z-50 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
+          className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
         >
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-4">
               <Link
                 href={`/workspace/${organization.id}`}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
               </Link>
-              <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <Presentation className="w-5 h-5 text-emerald-400" />
-                <span className="font-semibold text-white">{room.name}</span>
-                <span className="text-xs text-white/50 capitalize bg-white/10 px-2 py-1 rounded">
+                <Presentation className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <span className="font-semibold text-foreground">{room.name}</span>
+                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
                   {room.type}
                 </span>
               </div>
