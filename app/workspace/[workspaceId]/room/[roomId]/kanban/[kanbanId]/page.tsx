@@ -68,9 +68,9 @@ export default function KanbanPage() {
 
   if (kanban === null || room === null) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             Board not found
           </h1>
           <Link
@@ -100,30 +100,30 @@ export default function KanbanPage() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#0b0f1a]">
+    <div className="fixed inset-0 flex flex-col bg-background">
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex-shrink-0 z-50 bg-[#0b0f1a]/80 backdrop-blur-xl border-b border-white/10"
+        className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
       >
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => handleBackNavigation(backUrl)}
-              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
             </button>
-            <div className="h-6 w-px bg-white/10" />
+            <div className="h-6 w-px bg-border" />
             <div className="flex items-center gap-2">
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onBlur={handleNameBlur}
-                className="bg-transparent text-white font-semibold focus:outline-none border-b border-transparent focus:border-emerald-400 transition-colors"
+                className="bg-transparent text-foreground font-semibold focus:outline-none border-b border-transparent focus:border-emerald-400 transition-colors"
               />
-              <span className="text-xs text-white/50 bg-white/10 px-2 py-1 rounded">
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                 kanban
               </span>
             </div>
