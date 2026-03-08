@@ -36,8 +36,6 @@ interface AIChatSidebarProps {
   workspaceId: Id<"workspaces">;
   /** Returns current editor content for context */
   getEditorContent: () => string;
-  /** Replaces editor content (used for direct application, e.g. after diff approval) */
-  setEditorContent: (code: string) => void;
   /** Proposes code changes via diff review overlay (Agent mode) */
   proposeEditorContent: (code: string) => void;
   /** Whether a diff proposal is currently being reviewed */
@@ -51,7 +49,6 @@ export function AIChatSidebar({
   roomId,
   workspaceId,
   getEditorContent,
-  setEditorContent,
   proposeEditorContent,
   hasPendingProposal,
 }: AIChatSidebarProps) {

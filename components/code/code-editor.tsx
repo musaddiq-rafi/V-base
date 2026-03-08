@@ -666,7 +666,6 @@ export function CodeEditor({
           roomId={roomId}
           workspaceId={workspaceId}
           getEditorContent={getEditorContent}
-          setEditorContent={setEditorContent}
           proposeEditorContent={proposeEditorContent}
           hasPendingProposal={!!pendingProposal}
         />
