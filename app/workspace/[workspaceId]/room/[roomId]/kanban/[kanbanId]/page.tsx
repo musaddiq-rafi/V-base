@@ -9,7 +9,7 @@ import { PageLoader } from "@/components/shared/page-loader";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization, useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
@@ -57,9 +57,19 @@ export default function KanbanPage() {
   );
 
   const [name, setName] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (kanban?.name) setName(kanban.name);
+    if (kanban?.name) {
+      setName(kanban.name);
+      // Auto-focus and select title for freshly created boards (Google Docs style)
+      if (kanban.name.startsWith("Untitled board")) {
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+          nameInputRef.current?.select();
+        }, 150);
+      }
+    }
   }, [kanban?.name]);
 
   if (!organization || kanban === undefined || room === undefined) {
@@ -118,10 +128,12 @@ export default function KanbanPage() {
             <div className="h-6 w-px bg-border" />
             <div className="flex items-center gap-2">
               <input
+                ref={nameInputRef}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onBlur={handleNameBlur}
-                className="bg-transparent text-foreground font-semibold focus:outline-none border-b border-transparent focus:border-emerald-400 transition-colors"
+                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                className="bg-transparent text-foreground font-semibold focus:outline-none border-b border-transparent focus:border-emerald-400 transition-colors min-w-[200px]"
               />
               <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                 kanban
