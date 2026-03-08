@@ -12,6 +12,7 @@ import {
   Pencil,
   Check,
   X,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useOrganization } from "@clerk/nextjs";
@@ -324,9 +325,7 @@ export default function CodeFilePage() {
         {/* Editor Content */}
         <div className="flex-1 relative min-h-0">
           <ClientSideSuspense
-            fallback={
-              <InlineLoader label="Loading editor..." />
-            }
+            fallback={<InlineLoader label="Loading editor..." />}
           >
             <CodeEditor
               fileId={fileId}

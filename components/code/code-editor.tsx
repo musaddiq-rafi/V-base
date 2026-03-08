@@ -28,11 +28,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { AnimatePresence } from "framer-motion";
 import { Terminal } from "./terminal";
 import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
 import { executeCodeVBase, VBASE_LANGUAGE_VERSIONS } from "@/lib/vbase-rce";
 import { EditorSettingsModal, EditorTheme } from "./editor-settings-modal";
 import { AIChatSidebar } from "./ai-chat-sidebar";
+import { DiffReviewOverlay } from "./diff-review-overlay";
 
 // RCE Engine types
 type RCEEngine = "piston" | "vbase";
@@ -131,6 +133,7 @@ export function CodeEditor({
   const [element, setElement] = useState<HTMLElement>();
   const [synced, setSynced] = useState(false);
   const editorViewRef = useRef<EditorView | null>(null);
+  const ytextRef = useRef<Y.Text | null>(null);
 
   // Get user info from Liveblocks authentication endpoint
   const userInfo = useSelf((me) => me.info);
@@ -163,17 +166,56 @@ export function CodeEditor({
   // AI Sidebar State
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
 
+  // Diff Review State
+  const [pendingProposal, setPendingProposal] = useState<{
+    originalCode: string;
+    proposedCode: string;
+  } | null>(null);
+
   const getEditorContent = useCallback(() => {
-    return editorViewRef.current?.state.doc.toString() ?? "";
+    return (
+      ytextRef.current?.toString() ??
+      editorViewRef.current?.state.doc.toString() ??
+      ""
+    );
   }, []);
 
   const setEditorContent = useCallback((code: string) => {
-    const view = editorViewRef.current;
-    if (view) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: code },
+    const ytext = ytextRef.current;
+    if (ytext && ytext.doc) {
+      // Write directly to Y.Text CRDT to avoid merge artifacts from the
+      // CodeMirror ↔ Yjs bridge. The yCollab extension will reactively
+      // update the editor view.
+      ytext.doc.transact(() => {
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, code);
       });
+    } else {
+      // Fallback: direct CodeMirror dispatch (non-collaborative case)
+      const view = editorViewRef.current;
+      if (view) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: code },
+        });
+      }
     }
+  }, []);
+
+  /** Called by AI sidebar in agent mode — shows diff overlay instead of directly applying */
+  const proposeEditorContent = useCallback((proposedCode: string) => {
+    const originalCode = editorViewRef.current?.state.doc.toString() ?? "";
+    setPendingProposal({ originalCode, proposedCode });
+  }, []);
+
+  const handleKeepProposal = useCallback(() => {
+    if (pendingProposal) {
+      setEditorContent(pendingProposal.proposedCode);
+      setPendingProposal(null);
+    }
+  }, [pendingProposal, setEditorContent]);
+
+  const handleUndoProposal = useCallback(() => {
+    setPendingProposal(null);
   }, []);
 
   const updateLastEdited = useMutation(api.codeFiles.updateLastEdited);
@@ -204,6 +246,7 @@ export function CodeEditor({
     const provider = getYjsProviderForRoom(room);
     const ydoc = provider.getYDoc();
     const ytext = ydoc.getText("codemirror");
+    ytextRef.current = ytext;
     const undoManager = new Y.UndoManager(ytext);
 
     // Listen for sync status
@@ -588,7 +631,7 @@ export function CodeEditor({
       {/* CodeMirror Editor Container + AI Sidebar */}
       <div className="flex-1 relative min-h-0 overflow-hidden flex">
         {/* Editor + Terminal */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           <div ref={ref} className="flex-1 min-h-0 overflow-hidden" />
 
           {/* Terminal Panel */}
@@ -599,6 +642,20 @@ export function CodeEditor({
             isError={isError}
             isRunning={isRunning}
           />
+
+          {/* Diff Review Overlay — shown when AI proposes code */}
+          <AnimatePresence>
+            {pendingProposal && (
+              <DiffReviewOverlay
+                originalCode={pendingProposal.originalCode}
+                proposedCode={pendingProposal.proposedCode}
+                fileName={fileName}
+                language={language}
+                onKeep={handleKeepProposal}
+                onUndo={handleUndoProposal}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         {/* AI Chat Sidebar */}
@@ -609,7 +666,8 @@ export function CodeEditor({
           roomId={roomId}
           workspaceId={workspaceId}
           getEditorContent={getEditorContent}
-          setEditorContent={setEditorContent}
+          proposeEditorContent={proposeEditorContent}
+          hasPendingProposal={!!pendingProposal}
         />
       </div>
 
