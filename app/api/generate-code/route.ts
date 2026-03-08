@@ -32,13 +32,16 @@ Constraints you MUST follow:
   if (mode === "agent") {
     return `${baseContext}
 
-MODE: Agent — You are generating code to be placed directly into the editor.
+MODE: Agent — You are generating code that will REPLACE the entire file contents.
 STRICT RULES:
 - Return ONLY the raw source code. No markdown fences, no explanations, no comments like "here is the code".
 - Do NOT wrap output in \`\`\`code blocks\`\`\`.
 - The output must be valid, runnable ${langLabel} code ready to execute.
-- If the user asks to modify or fix code, return the COMPLETE updated file (not a diff or partial snippet).
-- If the prompt is ambiguous, make reasonable assumptions and produce working code.`;
+- Your output will COMPLETELY REPLACE whatever is currently in the editor.
+- Do NOT include the user's existing code unless they explicitly asked to modify/extend it.
+- If the user asks to "implement X" or "write X", return ONLY the code for X — do not keep old unrelated code.
+- If the user asks to "fix", "modify", "update", or "add to" existing code, then return the COMPLETE updated file with their existing code plus your changes.
+- If the prompt is ambiguous, assume the user wants fresh code that replaces the file.`;
   }
 
   // "ask" mode

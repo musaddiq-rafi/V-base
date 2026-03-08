@@ -133,6 +133,7 @@ export function CodeEditor({
   const [element, setElement] = useState<HTMLElement>();
   const [synced, setSynced] = useState(false);
   const editorViewRef = useRef<EditorView | null>(null);
+  const ytextRef = useRef<Y.Text | null>(null);
 
   // Get user info from Liveblocks authentication endpoint
   const userInfo = useSelf((me) => me.info);
@@ -172,15 +173,31 @@ export function CodeEditor({
   } | null>(null);
 
   const getEditorContent = useCallback(() => {
-    return editorViewRef.current?.state.doc.toString() ?? "";
+    return (
+      ytextRef.current?.toString() ??
+      editorViewRef.current?.state.doc.toString() ??
+      ""
+    );
   }, []);
 
   const setEditorContent = useCallback((code: string) => {
-    const view = editorViewRef.current;
-    if (view) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: code },
+    const ytext = ytextRef.current;
+    if (ytext && ytext.doc) {
+      // Write directly to Y.Text CRDT to avoid merge artifacts from the
+      // CodeMirror ↔ Yjs bridge. The yCollab extension will reactively
+      // update the editor view.
+      ytext.doc.transact(() => {
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, code);
       });
+    } else {
+      // Fallback: direct CodeMirror dispatch (non-collaborative case)
+      const view = editorViewRef.current;
+      if (view) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: code },
+        });
+      }
     }
   }, []);
 
@@ -229,6 +246,7 @@ export function CodeEditor({
     const provider = getYjsProviderForRoom(room);
     const ydoc = provider.getYDoc();
     const ytext = ydoc.getText("codemirror");
+    ytextRef.current = ytext;
     const undoManager = new Y.UndoManager(ytext);
 
     // Listen for sync status

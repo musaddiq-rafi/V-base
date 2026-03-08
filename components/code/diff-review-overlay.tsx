@@ -1,8 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { computeDiff, DiffLine } from "@/lib/diff";
-import { Check, X, Plus, Minus, Equal } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { EditorView, basicSetup } from "codemirror";
+import { EditorState, Text } from "@codemirror/state";
+import { unifiedMergeView } from "@codemirror/merge";
+import { javascript } from "@codemirror/lang-javascript";
+import { python } from "@codemirror/lang-python";
+import { cpp } from "@codemirror/lang-cpp";
+import { java } from "@codemirror/lang-java";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import { Check, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface DiffReviewOverlayProps {
@@ -14,7 +21,6 @@ interface DiffReviewOverlayProps {
   onUndo: () => void;
 }
 
-/** Map language to a display label */
 const LANG_LABELS: Record<string, string> = {
   javascript: "JavaScript",
   python: "Python",
@@ -23,6 +29,27 @@ const LANG_LABELS: Record<string, string> = {
   c: "C",
 };
 
+function getLanguageExtension(language: string) {
+  switch (language) {
+    case "javascript":
+      return javascript();
+    case "python":
+      return python();
+    case "java":
+      return java();
+    case "c":
+    case "cpp":
+      return cpp();
+    default:
+      return javascript();
+  }
+}
+
+/**
+ * VS Code-style diff overlay using CodeMirror's unified merge view.
+ * Shows the proposed code as the document with deleted (original) lines
+ * rendered inline — exactly like VS Code / GitHub inline diffs.
+ */
 export function DiffReviewOverlay({
   originalCode,
   proposedCode,
@@ -31,10 +58,73 @@ export function DiffReviewOverlay({
   onKeep,
   onUndo,
 }: DiffReviewOverlayProps) {
-  const diff = useMemo(
-    () => computeDiff(originalCode, proposedCode),
-    [originalCode, proposedCode],
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Destroy previous view if any
+    viewRef.current?.destroy();
+
+    // Normalize line endings to prevent spurious diff artifacts
+    const normOriginal = originalCode.replace(/\r\n/g, "\n");
+    const normProposed = proposedCode.replace(/\r\n/g, "\n");
+
+    const state = EditorState.create({
+      doc: normProposed,
+      extensions: [
+        basicSetup,
+        getLanguageExtension(language),
+        vscodeDark,
+        EditorView.editable.of(false),
+        EditorState.readOnly.of(true),
+        unifiedMergeView({
+          original: Text.of(normOriginal.split("\n")),
+          highlightChanges: false,
+          syntaxHighlightDeletions: true,
+          gutter: true,
+        }),
+        EditorView.theme({
+          "&": {
+            height: "100%",
+            fontSize: "13px",
+          },
+          ".cm-scroller": {
+            overflow: "auto",
+            fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
+          },
+          /* ── Added / changed lines: solid green block background ── */
+          ".cm-changedLine": {
+            backgroundColor: "#2ea04330 !important",
+          },
+          /* ── Deleted chunks: solid red block background ── */
+          ".cm-deletedChunk": {
+            backgroundColor: "#f8514930 !important",
+          },
+          ".cm-deletedChunk del": {
+            textDecoration: "none !important",
+            color: "#f8a0a0 !important",
+          },
+          ".cm-deletedChunk .cm-deletedText": {
+            textDecoration: "none !important",
+          },
+        }),
+      ],
+    });
+
+    const view = new EditorView({
+      state,
+      parent: containerRef.current,
+    });
+
+    viewRef.current = view;
+
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
+  }, [originalCode, proposedCode, language]);
 
   return (
     <motion.div
@@ -47,132 +137,54 @@ export function DiffReviewOverlay({
       {/* Header bar */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-gray-200">
-            AI Proposed Changes
-          </span>
-          <span className="text-[10px] text-gray-500">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold text-gray-200">
+              Review AI Changes
+            </span>
+          </div>
+          <span className="text-[10px] text-gray-500 bg-[#1e1e1e] px-2 py-0.5 rounded">
             {fileName} &middot; {LANG_LABELS[language] || language}
           </span>
         </div>
 
-        {/* Stats badges */}
-        <div className="flex items-center gap-2">
-          {diff.addedCount > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-              <Plus className="w-3 h-3" />
-              {diff.addedCount}
-            </span>
-          )}
-          {diff.removedCount > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-medium text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
-              <Minus className="w-3 h-3" />
-              {diff.removedCount}
-            </span>
-          )}
-          {diff.unchangedCount > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-gray-500/10 px-1.5 py-0.5 rounded">
-              <Equal className="w-3 h-3" />
-              {diff.unchangedCount}
-            </span>
-          )}
+        {/* Keyboard shortcuts hint */}
+        <div className="flex items-center gap-3 text-[10px] text-gray-600">
+          <span>
+            <kbd className="px-1 py-0.5 bg-[#3c3c3c] rounded text-gray-400 font-mono">
+              Scroll
+            </kbd>{" "}
+            to review
+          </span>
         </div>
       </div>
 
-      {/* Diff content */}
-      <div className="flex-1 overflow-auto min-h-0 font-mono text-sm">
-        <table className="w-full border-collapse">
-          <tbody>
-            {diff.lines.map((line, idx) => (
-              <DiffRow key={idx} line={line} />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* CodeMirror unified merge view */}
+      <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden" />
 
       {/* Bottom action bar */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-[#252526] border-t border-[#3c3c3c]">
         <p className="text-[11px] text-gray-500">
-          Review the AI&apos;s proposed changes before applying
+          <span className="text-emerald-500">Green</span> = new code &middot;{" "}
+          <span className="text-red-500">Red</span> = removed code
         </p>
         <div className="flex items-center gap-2">
           <button
             onClick={onUndo}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-[#3c3c3c] hover:bg-[#4c4c4c] text-gray-300 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md border border-[#555] hover:border-[#777] bg-transparent hover:bg-[#3c3c3c] text-gray-300 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
-            Undo
+            Discard
           </button>
           <button
             onClick={onKeep}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm"
           >
             <Check className="w-3.5 h-3.5" />
-            Keep
+            Accept
           </button>
         </div>
       </div>
     </motion.div>
-  );
-}
-
-/* ───────── Individual diff row ───────── */
-
-function DiffRow({ line }: { line: DiffLine }) {
-  const bgClass =
-    line.type === "added"
-      ? "bg-emerald-500/10"
-      : line.type === "removed"
-        ? "bg-red-500/10"
-        : "";
-
-  const textClass =
-    line.type === "added"
-      ? "text-emerald-300"
-      : line.type === "removed"
-        ? "text-red-300"
-        : "text-gray-400";
-
-  const gutterTextClass =
-    line.type === "added"
-      ? "text-emerald-600"
-      : line.type === "removed"
-        ? "text-red-600"
-        : "text-gray-600";
-
-  const indicator =
-    line.type === "added" ? "+" : line.type === "removed" ? "-" : " ";
-
-  const indicatorClass =
-    line.type === "added"
-      ? "text-emerald-400"
-      : line.type === "removed"
-        ? "text-red-400"
-        : "text-gray-700";
-
-  return (
-    <tr className={`${bgClass} hover:brightness-110 transition-[filter]`}>
-      {/* Old line number */}
-      <td
-        className={`select-none w-12 text-right pr-2 pl-2 ${gutterTextClass} text-[11px] border-r border-[#3c3c3c]/50 align-top`}
-      >
-        {line.oldLineNumber ?? ""}
-      </td>
-      {/* New line number */}
-      <td
-        className={`select-none w-12 text-right pr-2 ${gutterTextClass} text-[11px] border-r border-[#3c3c3c]/50 align-top`}
-      >
-        {line.newLineNumber ?? ""}
-      </td>
-      {/* +/- indicator */}
-      <td
-        className={`select-none w-6 text-center font-bold text-xs ${indicatorClass} align-top`}
-      >
-        {indicator}
-      </td>
-      {/* Line content */}
-      <td className={`pr-4 whitespace-pre ${textClass} text-[13px]`}>
-        {line.content}
-      </td>
-    </tr>
   );
 }

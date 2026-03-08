@@ -25,7 +25,9 @@ export default function WhiteboardPage() {
   const { organization } = useOrganization();
   const { user } = useUser();
 
-  const whiteboard = useQuery(api.whiteboards.getWhiteboardById, { whiteboardId });
+  const whiteboard = useQuery(api.whiteboards.getWhiteboardById, {
+    whiteboardId,
+  });
   const room = useQuery(api.rooms.getRoomById, { roomId });
   const recordEdit = useMutation(api.whiteboards.recordWhiteboardEdit);
   const renameMutation = useMutation(api.whiteboards.updateWhiteboard);
@@ -137,6 +139,7 @@ export default function WhiteboardPage() {
       id={liveblocksRoomId}
       initialPresence={{
         cursor: null,
+        selectedCell: null,
       }}
       initialStorage={{}}
     >
@@ -164,7 +167,9 @@ export default function WhiteboardPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onBlur={handleNameBlur}
-                  onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
                   className="bg-transparent font-semibold text-gray-900 dark:text-white focus:outline-none border-b border-transparent focus:border-orange-400 transition-colors min-w-[200px]"
                 />
                 <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded">
@@ -172,7 +177,9 @@ export default function WhiteboardPage() {
                 </span>
               </div>
             </div>
-            <Suspense fallback={<div className="text-sm text-gray-500">Loading...</div>}>
+            <Suspense
+              fallback={<div className="text-sm text-gray-500">Loading...</div>}
+            >
               <ActiveUsersAvatars />
             </Suspense>
           </div>
@@ -180,11 +187,7 @@ export default function WhiteboardPage() {
 
         {/* Whiteboard Content */}
         <div className="flex-1 relative">
-          <Suspense
-            fallback={
-              <InlineLoader label="Loading whiteboard..." />
-            }
-          >
+          <Suspense fallback={<InlineLoader label="Loading whiteboard..." />}>
             <Whiteboard roomId={whiteboardId} whiteboardId={whiteboardId} />
           </Suspense>
         </div>

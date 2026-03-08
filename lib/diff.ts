@@ -1,7 +1,9 @@
 /**
- * Lightweight line-based diff utility using the LCS (Longest Common Subsequence) algorithm.
- * Produces a unified diff suitable for rendering an inline diff overlay.
+ * Line-based diff utility powered by the `diff` npm package (Myers algorithm).
+ * Produces structured output for rendering a VS Code-style inline diff view.
  */
+
+import { diffLines, Change } from "diff";
 
 export type DiffLineType = "added" | "removed" | "unchanged";
 
@@ -22,95 +24,51 @@ export interface DiffResult {
 }
 
 /**
- * Compute the LCS table for two arrays of strings.
- */
-function lcsTable(a: string[], b: string[]): number[][] {
-  const m = a.length;
-  const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () =>
-    new Array(n + 1).fill(0),
-  );
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (a[i - 1] === b[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-      }
-    }
-  }
-
-  return dp;
-}
-
-/**
- * Backtrack the LCS table to produce a unified diff.
- */
-function backtrack(dp: number[][], a: string[], b: string[]): DiffLine[] {
-  const result: DiffLine[] = [];
-  let i = a.length;
-  let j = b.length;
-
-  // Collect in reverse, then reverse at the end
-  const stack: DiffLine[] = [];
-
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
-      stack.push({
-        type: "unchanged",
-        content: a[i - 1],
-        oldLineNumber: i,
-        newLineNumber: j,
-      });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      stack.push({
-        type: "added",
-        content: b[j - 1],
-        newLineNumber: j,
-      });
-      j--;
-    } else {
-      stack.push({
-        type: "removed",
-        content: a[i - 1],
-        oldLineNumber: i,
-      });
-      i--;
-    }
-  }
-
-  stack.reverse();
-  return stack;
-}
-
-/**
- * Compute a line-based diff between two strings.
+ * Compute a line-based diff between two strings using Myers' algorithm.
  */
 export function computeDiff(oldText: string, newText: string): DiffResult {
-  const oldLines = oldText.split("\n");
-  const newLines = newText.split("\n");
+  const changes: Change[] = diffLines(oldText, newText);
 
-  const dp = lcsTable(oldLines, newLines);
-  const lines = backtrack(dp, oldLines, newLines);
-
+  const lines: DiffLine[] = [];
+  let oldLineNum = 1;
+  let newLineNum = 1;
   let addedCount = 0;
   let removedCount = 0;
   let unchangedCount = 0;
 
-  for (const line of lines) {
-    switch (line.type) {
-      case "added":
+  for (const change of changes) {
+    // Split the change value into individual lines.
+    // diffLines includes a trailing newline, so we drop the last empty split.
+    const splitLines = change.value.split("\n");
+    // If the value ends with \n, the last element is empty — drop it
+    if (splitLines[splitLines.length - 1] === "") {
+      splitLines.pop();
+    }
+
+    for (const line of splitLines) {
+      if (change.added) {
+        lines.push({ type: "added", content: line, newLineNumber: newLineNum });
+        newLineNum++;
         addedCount++;
-        break;
-      case "removed":
+      } else if (change.removed) {
+        lines.push({
+          type: "removed",
+          content: line,
+          oldLineNumber: oldLineNum,
+        });
+        oldLineNum++;
         removedCount++;
-        break;
-      case "unchanged":
+      } else {
+        lines.push({
+          type: "unchanged",
+          content: line,
+          oldLineNumber: oldLineNum,
+          newLineNumber: newLineNum,
+        });
+        oldLineNum++;
+        newLineNum++;
         unchangedCount++;
-        break;
+      }
     }
   }
 
