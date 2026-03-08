@@ -36,8 +36,10 @@ interface AIChatSidebarProps {
   workspaceId: Id<"workspaces">;
   /** Returns current editor content for context */
   getEditorContent: () => string;
-  /** Replaces editor content (used in Agent mode) */
-  setEditorContent: (code: string) => void;
+  /** Proposes code changes via diff review overlay (Agent mode) */
+  proposeEditorContent: (code: string) => void;
+  /** Whether a diff proposal is currently being reviewed */
+  hasPendingProposal: boolean;
 }
 
 export function AIChatSidebar({
@@ -47,7 +49,8 @@ export function AIChatSidebar({
   roomId,
   workspaceId,
   getEditorContent,
-  setEditorContent,
+  proposeEditorContent,
+  hasPendingProposal,
 }: AIChatSidebarProps) {
   const [mode, setMode] = useState<ChatMode>("agent");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -105,7 +108,7 @@ export function AIChatSidebar({
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed || isLoading || hasPendingProposal) return;
 
     const currentCode = getEditorContent();
     const userMsg: ChatMessage = {
@@ -181,9 +184,9 @@ export function AIChatSidebar({
         console.error("Failed to save assistant message:", e);
       }
 
-      // In agent mode, place the code directly in the editor
+      // In agent mode, propose the code via diff overlay instead of direct placement
       if (mode === "agent" && data.result) {
-        setEditorContent(data.result);
+        proposeEditorContent(data.result);
       }
     } catch (err) {
       const errorContent = `Error: ${err instanceof Error ? err.message : "Failed to get response"}`;
@@ -380,6 +383,16 @@ export function AIChatSidebar({
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Pending proposal banner */}
+          {hasPendingProposal && (
+            <div className="shrink-0 px-3 py-2 bg-amber-500/10 border-t border-amber-500/20">
+              <p className="text-[11px] text-amber-400 text-center font-medium">
+                Review the proposed changes in the editor before sending another
+                request
+              </p>
+            </div>
+          )}
+
           {/* Input Area */}
           <div className="shrink-0 p-3 border-t border-[#3c3c3c] bg-[#252526]">
             <div className="flex gap-2">
@@ -397,13 +410,13 @@ export function AIChatSidebar({
                     : "Describe what to generate..."
                 }
                 rows={1}
-                disabled={isLoading}
+                disabled={isLoading || hasPendingProposal}
                 className="flex-1 text-sm bg-[#1e1e1e] border border-[#3c3c3c] text-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-purple-500/50 placeholder:text-gray-600 disabled:opacity-50"
                 style={{ minHeight: "36px", maxHeight: "120px" }}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || hasPendingProposal}
                 className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
                   mode === "agent"
                     ? "bg-emerald-600 hover:bg-emerald-500 text-white"
@@ -441,7 +454,7 @@ function AssistantMessage({
     return (
       <div className="text-xs">
         <p className="text-emerald-400/80 text-[10px] mb-1.5 font-medium">
-          ✓ Code placed in editor
+          ✓ Code proposed — review diff in editor
         </p>
         <pre className="bg-[#1a1a1a] rounded-md p-2.5 overflow-x-auto text-gray-300 max-h-60 overflow-y-auto border border-[#333]">
           <code>{content}</code>
