@@ -460,16 +460,20 @@ function ParticipantTile({
               </div>
             )}
 
-            {/* Audio waveform bars when speaking with camera off */}
-            {isSpeaking && isMicEnabled && (
-              <div className="flex items-end gap-[3px] h-6">
-                {[0, 1, 2, 3, 4].map((i) => (
+            {/* Audio waveform bars when speaking with camera off — always reserve space */}
+            <div className="flex items-end gap-[3px] h-6">
+              {isSpeaking &&
+                isMicEnabled &&
+                [0, 1, 2, 3, 4].map((i) => (
                   <motion.div
                     key={i}
                     className="w-[5px] rounded-full bg-[#23a559]"
+                    initial={{ height: "6px", opacity: 0 }}
                     animate={{
                       height: ["6px", `${14 + Math.random() * 10}px`, "6px"],
+                      opacity: 1,
                     }}
+                    exit={{ height: "6px", opacity: 0 }}
                     transition={{
                       duration: 0.4 + Math.random() * 0.3,
                       repeat: Infinity,
@@ -478,8 +482,7 @@ function ParticipantTile({
                     }}
                   />
                 ))}
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}
