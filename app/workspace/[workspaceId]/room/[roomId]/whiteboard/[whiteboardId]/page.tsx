@@ -8,7 +8,7 @@ import { ArrowLeft, Presentation } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useOrganization, useUser } from "@clerk/nextjs";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { RoomProvider } from "@liveblocks/react/suspense";
 import { Whiteboard } from "@/components/whiteboard/excalidraw-board";
 import { ActiveUsersAvatars } from "@/components/liveblocks/active-users";
@@ -58,6 +58,34 @@ export default function WhiteboardPage() {
         }
       : null,
   );
+
+  // Record edit when user interacts with whiteboard
+  const [name, setName] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (whiteboard?.name) {
+      setName(whiteboard.name);
+      // Auto-focus and select title for freshly created whiteboards (Google Docs style)
+      if (whiteboard.name.startsWith("Untitled whiteboard")) {
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+          nameInputRef.current?.select();
+        }, 150);
+      }
+    }
+  }, [whiteboard?.name]);
+
+  const handleNameBlur = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || !whiteboard || trimmed === whiteboard.name) return;
+    try {
+      await renameMutation({ whiteboardId, name: trimmed });
+    } catch (error) {
+      console.error("Failed to rename whiteboard:", error);
+      setName(whiteboard.name);
+    }
+  };
 
   // Record edit when user interacts with whiteboard
   useEffect(() => {
@@ -131,7 +159,14 @@ export default function WhiteboardPage() {
               <div className="h-6 w-px bg-gray-200 dark:bg-white/10" />
               <div className="flex items-center gap-2">
                 <Presentation className="w-5 h-5 text-orange-600" />
-                <span className="font-semibold text-gray-900 dark:text-white">{whiteboard.name}</span>
+                <input
+                  ref={nameInputRef}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={handleNameBlur}
+                  onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                  className="bg-transparent font-semibold text-gray-900 dark:text-white focus:outline-none border-b border-transparent focus:border-orange-400 transition-colors min-w-[200px]"
+                />
                 <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded">
                   Whiteboard
                 </span>

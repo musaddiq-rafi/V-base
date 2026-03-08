@@ -7,7 +7,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
-import { Cloud, CloudOff, Check, Sparkles, Send, AlertCircle, X } from "lucide-react";
+import { Cloud, CloudOff, Check, Loader2, Sparkles, Send, AlertCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import "@excalidraw/excalidraw/index.css";
@@ -482,15 +482,30 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
 
   return (
     <div className="absolute inset-0">
-      {/* ── AI Diagram Panel ── directly above the Excalidraw help (?) button */}
-      <div className="absolute bottom-[65px] right-[15px] z-[101] flex flex-col items-end gap-2">
+      {/* ── AI Diagram Panel ── top-right of canvas */}
+      <div className="absolute top-3 right-3 z-[101] flex flex-col items-end gap-2">
+        <motion.button
+          whileHover={{ scale: 1.07 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => { setShowAIPanel(v => !v); setAiError(null); }}
+          title="Generate diagram with AI"
+          className={`px-4 h-10 rounded-xl shadow-lg flex items-center gap-2 font-medium text-sm transition-colors duration-200 ${
+            showAIPanel
+              ? "bg-purple-600 text-white"
+              : "bg-white dark:bg-zinc-800 text-purple-600 border border-purple-200 dark:border-zinc-600 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-zinc-700"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Generate with AI</span>
+        </motion.button>
+
         <AnimatePresence>
           {showAIPanel && (
             <motion.div
               key="ai-panel"
-              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.15 }}
               className="w-72 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-4"
             >
@@ -559,20 +574,6 @@ export function Whiteboard({ roomId, whiteboardId }: WhiteboardProps) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        <motion.button
-          whileHover={{ scale: 1.07 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => { setShowAIPanel(v => !v); setAiError(null); }}
-          title="Generate diagram with AI"
-          className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-colors duration-200 ${
-            showAIPanel
-              ? "bg-purple-600 text-white"
-              : "bg-white dark:bg-zinc-800 text-purple-600 border border-purple-200 dark:border-zinc-600 hover:border-purple-400"
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-        </motion.button>
       </div>
 
       {/* Cloud Save Status - Bottom left corner */}
