@@ -39,6 +39,13 @@ export function WhiteboardCard({
     setIsDeleting(true);
     try {
       await deleteWhiteboard({ whiteboardId: whiteboard._id });
+
+      // Clean up Liveblocks room for this whiteboard
+      await fetch("/api/liveblocks-delete-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomIds: [`whiteboard:${whiteboard._id}`] }),
+      });
     } catch (error) {
       console.error("Failed to delete whiteboard:", error);
       alert("Failed to delete whiteboard");
@@ -49,7 +56,7 @@ export function WhiteboardCard({
 
   const handleOpen = () => {
     router.push(
-      `/workspace/${workspaceId}/room/${roomId}/whiteboard/${whiteboard._id}`
+      `/workspace/${workspaceId}/room/${roomId}/whiteboard/${whiteboard._id}`,
     );
   };
 

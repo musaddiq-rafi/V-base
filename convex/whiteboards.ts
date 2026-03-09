@@ -61,7 +61,7 @@ export const getWhiteboardsByRoom = query({
           creatorName: creator?.name || "Unknown",
           lastEditorName: lastEditor?.name || null,
         };
-      })
+      }),
     );
 
     return enrichedWhiteboards;
@@ -87,7 +87,10 @@ export const getWhiteboardById = query({
       .first();
 
     let lastEditor = null;
-    if (whiteboard.lastEditedBy && whiteboard.lastEditedBy !== whiteboard.createdBy) {
+    if (
+      whiteboard.lastEditedBy &&
+      whiteboard.lastEditedBy !== whiteboard.createdBy
+    ) {
       const lastEditedById = whiteboard.lastEditedBy;
       lastEditor = await ctx.db
         .query("users")
@@ -136,13 +139,45 @@ export const saveWhiteboardContent = mutation({
   },
 });
 
-// Delete a whiteboard
+// Delete a whiteboard and cascade-delete its linked chat channel, messages, and read receipts
 export const deleteWhiteboard = mutation({
   args: {
     whiteboardId: v.id("whiteboards"),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    // Cascade: delete linked file-chat channel
+    const linkedChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", "whiteboard").eq("contextId", args.whiteboardId),
+      )
+      .unique();
+
+    if (linkedChannel) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      await ctx.db.delete(linkedChannel._id);
+    }
+
     await ctx.db.delete(args.whiteboardId);
+    return { success: true, deletedWhiteboardId: args.whiteboardId };
   },
 });
 

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 // Create a new room in a workspace
 export const createRoom = mutation({
@@ -117,6 +118,7 @@ export const getRoomById = query({
 });
 
 // Delete a room and all its contents
+// Delete a room and all its contents (full cascade)
 // Returns information about what was deleted for Liveblocks cleanup
 export const deleteRoom = mutation({
   args: {
@@ -135,9 +137,44 @@ export const deleteRoom = mutation({
 
     const liveblocksRoomIdsToDelete: string[] = [];
 
+    // --- Helper: cascade-delete a channel and its messages + read receipts ---
+    const deleteChannelCascade = async (channelId: Id<"channels">) => {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+      await ctx.db.delete(channelId);
+    };
+
+    // --- Helper: find & delete a context-linked channel ---
+    const deleteContextChannel = async (
+      contextType: string,
+      contextId: string,
+    ) => {
+      const channel = await ctx.db
+        .query("channels")
+        .withIndex("by_context", (q) =>
+          q.eq("contextType", contextType as any).eq("contextId", contextId),
+        )
+        .unique();
+      if (channel) {
+        await deleteChannelCascade(channel._id);
+      }
+    };
+
     // Handle different room types
     if (room.type === "code") {
-      // Delete all AI chat messages for this room
+      // 1. Delete all AI chat messages for this room
       const aiMessages = await ctx.db
         .query("aiChatMessages")
         .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
@@ -146,7 +183,7 @@ export const deleteRoom = mutation({
         await ctx.db.delete(msg._id);
       }
 
-      // Delete all code files in this room and collect their IDs
+      // 2. Delete all code files + their linked channels
       const codeFiles = await ctx.db
         .query("codeFiles")
         .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
@@ -155,11 +192,12 @@ export const deleteRoom = mutation({
       for (const file of codeFiles) {
         if (file.type === "file") {
           liveblocksRoomIdsToDelete.push(`code:${file._id}`);
+          await deleteContextChannel("codeFile", file._id);
         }
         await ctx.db.delete(file._id);
       }
     } else if (room.type === "document") {
-      // Delete all documents in this room and collect their IDs
+      // Delete all documents + their linked channels
       const documents = await ctx.db
         .query("documents")
         .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
@@ -167,24 +205,45 @@ export const deleteRoom = mutation({
 
       for (const doc of documents) {
         liveblocksRoomIdsToDelete.push(`doc:${doc._id}`);
+        await deleteContextChannel("document", doc._id);
         await ctx.db.delete(doc._id);
       }
-    } else if (room.type === "whiteboard" || room.type === "conference") {
-      // These room types have their own Liveblocks room
-      liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
+    } else if (room.type === "whiteboard") {
+      // Delete all whiteboards + their linked channels
+      const whiteboards = await ctx.db
+        .query("whiteboards")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const wb of whiteboards) {
+        liveblocksRoomIdsToDelete.push(`whiteboard:${wb._id}`);
+        await deleteContextChannel("whiteboard", wb._id);
+        await ctx.db.delete(wb._id);
+      }
+    } else if (room.type === "conference") {
+      // Delete all meetings + their linked channels
+      const meetings = await ctx.db
+        .query("meetings")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .collect();
+
+      for (const meeting of meetings) {
+        await deleteContextChannel("meeting", meeting._id);
+        await ctx.db.delete(meeting._id);
+      }
     } else if (room.type === "kanban") {
-      // Delete kanban boards in this room
+      // Delete kanban boards + their linked channels
       const kanbans = await ctx.db
         .query("kanbans")
         .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
         .collect();
 
       for (const kb of kanbans) {
-        // liveblocksRoomIdsToDelete.push(`kanban:${kb._id}`);
+        await deleteContextChannel("kanbanBoard", kb._id);
         await ctx.db.delete(kb._id);
       }
     } else if (room.type === "spreadsheet") {
-      // Delete all spreadsheets in this room and collect their IDs
+      // Delete all spreadsheets + their linked channels
       const spreadsheets = await ctx.db
         .query("spreadsheets")
         .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
@@ -192,7 +251,22 @@ export const deleteRoom = mutation({
 
       for (const sheet of spreadsheets) {
         liveblocksRoomIdsToDelete.push(`spreadsheet:${sheet._id}`);
+        await deleteContextChannel("spreadsheet", sheet._id);
         await ctx.db.delete(sheet._id);
+      }
+    }
+
+    // Clean up room-level presence Liveblocks room
+    liveblocksRoomIdsToDelete.push(`room:${args.roomId}`);
+
+    // Clean up userPresence records for this room
+    const presenceRecords = await ctx.db
+      .query("userPresence")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", room.workspaceId))
+      .collect();
+    for (const record of presenceRecords) {
+      if (record.roomId === args.roomId) {
+        await ctx.db.delete(record._id);
       }
     }
 
