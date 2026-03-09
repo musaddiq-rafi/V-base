@@ -20,6 +20,7 @@ import {
 import { MeetingChat } from "./meeting-chat";
 import { ParticipantsList } from "./participants-list";
 import { useRaisedHands, RaisedHandInfo } from "./use-raised-hands";
+import { useJoinChime } from "./use-join-chime";
 import { MessageSquare, Users, X, Hand } from "lucide-react";
 import { PageLoader } from "@/components/shared/page-loader";
 
@@ -59,6 +60,9 @@ export function MeetingStageWithLiveKit({
   const { localParticipant } = useLocalParticipant();
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  // Play a soft chime when joining or when someone else joins
+  useJoinChime(room);
 
   // Raise hand state management
   const {
