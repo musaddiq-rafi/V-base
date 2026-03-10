@@ -9,9 +9,8 @@ import {
   PhoneOff,
   MoreVertical,
   Hand,
-  Smile,
-  Info,
   Settings,
+  Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -57,23 +56,20 @@ export function MeetingControls({
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-center gap-2 p-3 bg-[#202124]"
+        className="flex items-center justify-center py-3 px-4 bg-[#1e1f22]"
       >
-        {/* Left Section - Meeting Info (optional placeholder) */}
-        <div className="flex-1 hidden sm:block" />
-
-        {/* Center Section - Main Controls */}
-        <div className="flex items-center gap-2">
+        {/* Control pill */}
+        <div className="flex items-center gap-1 px-2 py-1.5 bg-[#2b2d31] rounded-lg">
           {/* Audio Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleAudio}
                 className={cn(
-                  "relative w-12 h-12 rounded-full transition-all flex items-center justify-center",
+                  "w-10 h-10 rounded-lg transition-all flex items-center justify-center",
                   isAudioEnabled
-                    ? "bg-[#3c4043] hover:bg-[#4a4d51] text-white"
-                    : "bg-[#ea4335] hover:bg-[#d33828] text-white",
+                    ? "bg-transparent hover:bg-[#3f4147] text-[#b5bac1] hover:text-[#f2f3f5]"
+                    : "bg-[#ed4245] hover:bg-[#d63a3d] text-white",
                 )}
               >
                 {isAudioEnabled ? (
@@ -83,12 +79,11 @@ export function MeetingControls({
                 )}
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {isAudioEnabled
-                  ? "Turn off microphone (Ctrl+D)"
-                  : "Turn on microphone (Ctrl+D)"}
-              </p>
+            <TooltipContent
+              side="top"
+              className="bg-[#111214] text-[#e0e1e5] border-none text-xs"
+            >
+              {isAudioEnabled ? "Mute" : "Unmute"}
             </TooltipContent>
           </Tooltip>
 
@@ -98,10 +93,10 @@ export function MeetingControls({
               <button
                 onClick={onToggleVideo}
                 className={cn(
-                  "relative w-12 h-12 rounded-full transition-all flex items-center justify-center",
+                  "w-10 h-10 rounded-lg transition-all flex items-center justify-center",
                   isVideoEnabled
-                    ? "bg-[#3c4043] hover:bg-[#4a4d51] text-white"
-                    : "bg-[#ea4335] hover:bg-[#d33828] text-white",
+                    ? "bg-transparent hover:bg-[#3f4147] text-[#b5bac1] hover:text-[#f2f3f5]"
+                    : "bg-[#ed4245] hover:bg-[#d63a3d] text-white",
                 )}
               >
                 {isVideoEnabled ? (
@@ -111,12 +106,11 @@ export function MeetingControls({
                 )}
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {isVideoEnabled
-                  ? "Turn off camera (Ctrl+E)"
-                  : "Turn on camera (Ctrl+E)"}
-              </p>
+            <TooltipContent
+              side="top"
+              className="bg-[#111214] text-[#e0e1e5] border-none text-xs"
+            >
+              {isVideoEnabled ? "Turn Off Camera" : "Turn On Camera"}
             </TooltipContent>
           </Tooltip>
 
@@ -126,17 +120,20 @@ export function MeetingControls({
               <button
                 onClick={onToggleScreenShare}
                 className={cn(
-                  "w-12 h-12 rounded-full transition-all flex items-center justify-center",
+                  "w-10 h-10 rounded-lg transition-all flex items-center justify-center",
                   isScreenSharing
-                    ? "bg-[#8ab4f8] hover:bg-[#7aa6e8] text-[#202124]"
-                    : "bg-[#3c4043] hover:bg-[#4a4d51] text-white",
+                    ? "bg-[#5865f2] hover:bg-[#4752c4] text-white"
+                    : "bg-transparent hover:bg-[#3f4147] text-[#b5bac1] hover:text-[#f2f3f5]",
                 )}
               >
                 <MonitorUp className="w-5 h-5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>{isScreenSharing ? "Stop presenting" : "Present now"}</p>
+            <TooltipContent
+              side="top"
+              className="bg-[#111214] text-[#e0e1e5] border-none text-xs"
+            >
+              {isScreenSharing ? "Stop Sharing" : "Share Screen"}
             </TooltipContent>
           </Tooltip>
 
@@ -146,85 +143,79 @@ export function MeetingControls({
               <button
                 onClick={onToggleRaiseHand}
                 className={cn(
-                  "w-12 h-12 rounded-full transition-all flex items-center justify-center",
+                  "w-10 h-10 rounded-lg transition-all flex items-center justify-center",
                   isHandRaised
-                    ? "bg-amber-500 hover:bg-amber-600 text-white"
-                    : "bg-[#3c4043] hover:bg-[#4a4d51] text-white",
+                    ? "bg-[#fee75c] hover:bg-[#ffd83d] text-[#1e1f22]"
+                    : "bg-transparent hover:bg-[#3f4147] text-[#b5bac1] hover:text-[#f2f3f5]",
                 )}
               >
                 <Hand className="w-5 h-5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>{isHandRaised ? "Lower hand" : "Raise hand"}</p>
+            <TooltipContent
+              side="top"
+              className="bg-[#111214] text-[#e0e1e5] border-none text-xs"
+            >
+              {isHandRaised ? "Lower Hand" : "Raise Hand"}
             </TooltipContent>
           </Tooltip>
-
-          {/* Reactions */}
-          {/* <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4d51] text-white transition-all flex items-center justify-center">
-                <Smile className="w-5 h-5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Send a reaction</p>
-            </TooltipContent>
-          </Tooltip> */}
 
           {/* More Options */}
           <DropdownMenu>
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <button className="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4d51] text-white transition-all flex items-center justify-center">
+                  <button className="w-10 h-10 rounded-lg bg-transparent hover:bg-[#3f4147] text-[#b5bac1] hover:text-[#f2f3f5] transition-all flex items-center justify-center">
                     <MoreVertical className="w-5 h-5" />
                   </button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>More options</p>
+              <TooltipContent
+                side="top"
+                className="bg-[#111214] text-[#e0e1e5] border-none text-xs"
+              >
+                More
               </TooltipContent>
             </Tooltip>
             <DropdownMenuContent
               align="center"
               side="top"
-              className="w-56 mb-2"
+              className="w-48 mb-2 bg-[#111214] border-[#2b2d31]"
             >
-              <DropdownMenuItem>
+              <DropdownMenuItem className="text-[#e0e1e5] hover:bg-[#3f4147] focus:bg-[#3f4147]">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-[#2b2d31]" />
+              <DropdownMenuItem className="text-[#e0e1e5] hover:bg-[#3f4147] focus:bg-[#3f4147]">
                 <Info className="w-4 h-4 mr-2" />
                 Meeting details
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Divider */}
-          <div className="w-px h-8 bg-[#5f6368] mx-2" />
+          {/* Separator */}
+          <div className="w-px h-6 bg-[#3f4147] mx-1" />
 
-          {/* Leave Meeting */}
+          {/* Leave Meeting - Discord red disconnect */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={onLeave}
-                className="px-5 py-3 rounded-full bg-[#ea4335] hover:bg-[#d33828] text-white font-medium transition-all flex items-center gap-2"
+                className="h-10 px-4 rounded-lg bg-[#ed4245] hover:bg-[#d63a3d] text-white font-medium transition-all flex items-center gap-2 text-[13px]"
               >
-                <PhoneOff className="w-5 h-5" />
+                <PhoneOff className="w-4 h-4" />
                 <span className="hidden sm:inline">Leave</span>
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Leave call</p>
+            <TooltipContent
+              side="top"
+              className="bg-[#111214] text-[#e0e1e5] border-none text-xs"
+            >
+              Disconnect
             </TooltipContent>
           </Tooltip>
         </div>
-
-        {/* Right Section - Time/Info (optional placeholder) */}
-        <div className="flex-1 hidden sm:block" />
       </motion.div>
     </TooltipProvider>
   );

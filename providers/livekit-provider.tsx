@@ -6,7 +6,7 @@ import {
   RoomAudioRenderer,
   useRoomContext,
 } from "@livekit/components-react";
-import { Room, RoomEvent, ConnectionState } from "livekit-client";
+import { Room, RoomEvent, ConnectionState, VideoPresets } from "livekit-client";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
 interface LiveKitProviderProps {
@@ -201,9 +201,36 @@ export function LiveKitProvider({
       options={{
         adaptiveStream: true,
         dynacast: true,
+        // Reconnection resilience for unstable networks
+        reconnectPolicy: {
+          nextRetryDelayInMs: (context) => {
+            // Stop after 7 retries
+            if (context.retryCount >= 7) return null;
+            // Exponential backoff: 300ms, 600ms, 1200ms, ... capped at 8s
+            return Math.min(300 * Math.pow(2, context.retryCount), 8000);
+          },
+        },
+        disconnectOnPageLeave: true,
         publishDefaults: {
           simulcast: true,
           videoCodec: "vp8",
+          // Cap outgoing video to 720p — good quality, much less bandwidth
+          videoSimulcastLayers: [VideoPresets.h90, VideoPresets.h216],
+          videoEncoding: VideoPresets.h720.encoding,
+          // Prioritize smooth playback over sharpness on slow networks
+          degradationPreference: "balanced",
+          // Audio: use higher DTX (discontinuous transmission) to save bandwidth during silence
+          dtx: true,
+          red: true,
+        },
+        audioCaptureDefaults: {
+          // Noise suppression & echo cancellation for cleaner audio
+          noiseSuppression: true,
+          echoCancellation: true,
+          autoGainControl: true,
+        },
+        videoCaptureDefaults: {
+          resolution: VideoPresets.h720.resolution,
         },
       }}
       className="h-full"

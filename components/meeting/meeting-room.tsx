@@ -157,11 +157,11 @@ export function MeetingRoom({
 
   if (meetingState === "ended") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#313338] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 rounded-full bg-[#23a559]/20 flex items-center justify-center mx-auto mb-5">
             <svg
-              className="w-10 h-10 text-green-500"
+              className="w-8 h-8 text-[#23a559]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -174,20 +174,20 @@ export function MeetingRoom({
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            You left the meeting
+          <h1 className="text-xl font-bold text-[#f2f3f5] mb-1">
+            You left the call
           </h1>
-          <p className="text-muted-foreground mb-8">Thanks for joining!</p>
-          <div className="flex items-center justify-center gap-4">
+          <p className="text-[#b5bac1] text-sm mb-6">Thanks for joining!</p>
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={handleBackToSelector}
-              className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors"
+              className="px-5 py-2.5 bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium rounded-lg transition-colors text-[15px]"
             >
-              Join Another Meeting
+              Rejoin
             </button>
             <a
               href={`/workspace/${workspaceId}`}
-              className="px-6 py-3 bg-muted hover:bg-surface-hover text-foreground font-medium rounded-xl transition-colors"
+              className="px-5 py-2.5 bg-[#3f4147] hover:bg-[#4e5058] text-[#f2f3f5] font-medium rounded-lg transition-colors text-[15px]"
             >
               Back to Workspace
             </a>
@@ -200,18 +200,20 @@ export function MeetingRoom({
   // Validate we have all required data before rendering LiveKit
   if (!livekitRoomName || !selectedMeetingId || !user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#313338] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-10 h-10 text-red-500 mx-auto mb-4">⚠️</div>
-          <h1 className="text-xl font-bold text-foreground mb-2">
-            Missing meeting information
+          <div className="w-12 h-12 rounded-full bg-[#ed4245]/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-[#ed4245] text-xl">!</span>
+          </div>
+          <h1 className="text-lg font-bold text-[#f2f3f5] mb-1">
+            Connection Error
           </h1>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-[#b5bac1] text-sm mb-4">
             Unable to connect to the meeting.
           </p>
           <button
             onClick={handleBackToSelector}
-            className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors"
+            className="px-5 py-2.5 bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium rounded-lg transition-colors text-[15px]"
           >
             Go Back
           </button>

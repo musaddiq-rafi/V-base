@@ -141,13 +141,45 @@ export const saveKanbanContent = mutation({
   },
 });
 
-// Delete a kanban board
+// Delete a kanban board and cascade-delete its linked chat channel, messages, and read receipts
 export const deleteKanban = mutation({
   args: {
     kanbanId: v.id("kanbans"),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    // Cascade: delete linked file-chat channel
+    const linkedChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", "kanbanBoard").eq("contextId", args.kanbanId),
+      )
+      .unique();
+
+    if (linkedChannel) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      await ctx.db.delete(linkedChannel._id);
+    }
+
     await ctx.db.delete(args.kanbanId);
+    return { success: true, deletedKanbanId: args.kanbanId };
   },
 });
 

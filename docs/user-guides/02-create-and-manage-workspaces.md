@@ -49,7 +49,6 @@ Caption: Enter a workspace name, then confirm to create it.
 ![Creating a workspace from the My Workspaces page.](../media/gifs/workspaces-flow-01-create-workspace.gif)
 Caption: Open the modal, name the workspace, and create it from the dashboard.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -68,7 +67,6 @@ Caption: Each workspace card shows the workspace name, member count, and your ro
 ![Workspace home page showing header, room stats, and room list area.](../media/screenshots/workspaces-05-workspace-home-overview.png)
 Caption: The workspace home page shows your rooms, members, and key actions.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -85,7 +83,6 @@ Use them like this:
 ![Dashboard filter tabs for All, Owned, and Joined workspaces.](../media/screenshots/workspaces-04-filter-tabs.png)
 Caption: Use the filters to focus on the workspaces you own or have joined.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -120,7 +117,6 @@ Caption: Open Workspace Settings to manage members and organization details.
 ![Opening a workspace and then opening workspace settings.](../media/gifs/workspaces-flow-02-open-workspace-and-settings.gif)
 Caption: After creating or selecting a workspace, open its settings to manage members and details.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -136,7 +132,6 @@ Use this area to:
 ![Workspace header showing active user avatars in the user activity stack.](../media/screenshots/workspaces-07-user-activity-stack.png)
 Caption: Active user indicators help you see who is currently present in the workspace.
 
-Placeholder media to capture during docs QA.
 
 ---
 

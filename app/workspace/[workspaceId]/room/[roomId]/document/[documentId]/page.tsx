@@ -87,6 +87,7 @@ export default function DocumentPage() {
       id={liveblocksRoomId}
       initialPresence={{
         cursor: null,
+        selectedCell: null,
       }}
     >
       <div className="fixed inset-0 flex flex-col print:static print:block">
@@ -118,9 +119,7 @@ export default function DocumentPage() {
         {/* Editor Content */}
         <div className="flex-1 overflow-auto print:overflow-visible print:flex-none print:h-auto">
           <ClientSideSuspense
-            fallback={
-              <InlineLoader label="Loading editor..." />
-            }
+            fallback={<InlineLoader label="Loading editor..." />}
           >
             <CollaborativeEditor documentId={documentId} />
           </ClientSideSuspense>

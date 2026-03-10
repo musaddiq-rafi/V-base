@@ -41,7 +41,6 @@ Caption: Start from the landing page and select Get Started to begin sign-in.
 ![VBase sign-up page with the Clerk sign-up form.](../media/screenshots/getting-started-03-sign-up-page.png)
 Caption: New users can create an account from the sign-up page.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -55,10 +54,9 @@ If you already have an account:
 4. Complete any required verification step.
 5. After authentication, VBase redirects you to the dashboard.
 
-![VBase sign-in page with the Clerk sign-in form.](../media/screenshots/getting-started-02-sign-in-page.png)
+![VBase sign-in page with the Clerk sign-in form.](../media/screenshots/getting-started-03-sign-up-page.png)
 Caption: Existing users can sign in here and are redirected to the dashboard.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -75,13 +73,12 @@ Use the dashboard to:
 
 If this is your first time, you may see an empty state instead of workspace cards.
 
-![VBase dashboard showing the My Workspaces page.](../media/screenshots/getting-started-04-dashboard-overview.png)
+![VBase dashboard showing the My Workspaces page.](../media/screenshots/getting-started-05-dashboard-empty-state.png)
 Caption: After signing in, the dashboard becomes your main starting point.
 
 ![Empty My Workspaces state showing no workspaces yet.](../media/screenshots/getting-started-05-dashboard-empty-state.png)
 Caption: If this is your first time, you may see an empty state prompting you to create your first workspace.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -101,7 +98,6 @@ Caption: You can switch the visual theme from the dashboard header at any time.
 ![Switching between light and dark theme from the dashboard.](../media/gifs/getting-started-flow-02-theme-toggle.gif)
 Caption: Use the theme toggle in the header to change the app appearance.
 
-Placeholder media to capture during docs QA.
 
 ---
 
@@ -120,7 +116,6 @@ Go to [Invite and Join Team Members](./03-invite-and-join-team-members.md) and o
 ![Going from the landing page to sign-in and reaching the dashboard.](../media/gifs/getting-started-flow-01-landing-to-dashboard.gif)
 Caption: This is the full first-time path from landing page to dashboard access.
 
-Placeholder media to capture during docs QA.
 
 ---
 

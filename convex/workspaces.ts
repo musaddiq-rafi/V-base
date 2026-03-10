@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internalMutation, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Helper to get organization context from JWT
@@ -145,7 +146,8 @@ export const updateWorkspace = mutation({
   },
 });
 
-// Delete workspace
+// Delete workspace and cascade-delete all rooms and their contents
+// Returns Liveblocks room IDs for external cleanup
 export const deleteWorkspace = mutation({
   args: { workspaceId: v.id("workspaces") },
   handler: async (ctx, args) => {
@@ -164,17 +166,134 @@ export const deleteWorkspace = mutation({
       throw new Error("Not authorized");
     }
 
-    // Delete all rooms in the workspace first
+    const liveblocksRoomIdsToDelete: string[] = [];
+
+    // --- Helper: cascade-delete a channel and its messages + read receipts ---
+    const deleteChannelCascade = async (channelId: Id<"channels">) => {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", channelId))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+      await ctx.db.delete(channelId);
+    };
+
+    // 1. Delete ALL channels in this workspace (general, direct, file, meeting)
+    const channels = await ctx.db
+      .query("channels")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+    for (const channel of channels) {
+      await deleteChannelCascade(channel._id);
+    }
+
+    // 2. Delete all rooms and their contents
     const rooms = await ctx.db
       .query("rooms")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .collect();
 
     for (const room of rooms) {
+      // Documents
+      const documents = await ctx.db
+        .query("documents")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const doc of documents) {
+        liveblocksRoomIdsToDelete.push(`doc:${doc._id}`);
+        await ctx.db.delete(doc._id);
+      }
+
+      // Code files + AI chat messages
+      const codeFiles = await ctx.db
+        .query("codeFiles")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const file of codeFiles) {
+        if (file.type === "file") {
+          liveblocksRoomIdsToDelete.push(`code:${file._id}`);
+        }
+        await ctx.db.delete(file._id);
+      }
+
+      const aiMessages = await ctx.db
+        .query("aiChatMessages")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const msg of aiMessages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      // Whiteboards
+      const whiteboards = await ctx.db
+        .query("whiteboards")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const wb of whiteboards) {
+        liveblocksRoomIdsToDelete.push(`whiteboard:${wb._id}`);
+        await ctx.db.delete(wb._id);
+      }
+
+      // Meetings
+      const meetings = await ctx.db
+        .query("meetings")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const meeting of meetings) {
+        await ctx.db.delete(meeting._id);
+      }
+
+      // Kanban boards
+      const kanbans = await ctx.db
+        .query("kanbans")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const kb of kanbans) {
+        await ctx.db.delete(kb._id);
+      }
+
+      // Spreadsheets
+      const spreadsheets = await ctx.db
+        .query("spreadsheets")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      for (const sheet of spreadsheets) {
+        liveblocksRoomIdsToDelete.push(`spreadsheet:${sheet._id}`);
+        await ctx.db.delete(sheet._id);
+      }
+
+      // Room-level Liveblocks presence room
+      liveblocksRoomIdsToDelete.push(`room:${room._id}`);
+
+      // Delete the room
       await ctx.db.delete(room._id);
     }
 
+    // 3. Delete all user presence records
+    const presenceRecords = await ctx.db
+      .query("userPresence")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+    for (const record of presenceRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    // 4. Delete the workspace itself
     await ctx.db.delete(args.workspaceId);
+
+    return {
+      success: true,
+      liveblocksRoomIdsToDelete,
+    };
   },
 });
 
@@ -361,7 +480,17 @@ export const deleteWorkspaceFromWebhook = internalMutation({
         await ctx.db.delete(meeting._id);
       }
 
-      // E. Delete all spreadsheets in spreadsheet rooms
+      // E. Delete all kanban boards in kanban rooms
+      const kanbans = await ctx.db
+        .query("kanbans")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+
+      for (const kb of kanbans) {
+        await ctx.db.delete(kb._id);
+      }
+
+      // F. Delete all spreadsheets in spreadsheet rooms
       const spreadsheets = await ctx.db
         .query("spreadsheets")
         .withIndex("by_room", (q) => q.eq("roomId", room._id))
@@ -382,7 +511,16 @@ export const deleteWorkspaceFromWebhook = internalMutation({
 
     console.log(`[Webhook] Deleted ${rooms.length} rooms`);
 
-    // 4. Finally, Delete the Workspace
+    // 4. Delete all user presence records
+    const presenceRecords = await ctx.db
+      .query("userPresence")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+      .collect();
+    for (const record of presenceRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    // 5. Finally, Delete the Workspace
     await ctx.db.delete(workspace._id);
 
     console.log(

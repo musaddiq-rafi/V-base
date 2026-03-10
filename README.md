@@ -13,25 +13,21 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 
-> **A powerful real-time collaborative workspace** where teams can edit documents, write code, brainstorm on whiteboards, and have video meetings — all in one unified platform.
+> **A powerful real-time collaborative workspace** where teams can edit documents, write code, analyze data, manage tasks, brainstorm on whiteboards, chat, and meet live in one unified platform.
 
-## User Guide
 
-For end-user documentation and feature walkthroughs, start with the user-guide hub:
-
-- [VBase User Guide](./docs/user-guides/README.md)
-
----
 
 ## 🌟 Project Overview
 
-**VBase** is an all-in-one collaborative virtual workspace that brings together document editing, code collaboration, whiteboard brainstorming, and video conferencing into a seamless, real-time experience. Think of it as your team's virtual office where everyone can work together regardless of location.
+**VBase** is an all-in-one collaborative virtual workspace that brings together document editing, code collaboration, spreadsheet work, kanban task tracking, whiteboard brainstorming, chat, and video conferencing into a seamless, real-time experience. Think of it as your team's virtual office where everyone can work together regardless of location.
 
 ### 🎯 The Problem We Solve
 
 Modern teams face fragmented collaboration:
 - **Document editing** → Google Docs
 - **Code collaboration** → VS Code Live Share
+- **Spreadsheets** → Google Sheets / Excel
+- **Task tracking** → Trello / Jira
 - **Whiteboarding** → Miro/Figma
 - **Video calls** → Zoom/Google Meet
 - **Team chat** → Slack/Discord
@@ -57,6 +53,22 @@ VBase unifies all collaboration tools in one workspace:
 **⚙️ [vbase-rce](https://github.com/SillyCatto/vbase-rce)**: Our own experimental RCE engine built with FastAPI and Docker for code execution in Code Room
 
 ---
+### 📌 Live Deployment
+
+VBase is deployed on Vercel.
+
+- [Open VBase](https://vbase-app.vercel.app/)
+
+
+---
+
+### 📚 User Guide
+
+For end-user documentation and feature walkthroughs, start with the user-guide hub:
+
+- [VBase User Guide](./docs/user-guides/README.md)
+
+---
 
 ## ✨ Key Features
 
@@ -64,7 +76,8 @@ VBase unifies all collaboration tools in one workspace:
 - **Rich Text Editing**: Full formatting with Tiptap-powered editor (bold, italic, headings, lists, images, links)
 - **Real-Time Sync**: See teammates' cursors and edits instantly via Liveblocks Yjs
 - **A4 Page Layout**: Professional document view with rulers, margins, and page breaks
-- **Export Options**: Download documents as PDF
+- **AI Writing Tools**: Summarize, elaborate, fix grammar, change tone, and generate content
+- **Export Options**: Export documents as JSON, HTML, PDF, or text
 - **Connection Status**: Visual indicators for sync status
 
 ### 💻 Real-Time Code Editor
@@ -76,24 +89,44 @@ VBase unifies all collaboration tools in one workspace:
 - **File Explorer**: Create files and folders with hierarchical organization
 - **VS Code Themes**: Light and dark mode with VS Code-style syntax highlighting
 - **Integrated Terminal**: View execution output directly in the editor
+- **AI Assistant**: Ask for explanations or use agent-style generation directly in the editor
+
+### 📊 Collaborative Spreadsheet Rooms
+- **Spreadsheet Room Type**: Create spreadsheet rooms directly from a workspace
+- **Live Grid Editing**: Edit cells collaboratively with shared state via Liveblocks storage
+- **Formula Bar**: Enter values and formulas with cell-reference awareness
+- **Formatting Tools**: Bold, italic, underline, alignment, fill, text color, and number formats
+- **Structure Controls**: Insert and delete rows or columns relative to the active cell
+- **Selection Stats**: Instantly view count, min, max, average, and sum for selected ranges
+
+### ✅ Kanban Task Boards
+- **Kanban Room Type**: Create boards for task planning and delivery workflows
+- **Board And List Views**: Switch between drag-and-drop board view and table-style list view
+- **Default Workflow Columns**: Start with To do, In progress, and Done
+- **Task Editing**: Add task titles, descriptions, and update card details later
+- **Custom Columns**: Add, rename, and delete columns to match the team's workflow
+- **Drag And Drop**: Move cards within or across columns to reflect progress
 
 ### 🎨 Whiteboard Canvas
 - **Infinite Canvas**: Powered by Excalidraw for free-form drawing
 - **Real-Time Sync**: See teammates drawing in real-time
 - **Rich Toolset**: Shapes, arrows, text, freehand drawing, and more
 - **Persistent Storage**: Whiteboards save to database automatically
+- **AI Diagram Generation**: Turn prompts like flows or system descriptions into live canvas diagrams
 
 ### 📹 Video Conferencing
 - **HD Video & Audio**: Crystal clear communication via LiveKit
 - **Meeting Lobby**: Preview camera/mic before joining
 - **Multiple Meetings**: Up to 3 concurrent meetings per conference room
+- **In-Call Collaboration**: Open people and chat side panels while staying in the call
+- **Live Controls**: Toggle mic, camera, screen sharing, and raised hand state during meetings
 - **Participant Management**: See who's in the call with host identification
 - **Meeting Cleanup**: Automatic resource cleanup on leave/disconnect
 
 ### 💬 Integrated Chat System
 - **Workspace Chat**: `#general` channel for team-wide communication
 - **Direct Messages**: Private 1:1 conversations between team members
-- **Message Reactions**: Like, dislike, and haha reactions
+- **Message Reactions**: Quick reactions for like and haha in the current workspace chat UI
 - **Unread Tracking**: Badge notifications for unread messages
 - **Floating UI**: Non-intrusive chat bubble accessible from anywhere
 
@@ -124,8 +157,30 @@ VBase integrates AI assistance directly into three room types — no context swi
 ### 🏢 Workspace Management
 - **Organization-Based**: Workspaces tied to Clerk Organizations
 - **Member Management**: Invite team members via email
-- **Room Types**: Create Document, Code, Whiteboard, or Conference rooms
+- **Room Types**: Create Document, Code, Whiteboard, Spreadsheet, Meeting, or Kanban rooms
+- **User Activity Indicators**: See active user avatars and presence while collaborating inside workspaces
 - **Access Control**: Room-level permissions for team members
+
+
+### 👥 User Activity And Presence
+
+- **Active User Avatars**: Workspace surfaces show who is currently active
+- **Presence Awareness**: Teammates can quickly see whether others are already inside a workspace or collaboration surface
+- **Collaboration Confidence**: Presence indicators help teams know when it makes sense to start editing, chatting, or meeting live
+- **Join Users**: When joining a workspace, users can see who is already active and choose to join them in their current activity or start something new.
+
+---
+
+## ✅ Current Room Types
+
+VBase currently supports these room types in workspaces:
+
+- **Document**: Rich-text collaboration, exports, and AI writing tools
+- **Code**: File-based coding, execution engines, terminal output, and AI assistance
+- **Whiteboard**: Excalidraw-based collaboration with AI diagram generation
+- **Spreadsheet**: Grid editing, formulas, formatting, and live collaboration
+- **Meeting**: Live audio/video sessions with chat, raised hands, and screen sharing
+- **Kanban**: Task boards with drag-and-drop workflow management
 
 ---
 
@@ -161,6 +216,7 @@ VBase integrates AI assistance directly into three room types — no context swi
 | **Tiptap** | Rich text document editing |
 | **CodeMirror** | Code editing with syntax highlighting |
 | **Excalidraw** | Whiteboard drawing canvas |
+| **Dnd Kit** | Kanban drag-and-drop interactions |
 | **Piston API** | An advanced & secured public RCE engine API |
 ### **AI**
 | Technology | Purpose |
@@ -211,6 +267,9 @@ VBase integrates AI assistance directly into three room types — no context swi
 vbase/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API routes
+│   │   ├── generate-code/        # Code AI generation
+│   │   ├── generate-diagram/     # Whiteboard AI diagram generation
+│   │   ├── generate-doc-ai/      # Document AI actions
 │   │   ├── liveblocks-auth/      # Liveblocks authentication
 │   │   ├── livekit/token/        # LiveKit token generation
 │   │   ├── leave-meeting/        # Meeting cleanup endpoint
@@ -224,12 +283,16 @@ vbase/
 │       └── room/[roomId]/        # Room type routes
 │           ├── document/         # Document editor
 │           ├── code/             # Code editor
+│           ├── spreadsheet/      # Spreadsheet editor
+│           ├── kanban/           # Kanban board
 │           ├── whiteboard/       # Whiteboard canvas
 │           └── meeting/          # Video conferencing
 ├── components/                   # React components
 │   ├── chat/                     # Chat system components
 │   ├── code/                     # Code editor components
 │   ├── document/                 # Document editor components
+│   ├── spreadsheet/              # Spreadsheet room components
+│   ├── kanban/                   # Kanban board components
 │   ├── meeting/                  # Video meeting components
 │   ├── rooms/                    # Room management
 │   ├── whiteboard/               # Whiteboard components
@@ -242,6 +305,8 @@ vbase/
 │   ├── documents.ts              # Document operations
 │   ├── codeFiles.ts              # Code file operations
 │   ├── whiteboards.ts            # Whiteboard operations
+│   ├── spreadsheets.ts           # Spreadsheet operations
+│   ├── kanban.ts                 # Kanban operations
 │   ├── meetings.ts               # Meeting operations
 │   ├── channels.ts               # Chat channels
 │   ├── messages.ts               # Chat messages
@@ -355,8 +420,8 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 |----------|-------|
 | Workspaces per User | **5 max** |
 | Rooms per Workspace | **10 max** |
-| Conference Rooms per Workspace | **1 max** |
-| Concurrent Meetings per Conference | **3 max** |
+| Meeting Rooms per Workspace | **1 max** |
+| Concurrent Meetings per Meeting Room | **3 max** |
 | Members per Workspace | **10 max** |
 
 ---
@@ -393,10 +458,10 @@ npm run lint         # Run ESLint
 
 ## 🔮 Roadmap
 
-- [ ] **Screen Sharing** - Share your screen during video meetings
-- [ ] **Kanban Boards** - Trello-style task management rooms
 - [ ] **Context-Aware Chat** - File-specific chat sidebars
 - [ ] **2D Spatial Dashboard** - Gather.town-inspired navigation
+- [ ] **Meeting Enhancements** - Polls, richer moderation tools, and deeper in-call controls
+- [ ] **Spreadsheet Enhancements** - More advanced formulas and polish beyond the MVP grid editor
 - [ ] **Role-Based Access Control** - Granular room permissions
 - [ ] **AI for Spreadsheets** - Formula suggestions and data analysis
 - [ ] **AI Meeting Summaries** - Auto-generated notes after video calls

@@ -61,7 +61,7 @@ export const getDocumentsByRoom = query({
           creatorName: creator?.name || "Unknown",
           lastEditorName: lastEditor?.name || null,
         };
-      })
+      }),
     );
 
     return enrichedDocuments;
@@ -117,12 +117,43 @@ export const updateDocumentName = mutation({
   },
 });
 
-// Delete a document
+// Delete a document and cascade-delete its linked chat channel, messages, and read receipts
 export const deleteDocument = mutation({
   args: {
     documentId: v.id("documents"),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    // Cascade: delete linked file-chat channel
+    const linkedChannel = await ctx.db
+      .query("channels")
+      .withIndex("by_context", (q) =>
+        q.eq("contextType", "document").eq("contextId", args.documentId),
+      )
+      .unique();
+
+    if (linkedChannel) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const msg of messages) {
+        await ctx.db.delete(msg._id);
+      }
+
+      const readReceipts = await ctx.db
+        .query("lastRead")
+        .withIndex("by_channel", (q) => q.eq("channelId", linkedChannel._id))
+        .collect();
+      for (const receipt of readReceipts) {
+        await ctx.db.delete(receipt._id);
+      }
+
+      await ctx.db.delete(linkedChannel._id);
+    }
+
     await ctx.db.delete(args.documentId);
     return { success: true, deletedDocumentId: args.documentId };
   },

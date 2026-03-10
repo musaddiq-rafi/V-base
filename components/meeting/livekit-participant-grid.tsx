@@ -8,6 +8,7 @@ import {
   useTracks,
   VideoTrack,
   AudioTrack,
+  useIsSpeaking,
 } from "@livekit/components-react";
 import { Track, Participant, TrackPublication } from "livekit-client";
 import {
@@ -21,6 +22,7 @@ import {
   MoreVertical,
   ChevronLeft,
   ChevronRight,
+  MonitorUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -63,6 +65,7 @@ export function LiveKitParticipantGrid({
     string | null
   >(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   // Get all video tracks (camera + screen share) - subscribe to all
   const videoTracks = useTracks(
@@ -86,13 +89,27 @@ export function LiveKitParticipantGrid({
     };
   }, []);
 
-  // Auto-stage screen sharing participant
+  // Track whether staging was auto-triggered by screen sharing
+  const autoStagedRef = useRef<string | null>(null);
+
+  // Auto-stage screen sharing participant & auto-unstage when sharing stops
   useEffect(() => {
     const screenSharingParticipant = participants.find(
       (p) => p.isScreenShareEnabled,
     );
+
     if (screenSharingParticipant && !stagedParticipantId) {
+      // Auto-stage the screen sharer
       setStagedParticipantId(screenSharingParticipant.identity);
+      autoStagedRef.current = screenSharingParticipant.identity;
+    } else if (
+      !screenSharingParticipant &&
+      autoStagedRef.current &&
+      stagedParticipantId === autoStagedRef.current
+    ) {
+      // Screen sharing stopped — auto-unstage only if it was auto-staged
+      setStagedParticipantId(null);
+      autoStagedRef.current = null;
     }
   }, [participants, stagedParticipantId]);
 
@@ -100,6 +117,8 @@ export function LiveKitParticipantGrid({
     setStagedParticipantId((prev) =>
       prev === participantId ? null : participantId,
     );
+    // Clear auto-stage tracking on manual toggle
+    autoStagedRef.current = null;
   }, []);
 
   const handleFullscreen = useCallback(async (participantId: string) => {
@@ -152,54 +171,70 @@ export function LiveKitParticipantGrid({
     ? participants.filter((p) => p.identity !== stagedParticipantId)
     : participants;
 
+  // Smart grid layout calculation - Discord style
+  const getGridLayout = useCallback((count: number) => {
+    if (count === 1) return { cols: 1, rows: 1, maxW: "max-w-3xl" };
+    if (count === 2) return { cols: 2, rows: 1, maxW: "max-w-5xl" };
+    if (count === 3) return { cols: 3, rows: 1, maxW: "max-w-6xl" };
+    if (count === 4) return { cols: 2, rows: 2, maxW: "" };
+    if (count <= 6) return { cols: 3, rows: 2, maxW: "" };
+    if (count <= 9) return { cols: 3, rows: 3, maxW: "" };
+    return { cols: 4, rows: Math.ceil(count / 4), maxW: "" };
+  }, []);
+
   // Regular grid layout (no staging)
   if (!stagedParticipantId) {
-    const getGridClass = () => {
-      const count = participants.length;
-      if (count === 1) return "grid-cols-1 max-w-2xl mx-auto";
-      if (count === 2) return "grid-cols-2 max-w-4xl mx-auto";
-      if (count <= 4) return "grid-cols-2";
-      if (count <= 6) return "grid-cols-3";
-      if (count <= 9) return "grid-cols-3";
-      return "grid-cols-4";
-    };
+    const count = participants.length;
+    const layout = getGridLayout(count);
 
     return (
-      <div className={cn("grid gap-3 h-full auto-rows-fr p-2", getGridClass())}>
-        {participants.map((participant) => {
-          const cameraTrack = videoTracks.find(
-            (t) =>
-              t.participant.identity === participant.identity &&
-              t.source === Track.Source.Camera,
-          );
-          const screenShareTrack = videoTracks.find(
-            (t) =>
-              t.participant.identity === participant.identity &&
-              t.source === Track.Source.ScreenShare,
-          );
+      <div
+        ref={gridContainerRef}
+        className={cn(
+          "grid h-full w-full p-3 gap-2 mx-auto place-content-center",
+          layout.maxW,
+        )}
+        style={{
+          gridTemplateColumns: `repeat(${layout.cols}, minmax(0, 1fr))`,
+          gridAutoRows: "1fr",
+        }}
+      >
+        <AnimatePresence mode="popLayout">
+          {participants.map((participant) => {
+            const cameraTrack = videoTracks.find(
+              (t) =>
+                t.participant.identity === participant.identity &&
+                t.source === Track.Source.Camera,
+            );
+            const screenShareTrack = videoTracks.find(
+              (t) =>
+                t.participant.identity === participant.identity &&
+                t.source === Track.Source.ScreenShare,
+            );
 
-          return (
-            <ParticipantTile
-              key={participant.identity}
-              participant={participant}
-              isLocal={participant.isLocal}
-              cameraTrack={cameraTrack}
-              screenShareTrack={screenShareTrack}
-              handRaisedPosition={getQueuePosition(participant.identity)}
-              isHandRaised={isHandRaised(participant.identity)}
-              isStaged={false}
-              onStageToggle={handleStageToggle}
-              onFullscreen={handleFullscreen}
-            />
-          );
-        })}
+            return (
+              <ParticipantTile
+                key={participant.identity}
+                participant={participant}
+                isLocal={participant.isLocal}
+                cameraTrack={cameraTrack}
+                screenShareTrack={screenShareTrack}
+                handRaisedPosition={getQueuePosition(participant.identity)}
+                isHandRaised={isHandRaised(participant.identity)}
+                isStaged={false}
+                onStageToggle={handleStageToggle}
+                onFullscreen={handleFullscreen}
+              />
+            );
+          })}
+        </AnimatePresence>
       </div>
     );
   }
 
-  // Staged layout
+  // Staged layout (pinned participant)
   return (
-    <div className="flex flex-col h-full gap-3 p-2">
+    <div className="flex flex-col h-full gap-2 p-3">
       {/* Staged participant (takes majority of space) */}
       {stagedParticipant && (
         <div className="flex-1 min-h-0">
@@ -221,11 +256,11 @@ export function LiveKitParticipantGrid({
 
       {/* Carousel of other participants */}
       {nonStagedParticipants.length > 0 && (
-        <div className="relative flex-shrink-0 h-32">
+        <div className="relative flex-shrink-0 h-36">
           {/* Left scroll button */}
           <button
             onClick={() => scrollCarousel("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-gray-800/90 hover:bg-gray-700 text-white flex items-center justify-center shadow-lg transition-colors"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white flex items-center justify-center transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -233,7 +268,7 @@ export function LiveKitParticipantGrid({
           {/* Carousel container */}
           <div
             ref={carouselRef}
-            className="flex gap-3 overflow-x-auto scrollbar-hide px-10 h-full"
+            className="flex gap-2 overflow-x-auto px-9 h-full"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {nonStagedParticipants.map((participant) => {
@@ -251,7 +286,7 @@ export function LiveKitParticipantGrid({
               return (
                 <div
                   key={participant.identity}
-                  className="flex-shrink-0 w-48 h-full"
+                  className="flex-shrink-0 w-52 h-full"
                 >
                   <ParticipantTile
                     participant={participant}
@@ -273,7 +308,7 @@ export function LiveKitParticipantGrid({
           {/* Right scroll button */}
           <button
             onClick={() => scrollCarousel("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-gray-800/90 hover:bg-gray-700 text-white flex items-center justify-center shadow-lg transition-colors"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white flex items-center justify-center transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -321,6 +356,7 @@ function ParticipantTile({
   const isCameraEnabled = participant.isCameraEnabled;
   const isMicEnabled = participant.isMicrophoneEnabled;
   const isScreenSharing = participant.isScreenShareEnabled;
+  const isSpeaking = useIsSpeaking(participant);
 
   // Parse metadata to get avatar
   const metadata = useMemo(
@@ -341,17 +377,26 @@ function ParticipantTile({
   // Determine what to show - prefer screen share if active
   const activeTrack = screenShareTrack || cameraTrack;
   const showVideo = activeTrack && (isScreenSharing || isCameraEnabled);
-  const canFullscreen = showVideo; // Can fullscreen if has video
+  const canFullscreen = showVideo;
 
   return (
     <motion.div
       id={`participant-tile-${participant.identity}`}
-      initial={{ opacity: 0, scale: 0.95 }}
+      layout
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className={cn(
-        "relative bg-[#202124] rounded-lg overflow-hidden group",
-        isCarouselItem ? "h-full" : "min-h-[120px]",
-        isStaged && "ring-2 ring-blue-500",
+        "relative rounded-xl overflow-hidden group transition-shadow duration-200",
+        isCarouselItem ? "h-full" : "min-h-[100px]",
+        // Discord-style speaking glow
+        isSpeaking
+          ? "ring-[3px] ring-[#23a559] shadow-[0_0_16px_rgba(35,165,89,0.45)]"
+          : isStaged
+            ? "ring-2 ring-[#5865f2]"
+            : "ring-1 ring-white/[0.06]",
+        "bg-[#1e1f22]",
         className,
       )}
     >
@@ -364,83 +409,113 @@ function ParticipantTile({
           />
         </div>
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#3c4043]">
-          {avatarUrl ? (
-            <div
-              className={cn(
-                "rounded-full overflow-hidden",
-                isCarouselItem
-                  ? "w-12 h-12"
-                  : isStaged
-                    ? "w-32 h-32"
-                    : "w-20 h-20",
-              )}
-            >
-              <Image
-                src={avatarUrl}
-                alt={displayName}
-                width={128}
-                height={128}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "rounded-full bg-[#5f6368] flex items-center justify-center",
-                isCarouselItem
-                  ? "w-12 h-12"
-                  : isStaged
-                    ? "w-32 h-32"
-                    : "w-20 h-20",
-              )}
-            >
-              <span
+        <div className="absolute inset-0 flex items-center justify-center bg-[#2b2d31]">
+          <div className="flex flex-col items-center gap-3">
+            {avatarUrl ? (
+              <div
                 className={cn(
-                  "font-medium text-white",
+                  "rounded-full overflow-hidden ring-4 ring-transparent",
+                  isSpeaking && "ring-[#23a559]/40",
                   isCarouselItem
-                    ? "text-lg"
+                    ? "w-14 h-14"
                     : isStaged
-                      ? "text-4xl"
-                      : "text-2xl",
+                      ? "w-28 h-28"
+                      : "w-20 h-20",
                 )}
               >
-                {initials}
-              </span>
+                <Image
+                  src={avatarUrl}
+                  alt={displayName}
+                  width={128}
+                  height={128}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "rounded-full flex items-center justify-center",
+                  isSpeaking
+                    ? "bg-[#5865f2] ring-4 ring-[#23a559]/40"
+                    : "bg-[#5865f2]",
+                  isCarouselItem
+                    ? "w-14 h-14"
+                    : isStaged
+                      ? "w-28 h-28"
+                      : "w-20 h-20",
+                )}
+              >
+                <span
+                  className={cn(
+                    "font-semibold text-white",
+                    isCarouselItem
+                      ? "text-lg"
+                      : isStaged
+                        ? "text-3xl"
+                        : "text-xl",
+                  )}
+                >
+                  {initials}
+                </span>
+              </div>
+            )}
+
+            {/* Audio waveform bars when speaking with camera off — always reserve space */}
+            <div className="flex items-end gap-[3px] h-6">
+              {isSpeaking &&
+                isMicEnabled &&
+                [0, 1, 2, 3, 4].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-[5px] rounded-full bg-[#23a559]"
+                    initial={{ height: "6px", opacity: 0 }}
+                    animate={{
+                      height: ["6px", `${14 + Math.random() * 10}px`, "6px"],
+                      opacity: 1,
+                    }}
+                    exit={{ height: "6px", opacity: 0 }}
+                    transition={{
+                      duration: 0.4 + Math.random() * 0.3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.08,
+                    }}
+                  />
+                ))}
             </div>
-          )}
+          </div>
         </div>
       )}
 
       {/* Screen share indicator */}
       {isScreenSharing && (
-        <div className="absolute top-2 left-2 px-2 py-1 bg-[#1a73e8] rounded text-xs text-white font-medium flex items-center gap-1">
-          <Pin className="w-3 h-3" />
-          Presenting
+        <div className="absolute top-2 left-2 px-2 py-1 bg-[#5865f2] rounded-md text-[11px] text-white font-medium flex items-center gap-1">
+          <MonitorUp className="w-3 h-3" />
+          Screen
         </div>
       )}
 
-      {/* Staged indicator */}
+      {/* Pinned indicator */}
       {isStaged && !isScreenSharing && (
-        <div className="absolute top-2 left-2 px-2 py-1 bg-blue-600 rounded text-xs text-white font-medium flex items-center gap-1">
+        <div className="absolute top-2 left-2 px-2 py-1 bg-[#5865f2] rounded-md text-[11px] text-white font-medium flex items-center gap-1">
           <Pin className="w-3 h-3" />
           Pinned
         </div>
       )}
 
       {/* Hover actions container - top right corner */}
-      <div className="absolute top-2 right-2 flex items-center gap-2 z-20">
+      <div className="absolute top-2 right-2 flex items-center gap-1.5 z-20">
         {/* Raised Hand Indicator */}
         {isHandRaised && handRaisedPosition !== null && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
-            <div className="flex items-center gap-1 px-2 py-1 bg-amber-500 rounded-full">
-              <span className="text-xs font-bold text-white">
+            <div className="flex items-center gap-1 px-2 py-1 bg-[#fee75c] rounded-md">
+              <span className="text-[11px] font-bold text-[#1e1f22]">
                 {handRaisedPosition}
               </span>
-              <Hand className="w-3 h-3 text-white" />
+              <Hand className="w-3 h-3 text-[#1e1f22]" />
             </div>
           </motion.div>
         )}
@@ -449,33 +524,33 @@ function ParticipantTile({
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white">
-                <MoreVertical className="w-4 h-4" />
+              <button className="w-7 h-7 rounded-md bg-black/60 hover:bg-black/80 flex items-center justify-center text-white/80 hover:text-white transition-colors">
+                <MoreVertical className="w-3.5 h-3.5" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem
                 onClick={() => onStageToggle(participant.identity)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm"
               >
                 {isStaged ? (
                   <>
-                    <PinOff className="w-4 h-4" />
+                    <PinOff className="w-3.5 h-3.5" />
                     <span>Unpin</span>
                   </>
                 ) : (
                   <>
-                    <Pin className="w-4 h-4" />
-                    <span>Pin to stage</span>
+                    <Pin className="w-3.5 h-3.5" />
+                    <span>Pin</span>
                   </>
                 )}
               </DropdownMenuItem>
               {canFullscreen && (
                 <DropdownMenuItem
                   onClick={() => onFullscreen(participant.identity)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-sm"
                 >
-                  <Maximize className="w-4 h-4" />
+                  <Maximize className="w-3.5 h-3.5" />
                   <span>Full screen</span>
                 </DropdownMenuItem>
               )}
@@ -484,37 +559,50 @@ function ParticipantTile({
         </div>
       </div>
 
-      {/* Bottom info bar - Google Meet style */}
-      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+      {/* Bottom info bar - Discord style */}
+      <div className="absolute bottom-0 left-0 right-0 p-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Mic status */}
-            {!isMicEnabled && (
-              <div className="w-6 h-6 rounded-full bg-[#ea4335] flex items-center justify-center">
+          <div className="flex items-center gap-1.5">
+            {/* Mic indicator */}
+            <div
+              className={cn(
+                "w-6 h-6 rounded-md flex items-center justify-center",
+                !isMicEnabled
+                  ? "bg-[#ed4245]"
+                  : isSpeaking
+                    ? "bg-[#23a559]"
+                    : "bg-black/50",
+              )}
+            >
+              {!isMicEnabled ? (
                 <MicOff className="w-3 h-3 text-white" />
-              </div>
-            )}
+              ) : (
+                <Mic className="w-3 h-3 text-white" />
+              )}
+            </div>
             <span
               className={cn(
-                "font-medium text-white truncate",
-                isCarouselItem ? "text-xs max-w-20" : "text-sm",
+                "font-medium text-white truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]",
+                isCarouselItem ? "text-xs max-w-24" : "text-[13px]",
               )}
             >
               {displayName}
-              {isLocal && <span className="text-gray-300 ml-1">(You)</span>}
+              {isLocal && (
+                <span className="text-white/50 ml-1 text-xs">(You)</span>
+              )}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Fullscreen button (bottom right) - only for video enabled participants */}
+      {/* Fullscreen button (bottom right) */}
       {canFullscreen && (
         <button
           onClick={() => onFullscreen(participant.identity)}
-          className="absolute bottom-2 right-2 w-8 h-8 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-2 right-2 w-7 h-7 rounded-md bg-black/50 hover:bg-black/70 flex items-center justify-center text-white/70 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
           title="Full screen"
         >
-          <Maximize className="w-4 h-4" />
+          <Maximize className="w-3.5 h-3.5" />
         </button>
       )}
     </motion.div>

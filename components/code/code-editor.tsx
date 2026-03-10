@@ -28,11 +28,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { AnimatePresence } from "framer-motion";
 import { Terminal } from "./terminal";
 import { executeCode, LANGUAGE_VERSIONS } from "@/lib/piston";
 import { executeCodeVBase, VBASE_LANGUAGE_VERSIONS } from "@/lib/vbase-rce";
 import { EditorSettingsModal, EditorTheme } from "./editor-settings-modal";
 import { AIChatSidebar } from "./ai-chat-sidebar";
+import { DiffReviewOverlay } from "./diff-review-overlay";
 
 // RCE Engine types
 type RCEEngine = "piston" | "vbase";
@@ -131,6 +133,7 @@ export function CodeEditor({
   const [element, setElement] = useState<HTMLElement>();
   const [synced, setSynced] = useState(false);
   const editorViewRef = useRef<EditorView | null>(null);
+  const ytextRef = useRef<Y.Text | null>(null);
 
   // Get user info from Liveblocks authentication endpoint
   const userInfo = useSelf((me) => me.info);
@@ -163,17 +166,56 @@ export function CodeEditor({
   // AI Sidebar State
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
 
+  // Diff Review State
+  const [pendingProposal, setPendingProposal] = useState<{
+    originalCode: string;
+    proposedCode: string;
+  } | null>(null);
+
   const getEditorContent = useCallback(() => {
-    return editorViewRef.current?.state.doc.toString() ?? "";
+    return (
+      ytextRef.current?.toString() ??
+      editorViewRef.current?.state.doc.toString() ??
+      ""
+    );
   }, []);
 
   const setEditorContent = useCallback((code: string) => {
-    const view = editorViewRef.current;
-    if (view) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: code },
+    const ytext = ytextRef.current;
+    if (ytext && ytext.doc) {
+      // Write directly to Y.Text CRDT to avoid merge artifacts from the
+      // CodeMirror ↔ Yjs bridge. The yCollab extension will reactively
+      // update the editor view.
+      ytext.doc.transact(() => {
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, code);
       });
+    } else {
+      // Fallback: direct CodeMirror dispatch (non-collaborative case)
+      const view = editorViewRef.current;
+      if (view) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: code },
+        });
+      }
     }
+  }, []);
+
+  /** Called by AI sidebar in agent mode — shows diff overlay instead of directly applying */
+  const proposeEditorContent = useCallback((proposedCode: string) => {
+    const originalCode = editorViewRef.current?.state.doc.toString() ?? "";
+    setPendingProposal({ originalCode, proposedCode });
+  }, []);
+
+  const handleKeepProposal = useCallback(() => {
+    if (pendingProposal) {
+      setEditorContent(pendingProposal.proposedCode);
+      setPendingProposal(null);
+    }
+  }, [pendingProposal, setEditorContent]);
+
+  const handleUndoProposal = useCallback(() => {
+    setPendingProposal(null);
   }, []);
 
   const updateLastEdited = useMutation(api.codeFiles.updateLastEdited);
@@ -204,6 +246,7 @@ export function CodeEditor({
     const provider = getYjsProviderForRoom(room);
     const ydoc = provider.getYDoc();
     const ytext = ydoc.getText("codemirror");
+    ytextRef.current = ytext;
     const undoManager = new Y.UndoManager(ytext);
 
     // Listen for sync status
@@ -343,12 +386,20 @@ export function CodeEditor({
     URL.revokeObjectURL(url);
   };
 
+  const isDark = theme === "dark";
+
   return (
-    <div className="h-full w-full flex flex-col relative bg-[#1e1e1e]">
+    <div
+      className={`h-full w-full flex flex-col relative ${isDark ? "bg-[#1e1e1e]" : "bg-white"}`}
+    >
       {/* Combined File Tab + Toolbar Bar */}
-      <div className="shrink-0 h-9 flex items-center bg-[#252526] border-b border-[#3c3c3c]">
+      <div
+        className={`shrink-0 h-9 flex items-center ${isDark ? "bg-[#252526] border-b border-b-[#3c3c3c]" : "bg-[#f3f3f3] border-b border-b-[#e0e0e0]"}`}
+      >
         {/* File Tab */}
-        <div className="h-full flex items-center gap-2 px-3 bg-[#1e1e1e] border-t-2 border-t-emerald-500 text-gray-200 text-sm min-w-0 max-w-[200px]">
+        <div
+          className={`h-full flex items-center gap-2 px-3 ${isDark ? "bg-[#1e1e1e] text-gray-200" : "bg-white text-gray-800"} border-t-2 border-t-emerald-500 text-sm min-w-0 max-w-[200px]`}
+        >
           <Circle
             className="w-3 h-3 shrink-0"
             fill={languageColor}
@@ -358,14 +409,14 @@ export function CodeEditor({
           {onClose ? (
             <button
               onClick={onClose}
-              className="ml-auto p-0.5 hover:bg-[#3c3c3c] rounded opacity-60 hover:opacity-100 transition-opacity"
+              className={`ml-auto p-0.5 ${isDark ? "hover:bg-[#3c3c3c]" : "hover:bg-[#e0e0e0]"} rounded opacity-60 hover:opacity-100 transition-opacity`}
             >
               <X className="w-3.5 h-3.5" />
             </button>
           ) : (
             <Link
               href={closeUrl}
-              className="ml-auto p-0.5 hover:bg-[#3c3c3c] rounded opacity-60 hover:opacity-100 transition-opacity"
+              className={`ml-auto p-0.5 ${isDark ? "hover:bg-[#3c3c3c]" : "hover:bg-[#e0e0e0]"} rounded opacity-60 hover:opacity-100 transition-opacity`}
             >
               <X className="w-3.5 h-3.5" />
             </Link>
@@ -390,13 +441,15 @@ export function CodeEditor({
             </div>
           )}
 
-          <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+          <div
+            className={`w-px h-4 ${isDark ? "bg-[#3c3c3c]" : "bg-[#d4d4d4]"} mx-1`}
+          />
 
           {/* Language Picker Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#3c3c3c] text-gray-300 text-xs font-medium rounded transition-colors"
+              className={`flex items-center gap-1.5 px-2 py-1 ${isDark ? "hover:bg-[#3c3c3c] text-gray-300" : "hover:bg-[#e0e0e0] text-gray-600"} text-xs font-medium rounded transition-colors`}
               title="Change language"
             >
               <Circle
@@ -413,7 +466,9 @@ export function CodeEditor({
                   className="fixed inset-0 z-10"
                   onClick={() => setIsLangDropdownOpen(false)}
                 />
-                <div className="absolute top-full left-0 mt-1 w-44 bg-[#252526] border border-[#3c3c3c] rounded-lg shadow-xl z-20 overflow-hidden">
+                <div
+                  className={`absolute top-full left-0 mt-1 w-44 ${isDark ? "bg-[#252526] border-[#3c3c3c]" : "bg-white border-[#e0e0e0]"} border rounded-lg shadow-xl z-20 overflow-hidden`}
+                >
                   {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang.value}
@@ -423,10 +478,12 @@ export function CodeEditor({
                         }
                         setIsLangDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs hover:bg-[#3c3c3c] transition-colors ${
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs ${isDark ? "hover:bg-[#3c3c3c]" : "hover:bg-[#e8e8e8]"} transition-colors ${
                         language === lang.value
-                          ? "bg-[#3c3c3c] text-emerald-400"
-                          : "text-gray-300"
+                          ? `${isDark ? "bg-[#3c3c3c]" : "bg-[#e0e0e0]"} text-emerald-400`
+                          : isDark
+                            ? "text-gray-300"
+                            : "text-gray-600"
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -448,12 +505,14 @@ export function CodeEditor({
             )}
           </div>
 
-          <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+          <div
+            className={`w-px h-4 ${isDark ? "bg-[#3c3c3c]" : "bg-[#d4d4d4]"} mx-1`}
+          />
 
           {/* Copy Button */}
           <button
             onClick={handleCopyCode}
-            className="p-1.5 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
+            className={`p-1.5 rounded ${isDark ? "hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300" : "hover:bg-[#e0e0e0] text-gray-400 hover:text-gray-600"} transition-colors`}
             title="Copy code"
           >
             {copied ? (
@@ -466,7 +525,7 @@ export function CodeEditor({
           {/* Download Button */}
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
+            className={`p-1.5 rounded ${isDark ? "hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300" : "hover:bg-[#e0e0e0] text-gray-400 hover:text-gray-600"} transition-colors`}
             title="Download file"
           >
             <Download className="w-4 h-4" />
@@ -475,7 +534,7 @@ export function CodeEditor({
           {/* Settings Button */}
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="p-1.5 rounded hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300 transition-colors"
+            className={`p-1.5 rounded ${isDark ? "hover:bg-[#3c3c3c] text-gray-500 hover:text-gray-300" : "hover:bg-[#e0e0e0] text-gray-400 hover:text-gray-600"} transition-colors`}
             title="Editor Settings"
           >
             <Settings className="w-4 h-4" />
@@ -484,13 +543,15 @@ export function CodeEditor({
           {/* Run Button with RCE Engine Selector */}
           {isExecutionSupported && (
             <>
-              <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+              <div
+                className={`w-px h-4 ${isDark ? "bg-[#3c3c3c]" : "bg-[#d4d4d4]"} mx-1`}
+              />
 
               {/* RCE Engine Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setIsEngineDropdownOpen(!isEngineDropdownOpen)}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-gray-300 text-xs font-medium rounded-l border-r border-[#2c2c2c] transition-colors"
+                  className={`flex items-center gap-1.5 px-2 py-1 ${isDark ? "bg-[#3c3c3c] hover:bg-[#4c4c4c] text-gray-300 border-r border-r-[#2c2c2c]" : "bg-[#e0e0e0] hover:bg-[#d4d4d4] text-gray-700 border-r border-r-[#d0d0d0]"} text-xs font-medium rounded-l transition-colors`}
                   title="Select execution engine"
                 >
                   <span>{RCE_ENGINE_INFO[rceEngine].label}</span>
@@ -504,7 +565,9 @@ export function CodeEditor({
                       className="fixed inset-0 z-10"
                       onClick={() => setIsEngineDropdownOpen(false)}
                     />
-                    <div className="absolute top-full right-0 mt-1 w-44 bg-[#252526] border border-[#3c3c3c] rounded-lg shadow-xl z-20 overflow-hidden">
+                    <div
+                      className={`absolute top-full right-0 mt-1 w-44 ${isDark ? "bg-[#252526] border-[#3c3c3c]" : "bg-white border-[#e0e0e0]"} border rounded-lg shadow-xl z-20 overflow-hidden`}
+                    >
                       {(Object.keys(RCE_ENGINE_INFO) as RCEEngine[]).map(
                         (engine) => (
                           <button
@@ -513,10 +576,12 @@ export function CodeEditor({
                               setRceEngine(engine);
                               setIsEngineDropdownOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs hover:bg-[#3c3c3c] transition-colors ${
+                            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs ${isDark ? "hover:bg-[#3c3c3c]" : "hover:bg-[#e8e8e8]"} transition-colors ${
                               rceEngine === engine
-                                ? "bg-[#3c3c3c] text-emerald-400"
-                                : "text-gray-300"
+                                ? `${isDark ? "bg-[#3c3c3c]" : "bg-[#e0e0e0]"} text-emerald-400`
+                                : isDark
+                                  ? "text-gray-300"
+                                  : "text-gray-600"
                             }`}
                           >
                             <div>
@@ -554,7 +619,9 @@ export function CodeEditor({
             </>
           )}
 
-          <div className="w-px h-4 bg-[#3c3c3c] mx-1" />
+          <div
+            className={`w-px h-4 ${isDark ? "bg-[#3c3c3c]" : "bg-[#d4d4d4]"} mx-1`}
+          />
 
           {/* AI Assistant Button */}
           <button
@@ -588,7 +655,7 @@ export function CodeEditor({
       {/* CodeMirror Editor Container + AI Sidebar */}
       <div className="flex-1 relative min-h-0 overflow-hidden flex">
         {/* Editor + Terminal */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           <div ref={ref} className="flex-1 min-h-0 overflow-hidden" />
 
           {/* Terminal Panel */}
@@ -598,7 +665,22 @@ export function CodeEditor({
             output={output}
             isError={isError}
             isRunning={isRunning}
+            isDark={isDark}
           />
+
+          {/* Diff Review Overlay — shown when AI proposes code */}
+          <AnimatePresence>
+            {pendingProposal && (
+              <DiffReviewOverlay
+                originalCode={pendingProposal.originalCode}
+                proposedCode={pendingProposal.proposedCode}
+                fileName={fileName}
+                language={language}
+                onKeep={handleKeepProposal}
+                onUndo={handleUndoProposal}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         {/* AI Chat Sidebar */}
@@ -609,7 +691,9 @@ export function CodeEditor({
           roomId={roomId}
           workspaceId={workspaceId}
           getEditorContent={getEditorContent}
-          setEditorContent={setEditorContent}
+          proposeEditorContent={proposeEditorContent}
+          hasPendingProposal={!!pendingProposal}
+          isDark={isDark}
         />
       </div>
 

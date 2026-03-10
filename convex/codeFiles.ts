@@ -394,7 +394,7 @@ export const deleteNode = mutation({
       }
 
       // If it's a file, add to the list for Liveblocks cleanup
-      // and delete associated AI chat messages
+      // and delete associated AI chat messages and linked chat channel
       if (currentItem.type === "file") {
         deletedFileIds.push(currentItem._id);
 
@@ -405,6 +405,38 @@ export const deleteNode = mutation({
           .collect();
         for (const msg of aiMessages) {
           await ctx.db.delete(msg._id);
+        }
+
+        // Cascade: delete linked file-chat channel
+        const linkedChannel = await ctx.db
+          .query("channels")
+          .withIndex("by_context", (q) =>
+            q.eq("contextType", "codeFile").eq("contextId", itemId),
+          )
+          .unique();
+
+        if (linkedChannel) {
+          const channelMessages = await ctx.db
+            .query("messages")
+            .withIndex("by_channel", (q) =>
+              q.eq("channelId", linkedChannel._id),
+            )
+            .collect();
+          for (const msg of channelMessages) {
+            await ctx.db.delete(msg._id);
+          }
+
+          const readReceipts = await ctx.db
+            .query("lastRead")
+            .withIndex("by_channel", (q) =>
+              q.eq("channelId", linkedChannel._id),
+            )
+            .collect();
+          for (const receipt of readReceipts) {
+            await ctx.db.delete(receipt._id);
+          }
+
+          await ctx.db.delete(linkedChannel._id);
         }
       }
 
@@ -440,7 +472,7 @@ export const deleteAllFilesForRoom = mutation({
 
     const deletedFileIds: string[] = [];
 
-    // Collect file IDs for Liveblocks cleanup and delete AI chat messages
+    // Collect file IDs for Liveblocks cleanup and delete AI chat messages + linked channels
     for (const item of allItems) {
       if (item.type === "file") {
         deletedFileIds.push(item._id);
@@ -452,6 +484,38 @@ export const deleteAllFilesForRoom = mutation({
           .collect();
         for (const msg of aiMessages) {
           await ctx.db.delete(msg._id);
+        }
+
+        // Cascade: delete linked file-chat channel
+        const linkedChannel = await ctx.db
+          .query("channels")
+          .withIndex("by_context", (q) =>
+            q.eq("contextType", "codeFile").eq("contextId", item._id),
+          )
+          .unique();
+
+        if (linkedChannel) {
+          const channelMessages = await ctx.db
+            .query("messages")
+            .withIndex("by_channel", (q) =>
+              q.eq("channelId", linkedChannel._id),
+            )
+            .collect();
+          for (const msg of channelMessages) {
+            await ctx.db.delete(msg._id);
+          }
+
+          const readReceipts = await ctx.db
+            .query("lastRead")
+            .withIndex("by_channel", (q) =>
+              q.eq("channelId", linkedChannel._id),
+            )
+            .collect();
+          for (const receipt of readReceipts) {
+            await ctx.db.delete(receipt._id);
+          }
+
+          await ctx.db.delete(linkedChannel._id);
         }
       }
     }

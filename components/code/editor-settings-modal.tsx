@@ -42,7 +42,7 @@ export function EditorSettingsModal({
         className="relative bg-[#252526] rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden border border-[#3c3c3c]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#3c3c3c]">
+        <div className="flex items-center justify-between p-4 border-b border-b-[#3c3c3c]">
           <h2 className="text-lg font-semibold text-gray-200">
             Editor Settings
           </h2>
@@ -113,7 +113,7 @@ export function EditorSettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#3c3c3c]">
+        <div className="p-4 border-t border-t-[#3c3c3c]">
           <button
             onClick={onClose}
             className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
