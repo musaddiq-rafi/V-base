@@ -49,6 +49,7 @@ VBase unifies all collaboration tools in one workspace:
 | 🎨 **Whiteboards** | Infinite canvas for brainstorming with real-time sync |
 | 📹 **Video Meetings** | HD video conferencing with up to 3 concurrent meetings |
 | 💬 **Team Chat** | Workspace-wide and direct messaging with reactions |
+| 🤖 **AI Assistant** | Gemini-powered writing tools, code agent, and diagram generator |
 
 ---
 
@@ -96,6 +97,30 @@ VBase unifies all collaboration tools in one workspace:
 - **Unread Tracking**: Badge notifications for unread messages
 - **Floating UI**: Non-intrusive chat bubble accessible from anywhere
 
+### 🤖 AI Features (Powered by Google Gemini 2.5 Flash)
+
+VBase integrates AI assistance directly into three room types — no context switching required.
+
+#### Code Room — AI Chat Sidebar
+- **Ask Mode**: Conversational Q&A with full awareness of the current file's content
+- **Agent Mode**: Describes the task in plain language; Gemini writes the code and injects it directly into the editor
+- **Persistent History**: Chat history saved per file via Convex — survives page refreshes
+- **Supported Languages**: JavaScript, Python, Java, C, C++
+
+#### Document Room — AI Writing Tools
+- **Summarize**: Condense a selection to about one-third of its original length
+- **Elaborate**: Expand a selection with more detail and examples
+- **Fix Grammar**: Correct grammar, spelling, and punctuation without changing meaning
+- **Change Tone**: Rewrite in Professional, Casual, Formal, or Friendly voice
+- **Generate**: Free-text prompt to generate new 2–4 paragraph content
+- Results can **Replace** the selection or be **Inserted Below** the cursor
+
+#### Whiteboard Room — AI Diagram Generator
+- Type a natural-language description (e.g. *"User login flow with OAuth fallback"*)
+- Gemini returns a structured flowchart JSON (`nodes[]` + `edges[]`)
+- Layout is computed with a topological sort and stagger-animated onto the canvas
+- Diagram is automatically saved to the workspace database
+
 ### 🏢 Workspace Management
 - **Organization-Based**: Workspaces tied to Clerk Organizations
 - **Member Management**: Invite team members via email
@@ -137,7 +162,12 @@ VBase unifies all collaboration tools in one workspace:
 | **CodeMirror** | Code editing with syntax highlighting |
 | **Excalidraw** | Whiteboard drawing canvas |
 | **Piston API** | An advanced & secured public RCE engine API |
-
+### **AI**
+| Technology | Purpose |
+|------------|--------|
+| **Google Gemini 2.5 Flash** | AI model for code, document, and diagram generation |
+| **Generative Language REST API** | Direct HTTP integration (no SDK) |
+| **react-markdown + remark-gfm** | Markdown rendering for AI chat responses |
 ---
 
 ## 🏗️ Architecture Overview
@@ -153,24 +183,25 @@ VBase unifies all collaboration tools in one workspace:
 │  │  (Tiptap)    │  │ (CodeMirror) │  │ (Excalidraw) │           │
 │  └──────────────┘  └──────────────┘  └──────────────┘           │
 │                                                                 │
-│  ┌──────────────┐  ┌──────────────┐                             │
-│  │   Meetings   │  │  Chat System │                             │
-│  │  (LiveKit)   │  │   (Convex)   │                             │
-│  └──────────────┘  └──────────────┘                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
+│  │   Meetings   │  │  Chat System │  │  AI Sidebar  │           │
+│  │  (LiveKit)   │  │   (Convex)   │  │  (Gemini)    │           │
+│  └──────────────┘  └──────────────┘  └──────────────┘           │
 └─────────────────────────────────────────────────────────────────┘
                               │
           ┌───────────────────┼───────────────────┐
           ▼                   ▼                   ▼
-   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-   │   Convex    │    │  Liveblocks │    │   LiveKit   │
-   │  (Database) │    │   (Sync)    │    │   (Video)   │
-   └─────────────┘    └─────────────┘    └─────────────┘
+   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+   │   Convex    │    │  Liveblocks │    │   LiveKit   │    │   Gemini    │
+   │  (Database) │    │   (Sync)    │    │   (Video)   │    │    (AI)     │
+   └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
 ### Data Flow
-- **Persistent Data → Convex**: Users, workspaces, rooms, chat messages, file metadata
+- **Persistent Data → Convex**: Users, workspaces, rooms, chat messages, file metadata, AI chat history
 - **Ephemeral Data → Liveblocks**: Cursor positions, editor state (Yjs), whiteboard drawings
 - **Video/Audio → LiveKit**: Real-time media streaming
+- **AI Inference → Google Gemini**: Code generation, document writing, diagram creation
 
 ---
 
@@ -182,7 +213,10 @@ vbase/
 │   ├── api/                      # API routes
 │   │   ├── liveblocks-auth/      # Liveblocks authentication
 │   │   ├── livekit/token/        # LiveKit token generation
-│   │   └── leave-meeting/        # Meeting cleanup endpoint
+│   │   ├── leave-meeting/        # Meeting cleanup endpoint
+│   │   ├── generate-code/        # AI code generation & chat (Gemini)
+│   │   ├── generate-doc-ai/      # AI document writing tools (Gemini)
+│   │   └── generate-diagram/     # AI diagram generator (Gemini)
 │   ├── dashboard/                # Dashboard pages
 │   │   ├── page.tsx              # Workspace list
 │   │   └── invitations/          # Pending invitations
@@ -210,7 +244,8 @@ vbase/
 │   ├── whiteboards.ts            # Whiteboard operations
 │   ├── meetings.ts               # Meeting operations
 │   ├── channels.ts               # Chat channels
-│   └── messages.ts               # Chat messages
+│   ├── messages.ts               # Chat messages
+│   └── aiChat.ts                 # AI chat history persistence
 ├── lib/                          # Utility functions
 │   ├── piston.ts                 # Piston RCE integration
 │   └── vbase-rce.ts              # Custom RCE integration
@@ -276,6 +311,9 @@ LIVEKIT_API_SECRET=xxxxx
 # Custom RCE (Optional)
 NEXT_PUBLIC_VBASE_RCE_BASE_URL=https://your-rce-server.com
 NEXT_PUBLIC_VBASE_RCE_API_SECRET=your_secret
+
+# Google Gemini AI (required for AI features)
+GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 ### 4. Set Up Convex
@@ -340,6 +378,19 @@ npm run lint         # Run ESLint
 
 ---
 
+## � Documentation
+
+| Document | Description |
+|----------|-------------|
+| [AI Features](./docs/ai-features.md) | Architecture and implementation details for all AI features |
+| [Chat System](./docs/chat-system.md) | Workspace chat, DMs, and channel architecture |
+| [Document System](./docs/document-system.md) | Collaborative document editor internals |
+| [Whiteboard System](./docs/whiteboard-system.md) | Excalidraw integration and persistence |
+| [Meeting Updates](./docs/meeting-updates.md) | LiveKit video conferencing notes |
+| [User Guide](./docs/user-guides/README.md) | End-user feature walkthroughs |
+
+---
+
 ## 🔮 Roadmap
 
 - [ ] **Screen Sharing** - Share your screen during video meetings
@@ -347,6 +398,8 @@ npm run lint         # Run ESLint
 - [ ] **Context-Aware Chat** - File-specific chat sidebars
 - [ ] **2D Spatial Dashboard** - Gather.town-inspired navigation
 - [ ] **Role-Based Access Control** - Granular room permissions
+- [ ] **AI for Spreadsheets** - Formula suggestions and data analysis
+- [ ] **AI Meeting Summaries** - Auto-generated notes after video calls
 
 ---
 

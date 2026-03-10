@@ -55,6 +55,7 @@ Placeholder media to capture during docs QA.
 - [Use Meeting Rooms](./09-use-meeting-rooms.md)
 - [Use Spreadsheet Rooms](./10-use-spreadsheet-rooms.md)
 - [Use Kanban Rooms](./11-use-kanban-rooms.md)
+- [Use AI Features](./12-use-ai-features.md)
 
 ---
 
