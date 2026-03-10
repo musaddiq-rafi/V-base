@@ -40,12 +40,14 @@ VBase unifies all collaboration tools in one workspace:
 
 | Feature | Description |
 |---------|-------------|
-| 📝 **Documents** | Real-time collaborative rich text editing (Google Docs-style) |
-| 💻 **Code Rooms** | Multi-file code collaboration with live cursors and code execution |
-| 🎨 **Whiteboards** | Infinite canvas for brainstorming with real-time sync |
-| 📹 **Video Meetings** | HD video conferencing with up to 3 concurrent meetings |
-| 💬 **Team Chat** | Workspace-wide and direct messaging with reactions |
-| 🤖 **AI Assistant** | Gemini-powered writing tools, code agent, and diagram generator |
+| 📝 **Documents** | Rich text collaboration with formatting, exports, and AI writing tools |
+| 💻 **Code Rooms** | Multi-file code collaboration with execution, terminal output, and AI coding help |
+| 📊 **Spreadsheets** | Collaborative spreadsheets with formulas, formatting, and live selection stats |
+| ✅ **Kanban Boards** | Task boards with board/list views, drag-and-drop cards, and custom columns |
+| 🎨 **Whiteboards** | Infinite canvas brainstorming with real-time sync and AI diagram generation |
+| 📹 **Meetings** | Live audio/video meetings with lobby, chat, raised hands, and screen sharing |
+| 💬 **Team Chat** | Workspace-wide and direct messaging with unread tracking and reactions |
+| 👥 **User Activity** | Active-user presence indicators so teams can see who is currently working in a workspace |
 
 ---
 
