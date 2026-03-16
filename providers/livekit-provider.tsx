@@ -1,0 +1,273 @@
+"use client";
+
+import "@livekit/components-styles";
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useRoomContext,
+} from "@livekit/components-react";
+import { Room, RoomEvent, ConnectionState, VideoPresets } from "livekit-client";
+import { ReactNode, useCallback, useEffect, useState } from "react";
+
+interface LiveKitProviderProps {
+  children: ReactNode;
+  roomName: string;
+  participantName: string;
+  participantIdentity: string;
+  participantAvatar?: string;
+  onConnected?: () => void;
+  onDisconnected?: () => void;
+  onError?: (error: Error) => void;
+  videoEnabled?: boolean;
+  audioEnabled?: boolean;
+}
+
+async function fetchToken(
+  roomName: string,
+  participantName: string,
+  participantIdentity: string,
+  participantAvatar?: string,
+): Promise<string> {
+  const params = new URLSearchParams({
+    room: roomName,
+    username: participantName,
+    identity: participantIdentity,
+  });
+
+  if (participantAvatar) {
+    params.set("avatar", participantAvatar);
+  }
+
+  console.log(
+    "[LiveKit] Fetching token for room:",
+    roomName,
+    "identity:",
+    participantIdentity,
+  );
+
+  const response = await fetch(`/api/livekit/token?${params.toString()}`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage = "Failed to fetch token";
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorMessage;
+    } catch {
+      errorMessage = `HTTP ${response.status}: ${errorText.substring(0, 100)}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+  return data.token;
+}
+
+export function LiveKitProvider({
+  children,
+  roomName,
+  participantName,
+  participantIdentity,
+  participantAvatar,
+  onConnected,
+  onDisconnected,
+  onError,
+  videoEnabled = true,
+  audioEnabled = true,
+}: LiveKitProviderProps) {
+  const [token, setToken] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+
+  useEffect(() => {
+    if (!roomName || !participantIdentity) {
+      console.error("[LiveKit] Missing roomName or participantIdentity");
+      setError(new Error("Missing room name or participant identity"));
+      setIsLoading(false);
+      return;
+    }
+
+    console.log("[LiveKit] Initializing connection to room:", roomName);
+
+    fetchToken(
+      roomName,
+      participantName,
+      participantIdentity,
+      participantAvatar,
+    )
+      .then((token) => {
+        console.log("[LiveKit] Token received successfully");
+        setToken(token);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("[LiveKit] Failed to fetch token:", err);
+        setError(err);
+        setIsLoading(false);
+        onError?.(err);
+      });
+  }, [
+    roomName,
+    participantName,
+    participantIdentity,
+    participantAvatar,
+    onError,
+  ]);
+
+  const handleConnected = useCallback(() => {
+    console.log("[LiveKit] Connected to room:", roomName);
+    onConnected?.();
+  }, [roomName, onConnected]);
+
+  const handleDisconnected = useCallback(() => {
+    console.log("[LiveKit] Disconnected from room:", roomName);
+    onDisconnected?.();
+  }, [roomName, onDisconnected]);
+
+  const handleError = useCallback(
+    (err: Error) => {
+      console.error("[LiveKit] Room error:", err);
+      setError(err);
+      onError?.(err);
+    },
+    [onError],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Connecting to meeting...</p>
+          <p className="text-muted-foreground/70 text-sm mt-2">
+            Room: {roomName}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !token) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Connection Failed
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {error?.message || "Unable to get meeting token"}
+          </p>
+          <p className="text-muted-foreground/60 text-xs mt-2">
+            Room: {roomName}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!livekitUrl) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Configuration Error
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            LiveKit URL is not configured
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <LiveKitRoom
+      token={token}
+      serverUrl={livekitUrl}
+      connect={true}
+      video={videoEnabled}
+      audio={audioEnabled}
+      onConnected={handleConnected}
+      onDisconnected={handleDisconnected}
+      onError={handleError}
+      options={{
+        adaptiveStream: true,
+        dynacast: true,
+        // Reconnection resilience for unstable networks
+        reconnectPolicy: {
+          nextRetryDelayInMs: (context) => {
+            // Stop after 7 retries
+            if (context.retryCount >= 7) return null;
+            // Exponential backoff: 300ms, 600ms, 1200ms, ... capped at 8s
+            return Math.min(300 * Math.pow(2, context.retryCount), 8000);
+          },
+        },
+        disconnectOnPageLeave: true,
+        publishDefaults: {
+          simulcast: true,
+          videoCodec: "vp8",
+          // Cap outgoing video to 720p — good quality, much less bandwidth
+          videoSimulcastLayers: [VideoPresets.h90, VideoPresets.h216],
+          videoEncoding: VideoPresets.h720.encoding,
+          // Prioritize smooth playback over sharpness on slow networks
+          degradationPreference: "balanced",
+          // Audio: use higher DTX (discontinuous transmission) to save bandwidth during silence
+          dtx: true,
+          red: true,
+        },
+        audioCaptureDefaults: {
+          // Noise suppression & echo cancellation for cleaner audio
+          noiseSuppression: true,
+          echoCancellation: true,
+          autoGainControl: true,
+        },
+        videoCaptureDefaults: {
+          resolution: VideoPresets.h720.resolution,
+        },
+      }}
+      className="h-full"
+    >
+      {children}
+      <RoomAudioRenderer />
+    </LiveKitRoom>
+  );
+}
+
+// Hook to get the current room context
+export function useLiveKitRoom() {
+  return useRoomContext();
+}
+
+// Connection state hook
+export function useConnectionState() {
+  const room = useRoomContext();
+  const [connectionState, setConnectionState] = useState<ConnectionState>(
+    ConnectionState.Disconnected,
+  );
+
+  useEffect(() => {
+    if (!room) return;
+
+    const handleConnectionStateChange = (state: ConnectionState) => {
+      console.log("[LiveKit] Connection state changed:", state);
+      setConnectionState(state);
+    };
+
+    setConnectionState(room.state);
+    room.on(RoomEvent.ConnectionStateChanged, handleConnectionStateChange);
+
+    return () => {
+      room.off(RoomEvent.ConnectionStateChanged, handleConnectionStateChange);
+    };
+  }, [room]);
+
+  return connectionState;
+}

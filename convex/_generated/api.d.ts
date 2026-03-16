@@ -8,11 +8,21 @@
  * @module
  */
 
+import type * as aiChat from "../aiChat.js";
 import type * as channels from "../channels.js";
 import type * as clerk from "../clerk.js";
+import type * as codeFiles from "../codeFiles.js";
+import type * as crons from "../crons.js";
+import type * as documents from "../documents.js";
 import type * as http from "../http.js";
+import type * as kanban from "../kanban.js";
+import type * as meetings from "../meetings.js";
 import type * as messages from "../messages.js";
+import type * as rooms from "../rooms.js";
+import type * as spreadsheets from "../spreadsheets.js";
+import type * as userPresence from "../userPresence.js";
 import type * as users from "../users.js";
+import type * as whiteboards from "../whiteboards.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -22,11 +32,21 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  aiChat: typeof aiChat;
   channels: typeof channels;
   clerk: typeof clerk;
+  codeFiles: typeof codeFiles;
+  crons: typeof crons;
+  documents: typeof documents;
   http: typeof http;
+  kanban: typeof kanban;
+  meetings: typeof meetings;
   messages: typeof messages;
+  rooms: typeof rooms;
+  spreadsheets: typeof spreadsheets;
+  userPresence: typeof userPresence;
   users: typeof users;
+  whiteboards: typeof whiteboards;
   workspaces: typeof workspaces;
 }>;
 

@@ -1,76 +1,524 @@
 @import "tailwindcss";
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 3.9%;
-  --primary: 0 0% 9%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --accent: 0 0% 96.1%;
-  --accent-foreground: 0 0% 9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 89.8%;
-  --input: 0 0% 89.8%;
-  --ring: 0 0% 3.9%;
-  --radius: 0.5rem;
+/* Liveblocks styles for collaborative features */
+@import "@liveblocks/react-ui/styles.css";
+@import "@liveblocks/react-tiptap/styles.css";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+ :root {
+   /* Light Mode Defaults */
+   --background: #f8fafc;
+   --background-secondary: #ffffff;
+   --foreground: #0f172a;
+
+   --card: #ffffff;
+   --card-foreground: #0f172a;
+   --card-border: #e2e8f0;
+
+   --popover: #ffffff;
+   --popover-foreground: #0f172a;
+
+   --primary: #0ea5e9;
+   --primary-foreground: #ffffff;
+
+   --secondary: #f1f5f9;
+   --secondary-foreground: #0f172a;
+
+   --muted: #f1f5f9;
+   --muted-foreground: #64748b;
+
+   --accent: #e0f2fe;
+   --accent-foreground: #0369a1;
+
+   --destructive: #ef4444;
+   --destructive-foreground: #ffffff;
+
+   --border: #e2e8f0;
+   --input: #e2e8f0;
+   --ring: #0ea5e9;
+   --radius: 0.3rem; /* Boxier look */
+
+   /* Sidebar */
+   --sidebar: #f8fafc;
+   --sidebar-foreground: #0f172a;
+   --sidebar-primary: #0ea5e9;
+   --sidebar-primary-foreground: #ffffff;
+   --sidebar-accent: #e0f2fe;
+   --sidebar-accent-foreground: #0369a1;
+   --sidebar-border: #e2e8f0;
+   --sidebar-ring: #0ea5e9;
+
+   /* Chat/Surface specific */
+   --surface: #f1f5f9;
+   --surface-hover: #e2e8f0;
+   --surface-elevated: #ffffff;
+
+   /* Badge border */
+   --badge-border: #ffffff;
+
+   /* Chart colors */
+   --chart-1: #0ea5e9;
+   --chart-2: #8b5cf6;
+   --chart-3: #22c55e;
+   --chart-4: #f59e0b;
+   --chart-5: #ef4444;
+ }
+
+ .dark {
+   /* Dark Galaxy Theme */
+   --background: #0b0f1a;
+   --background-secondary: #0f1520;
+   --foreground: #ffffff;
+
+   --card: rgba(255, 255, 255, 0.05);
+   --card-foreground: #ffffff;
+   --card-border: rgba(255, 255, 255, 0.1);
+
+   --popover: rgba(15, 20, 30, 0.95);
+   --popover-foreground: #ffffff;
+
+   --primary: #0ea5e9;
+   --primary-foreground: #ffffff;
+
+   --secondary: rgba(255, 255, 255, 0.1);
+   --secondary-foreground: #ffffff;
+
+   --muted: rgba(255, 255, 255, 0.05);
+   --muted-foreground: rgba(255, 255, 255, 0.6);
+
+   --accent: rgba(56, 189, 248, 0.15);
+   --accent-foreground: #38bdf8;
+
+   --destructive: #ef4444;
+   --destructive-foreground: #ffffff;
+
+   --border: rgba(255, 255, 255, 0.1);
+   --input: rgba(255, 255, 255, 0.08);
+   --ring: #0ea5e9;
+
+   /* Sidebar */
+   --sidebar: rgba(10, 14, 23, 0.95);
+   --sidebar-foreground: #ffffff;
+   --sidebar-primary: #0ea5e9;
+   --sidebar-primary-foreground: #ffffff;
+   --sidebar-accent: rgba(255, 255, 255, 0.08);
+   --sidebar-accent-foreground: #ffffff;
+   --sidebar-border: rgba(255, 255, 255, 0.08);
+   --sidebar-ring: #0ea5e9;
+
+   /* Chat/Surface specific */
+   --surface: rgba(255, 255, 255, 0.05);
+   --surface-hover: rgba(255, 255, 255, 0.1);
+   --surface-elevated: #0f1520;
+
+   /* Badge border */
+   --badge-border: #0b0f1a;
+ }
+
+/* Glass effect utility class - Dark Mode */
+.dark .glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
 }
 
-.dark {
-  --background: 0 0% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 9%;
-  --secondary: 0 0% 14.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 14.9%;
-  --muted-foreground: 0 0% 63.9%;
-  --accent: 0 0% 14.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14.9%;
-  --input: 0 0% 14.9%;
-  --ring: 0 0% 83.1%;
+.dark .glass:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+/* Glass effect utility class - Light Mode */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+  border: 1px solid rgba(0,0,0,0.08);
+  backdrop-filter: blur(12px);
+}
+
+.glass:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8));
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.glass-card {
+  background: var(--card); /* Use theme variable */
+  border: 1px solid var(--card-border); /* Use theme variable */
+  backdrop-filter: blur(12px);
+}
+
+.glass-card:hover {
+  border-color: var(--primary); /* subtle highlight */
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(to right, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+/* Reduced animations - Removed excessive glow/pulse */
+.animate-twinkle {
+  /* Simplified or removed */
+  opacity: 0.5;
 }
 
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--border);
+}
+
+html,
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--background); /* Use theme variable */
+  color: var(--foreground); /* Use theme variable */
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
-/* Custom scrollbar */
+/* Tiptap Editor Styles */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.ProseMirror h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.625rem;
+  line-height: 1.3;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.ProseMirror p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.75;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.ProseMirror li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror blockquote {
+  border-left: 4px solid color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+.ProseMirror code {
+  background-color: var(--muted);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.ProseMirror pre {
+  background-color: var(--muted);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ProseMirror pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Collaboration cursor styles - Matching Excalidraw/Whiteboard style */
+.collaboration-cursor__caret {
+  border-left: 2px solid;
+  border-right: none;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-cursor__label {
+  border-radius: 6px;
+  color: #000;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  left: -1px;
+  line-height: 1.3;
+  padding: 2px 8px;
+  position: absolute;
+  top: -1.4rem;
+  user-select: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* CodeMirror Yjs Cursor Styles - Matching Excalidraw/Whiteboard style */
+.cm-editor .cm-ySelectionInfo {
+  position: absolute;
+  top: -1.4em;
+  left: 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: #000;
+  border-radius: 6px;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.cm-editor .cm-ySelectionCaretDot {
+  display: none;
+}
+
+/* Remote cursor selection highlight */
+.cm-editor .cm-ySelection {
+  opacity: 0.35;
+  border-radius: 2px;
+}
+
+/* Remote cursor caret line */
+.cm-editor .cm-yLineSelection {
+  opacity: 0.2;
+}
+
+/* Make sure line numbers and gutters are visible */
+.cm-editor .cm-lineNumbers {
+  color: #858585;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-badge-border: var(--badge-border);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html:not(.dark) body,
+html:not(.dark) * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
+}
+
+html.dark body,
+html.dark * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
+}
+
+/* Light mode scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: rgba(0, 0, 0, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+@media print {
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .ProseMirror {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Remove shadows and borders for printing */
+  * {
+    box-shadow: none !important;
+  }
+}
+
+/* Google Docs Editor Specific Styles */
+.ProseMirror {
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+  color: #202124;
+  line-height: 1.5;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* Whiteboard room: reposition the global chat FAB to form a right-angle
+   triangle with the Excalidraw help (?) button and the AI Generate button.
+   Help (?) = bottom-right corner of canvas (~right:6px, bottom:6px),
+   Generate (✨) = directly above Help,
+   Chat (💬) = to the left of Help at the same level.
+   The right angle is at the Help (?) button. */
+body:has(.whiteboard-room) #chat-fab {
+  right: 4.0rem !important;
+  bottom: 0.375rem !important;
+}
+
+/* Selection highlight */
+.ProseMirror ::selection {
+  background-color: #d2e3fc;
+}
+
+/* AI Sparkle button animation */
+@keyframes sparkle-spin {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-8deg) scale(1.12);
+  }
+  50% {
+    transform: rotate(8deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(-4deg) scale(1.1);
+  }
 }
 

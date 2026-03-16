@@ -1,8 +1,16 @@
 import { SignUp } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  // Redirect authenticated users to dashboard
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Background decoration */}

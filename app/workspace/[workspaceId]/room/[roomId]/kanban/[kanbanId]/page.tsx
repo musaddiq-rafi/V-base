@@ -1,0 +1,153 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { ArrowLeft } from "lucide-react";
+import { PageLoader } from "@/components/shared/page-loader";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useOrganization, useUser } from "@clerk/nextjs";
+import { useEffect, useRef, useState } from "react";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useRenameOnExit } from "@/components/shared/rename-on-exit-modal";
+
+export default function KanbanPage() {
+  const params = useParams();
+  const router = useRouter();
+  const workspaceId = params.workspaceId as string;
+  const roomId = params.roomId as Id<"rooms">;
+  const kanbanId = params.kanbanId as Id<"kanbans">;
+  const { organization } = useOrganization();
+  const { user } = useUser();
+
+  const kanban = useQuery(api.kanban.getKanbanById, { kanbanId });
+  const room = useQuery(api.rooms.getRoomById, { roomId });
+  const updateKanban = useMutation(api.kanban.updateKanban);
+
+  const backUrl = `/workspace/${organization?.id || workspaceId}/room/${roomId}`;
+
+  const { handleBackNavigation, RenameModal } = useRenameOnExit({
+    currentName: kanban?.name ?? "",
+    untitledPrefix: "Untitled board",
+    onRename: async (newName) => {
+      await updateKanban({ kanbanId, name: newName, lastEditedBy: user?.id });
+    },
+    accentGradient: "from-emerald-500 to-green-600",
+    accentRing: "focus:ring-emerald-500",
+    entityLabel: "board",
+  });
+
+  // Presence heartbeat — track user is editing this kanban board
+  usePresenceHeartbeat(
+    kanban && room
+      ? {
+          workspaceId: kanban.workspaceId,
+          location: "file",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "kanban",
+          fileId: kanbanId,
+          fileName: kanban.name,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/kanban/${kanbanId}`,
+        }
+      : null,
+  );
+
+  const [name, setName] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (kanban?.name) {
+      setName(kanban.name);
+      // Auto-focus and select title for freshly created boards (Google Docs style)
+      if (kanban.name.startsWith("Untitled board")) {
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+          nameInputRef.current?.select();
+        }, 150);
+      }
+    }
+  }, [kanban?.name]);
+
+  if (!organization || kanban === undefined || room === undefined) {
+    return <PageLoader />;
+  }
+
+  if (kanban === null || room === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Board not found
+          </h1>
+          <Link
+            href={`/workspace/${organization.id}/room/${roomId}`}
+            className="text-emerald-400 hover:text-emerald-300 font-medium"
+          >
+            Return to Room
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const handleNameBlur = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === kanban.name) return;
+    try {
+      await updateKanban({
+        kanbanId,
+        name: trimmed,
+        lastEditedBy: user?.id,
+      });
+    } catch (error) {
+      console.error("Failed to rename kanban:", error);
+      setName(kanban.name);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 flex flex-col bg-background">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex-shrink-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border"
+      >
+        <div className="flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => handleBackNavigation(backUrl)}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back</span>
+            </button>
+            <div className="h-6 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <input
+                ref={nameInputRef}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={handleNameBlur}
+                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                className="bg-transparent text-foreground font-semibold focus:outline-none border-b border-transparent focus:border-emerald-400 transition-colors min-w-[200px]"
+              />
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                kanban
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <div className="flex-1">
+        <KanbanBoard kanbanId={kanbanId} content={kanban.content} />
+      </div>
+
+      {RenameModal}
+    </div>
+  );
+}

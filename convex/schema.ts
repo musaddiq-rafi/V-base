@@ -14,7 +14,9 @@ export default defineSchema({
     clerkOrgId: v.string(), // Clerk Organization ID
     name: v.string(),
     ownerId: v.string(), // Clerk User ID of the owner
-  }).index("by_clerk_org", ["clerkOrgId"]),
+  })
+    .index("by_clerk_org", ["clerkOrgId"])
+    .index("by_owner", ["ownerId"]),
 
   // Rooms within workspaces
   rooms: defineTable({
@@ -24,7 +26,9 @@ export default defineSchema({
       v.literal("document"),
       v.literal("code"),
       v.literal("whiteboard"),
-      v.literal("conference")
+      v.literal("conference"),
+      v.literal("kanban"),
+      v.literal("spreadsheet"),
     ),
     // Optional: Access control list (array of Clerk user IDs)
     // If empty, everyone in workspace can access
@@ -36,46 +40,199 @@ export default defineSchema({
     workspaceId: v.id("workspaces"),
     name: v.string(), // "general" or "dm-userId1-userId2"
     type: v.union(
-      v.literal("general"),    // Workspace-wide channel
-      v.literal("direct"),     // 1-on-1 DM
-      v.literal("group")       // Future: custom group channels
+      v.literal("general"), // Workspace-wide channel
+      v.literal("direct"), // 1-on-1 DM
+      v.literal("group"), // Future: custom group channels
+      v.literal("file"), // File-based chat (linked to documents/code/whiteboards)
+      v.literal("meeting"), // Meeting chat (linked to meetings)
     ),
     // For DM channels: the two participant user IDs (Clerk IDs)
     participantIds: v.optional(v.array(v.string())),
+
+    // For file-based chat channels: context binding
+    contextType: v.optional(
+      v.union(
+        v.literal("document"),
+        v.literal("codeFile"),
+        v.literal("whiteboard"),
+        v.literal("kanbanBoard"),
+        v.literal("spreadsheet"),
+        v.literal("meeting"),
+      ),
+    ),
+    contextId: v.optional(v.string()), // The _id of the linked entity
+
     createdAt: v.number(),
     createdBy: v.string(), // Clerk User ID
   })
     .index("by_workspace", ["workspaceId"])
-    .index("by_participants", ["participantIds"]),
+    .index("by_participants", ["participantIds"])
+    .index("by_context", ["contextType", "contextId"]),
 
   // Messages in channels
   messages: defineTable({
     channelId: v.id("channels"),
     workspaceId: v.id("workspaces"), // Denormalized for faster queries
     authorId: v.string(), // Clerk User ID
-    authorName: v.string(), // Cached from users table
+    authorName: v.string(), // Cached from users table (for backwards compat)
     content: v.string(),
     timestamp: v.number(),
     // Reactions: map of reaction type to array of user IDs who reacted
-    reactions: v.optional(v.object({
-      like: v.optional(v.array(v.string())), // Array of Clerk User IDs
-      dislike: v.optional(v.array(v.string())),
-      haha: v.optional(v.array(v.string())),
-    })),
-    // Track who has seen this message
-    seenBy: v.optional(v.array(v.object({
-      userId: v.string(), // Clerk User ID
-      seenAt: v.number(), // Timestamp when seen
-    }))),
-    // Optional: for future features
-    attachments: v.optional(v.array(v.object({
-      url: v.string(),
-      type: v.string(),
-      name: v.string(),
-    }))),
-    // For threaded replies (future)
+    reactions: v.optional(
+      v.object({
+        like: v.optional(v.array(v.string())),
+        dislike: v.optional(v.array(v.string())),
+        haha: v.optional(v.array(v.string())),
+      }),
+    ),
+    // Optional attachments
+    attachments: v.optional(
+      v.array(
+        v.object({
+          url: v.string(),
+          type: v.string(),
+          name: v.string(),
+        }),
+      ),
+    ),
+    // For threaded replies (optional)
     parentMessageId: v.optional(v.id("messages")),
   })
     .index("by_channel", ["channelId", "timestamp"])
     .index("by_workspace", ["workspaceId"]),
+
+  // Kanban boards (minimal)
+  // (kanbans table defined later)
+
+  // Last read timestamp per user per channel (cursor-based read tracking)
+  lastRead: defineTable({
+    userId: v.string(), // Clerk User ID
+    channelId: v.id("channels"),
+    lastReadAt: v.number(), // Timestamp of when user last read this channel
+  })
+    .index("by_user_channel", ["userId", "channelId"])
+    .index("by_user", ["userId"])
+    .index("by_channel", ["channelId"]),
+
+  // Documents within document rooms
+  documents: defineTable({
+    roomId: v.id("rooms"), // Parent document room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Document name (e.g., "Project Proposal")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
+  //Kanban boards within kanban rooms
+  kanbans: defineTable({
+    roomId: v.id("rooms"), // Parent kanban room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Kanban board name (e.g., "Sprint Tasks")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+    // For simplicity, we'll store the entire kanban state as a JSON string
+    content: v.optional(v.string()), // Serialized kanban data (JSON string)
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  // Code files and folders within code rooms
+  codeFiles: defineTable({
+    workspaceId: v.id("workspaces"),
+    roomId: v.id("rooms"),
+    name: v.string(), // File or folder name
+    type: v.union(v.literal("file"), v.literal("folder")),
+    parentId: v.optional(v.id("codeFiles")), // For nesting (undefined = root level)
+    language: v.optional(v.string()), // Only for files (e.g., "javascript", "python")
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room_parent", ["roomId", "parentId"]) // Efficient folder navigation
+    .index("by_room", ["roomId"]), // For counting total files
+
+  // Whiteboards within whiteboard rooms
+  whiteboards: defineTable({
+    roomId: v.id("rooms"), // Parent whiteboard room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Whiteboard name
+    content: v.optional(v.string()), // Serialized Excalidraw elements (JSON string)
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  // Active meetings within conference rooms (max 3 per room)
+  meetings: defineTable({
+    roomId: v.id("rooms"), // Parent conference room
+    name: v.string(), // Meeting name (e.g., "Code Base Updates")
+    livekitRoomName: v.string(), // Unique LiveKit room identifier
+    createdBy: v.string(), // Clerk User ID of creator
+    createdByName: v.string(), // Name of creator (cached)
+    createdAt: v.number(),
+    status: v.union(v.literal("active"), v.literal("ended")),
+    participantCount: v.number(), // Current number of participants
+  })
+    .index("by_room", ["roomId"])
+    .index("by_room_status", ["roomId", "status"]),
+
+  // Spreadsheets within spreadsheet rooms
+  spreadsheets: defineTable({
+    roomId: v.id("rooms"), // Parent spreadsheet room
+    workspaceId: v.id("workspaces"), // Denormalized for faster queries
+    name: v.string(), // Spreadsheet name
+    createdBy: v.string(), // Clerk User ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastEditedBy: v.optional(v.string()), // Clerk User ID of last editor
+  })
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  // AI Chat messages for code editor (per code file)
+  aiChatMessages: defineTable({
+    fileId: v.id("codeFiles"), // The code file this chat belongs to
+    roomId: v.id("rooms"), // Parent code room (denormalized for cascading)
+    workspaceId: v.id("workspaces"), // Workspace (denormalized for cascading)
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    content: v.string(),
+    mode: v.union(v.literal("ask"), v.literal("agent")),
+    timestamp: v.number(),
+  })
+    .index("by_file", ["fileId", "timestamp"])
+    .index("by_room", ["roomId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  // User presence tracking for workspace activity
+  userPresence: defineTable({
+    workspaceId: v.id("workspaces"),
+    clerkId: v.string(), // Clerk User ID
+    userName: v.string(), // Cached display name
+    userAvatar: v.optional(v.string()), // Cached avatar URL
+    location: v.union(
+      v.literal("workspace"), // On workspace main page
+      v.literal("room"), // Viewing a room's file list
+      v.literal("file"), // Inside a specific editor (doc/code/whiteboard/etc.)
+      v.literal("meeting"), // In a meeting
+    ),
+    roomId: v.optional(v.id("rooms")), // Which room (null if on workspace page)
+    roomName: v.optional(v.string()), // Cached room name
+    roomType: v.optional(v.string()), // "document", "code", "whiteboard", etc.
+    fileId: v.optional(v.string()), // Specific file/document/whiteboard ID
+    fileName: v.optional(v.string()), // Cached file/entity name
+    meetingName: v.optional(v.string()), // If in a meeting
+    path: v.string(), // Full Next.js route path for "Go" navigation
+    lastHeartbeat: v.number(), // Date.now() timestamp
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_user_workspace", ["clerkId", "workspaceId"]),
 });

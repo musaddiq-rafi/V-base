@@ -3,7 +3,10 @@
 import { useEffect } from "react";
 import { useOrganization, useOrganizationList } from "@clerk/nextjs";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { ChatSystem } from "@/components/chat/chat-system";
+import { PageLoader } from "@/components/shared/page-loader";
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode;
@@ -16,6 +19,12 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   const { setActive, isLoaded: isOrgListLoaded } = useOrganizationList();
   const { organization, isLoaded: isOrgLoaded } = useOrganization();
+
+  // Get the Convex workspace for the ChatSystem
+  const workspace = useQuery(
+    api.workspaces.getWorkspaceByClerkOrgId,
+    organization ? { clerkOrgId: organization.id } : "skip"
+  );
 
   // Set the active organization when entering a workspace
   useEffect(() => {
@@ -31,29 +40,20 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     }
   }, [isOrgListLoaded, setActive, workspaceId, organization?.id, router]);
 
-  // Show loading while setting up organization context
   if (!isOrgListLoaded || !isOrgLoaded) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-          <p className="text-gray-600 font-medium">Loading workspace...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader label="Loading workspace..." />;
   }
 
   // Verify the organization is set correctly
   if (organization?.id !== workspaceId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-          <p className="text-gray-600 font-medium">Switching workspace...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader label="Switching workspace..." />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {/* Global Chat System - available on every workspace page */}
+      {workspace && <ChatSystem workspaceId={workspace._id} />}
+    </>
+  );
 }

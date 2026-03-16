@@ -1,0 +1,765 @@
+"use client";
+
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import {
+  Plus,
+  Trash2,
+  Edit3,
+  X,
+  Save,
+  GripVertical,
+  LayoutGrid,
+  List,
+} from "lucide-react";
+import { Id } from "@/convex/_generated/dataModel";
+import { useDroppable } from "@dnd-kit/core";
+
+type KanbanCard = {
+  id: string;
+  title: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type KanbanColumn = {
+  id: string;
+  title: string;
+  cardIds: string[];
+};
+
+type KanbanContentV1 = {
+  version: 1;
+  columns: KanbanColumn[];
+  cards: Record<string, KanbanCard>;
+};
+
+type KanbanBoardProps = {
+  kanbanId: Id<"kanbans">;
+  content?: string | null;
+};
+
+const defaultContent = (): KanbanContentV1 => ({
+  version: 1,
+  columns: [
+    { id: "todo", title: "To do", cardIds: [] },
+    { id: "in-progress", title: "In progress", cardIds: [] },
+    { id: "done", title: "Done", cardIds: [] },
+  ],
+  cards: {},
+});
+
+const parseContent = (content?: string | null): KanbanContentV1 => {
+  if (!content) return defaultContent();
+  try {
+    const parsed = JSON.parse(content) as KanbanContentV1;
+    if (
+      parsed &&
+      parsed.version === 1 &&
+      Array.isArray(parsed.columns) &&
+      typeof parsed.cards === "object"
+    ) {
+      return parsed;
+    }
+  } catch {
+    return defaultContent();
+  }
+  return defaultContent();
+};
+
+const cardDndId = (id: string) => `card:${id}`;
+const columnDndId = (id: string) => `column:${id}`;
+const isCardId = (id: string) => id.startsWith("card:");
+const isColumnId = (id: string) => id.startsWith("column:");
+const toCardId = (id: string) => id.replace("card:", "");
+const toColumnId = (id: string) => id.replace("column:", "");
+
+export function KanbanBoard({ kanbanId, content }: KanbanBoardProps) {
+  const { user } = useUser();
+  const saveKanbanContent = useMutation(api.kanban.saveKanbanContent);
+  // content is always supplied by the parent page (which already queries
+  // getKanbanById). A second query here was redundant and caused an extra
+  // Convex subscription that could race with the optimistic drag state.
+  const sourceContent = content;
+
+  const [board, setBoard] = useState<KanbanContentV1>(() =>
+    parseContent(sourceContent),
+  );
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingDescription, setEditingDescription] = useState("");
+  const [newColumnTitle, setNewColumnTitle] = useState("");
+  const [newCardTitleByColumn, setNewCardTitleByColumn] = useState<
+    Record<string, string>
+  >({});
+  const [newTaskTitleListView, setNewTaskTitleListView] = useState("");
+  const [selectedColumnForListView, setSelectedColumnForListView] = useState(
+    () => board.columns[0]?.id || ""
+  );
+
+  const lastSyncedRef = useRef<string>(JSON.stringify(parseContent(sourceContent)));
+
+  useEffect(() => {
+    const parsed = parseContent(sourceContent);
+    const incoming = JSON.stringify(parsed);
+    // Skip if the incoming server content is identical to what we last
+    // confirmed saved/loaded. This prevents Convex echo-backs (the server
+    // returning the content we just saved) from calling setBoard and
+    // overwriting an in-flight optimistic drag state while the debounced
+    // save is still pending.
+    if (incoming === lastSyncedRef.current) return;
+    setBoard(parsed);
+    lastSyncedRef.current = incoming;
+  }, [sourceContent]);
+
+  useEffect(() => {
+    if (!kanbanId || !user?.id) return;
+    const serialized = JSON.stringify(board);
+    if (serialized === lastSyncedRef.current) return;
+
+    const handle = setTimeout(() => {
+      saveKanbanContent({
+        kanbanId,
+        content: serialized,
+        userId: user.id,
+      }).catch((error) => {
+        console.error("Failed to save kanban content:", error);
+      });
+      lastSyncedRef.current = serialized;
+    }, 600);
+
+    return () => clearTimeout(handle);
+  }, [board, kanbanId, saveKanbanContent, user?.id]);
+
+  const columnByCardId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const column of board.columns) {
+      for (const cardId of column.cardIds) {
+        map.set(cardId, column.id);
+      }
+    }
+    return map;
+  }, [board.columns]);
+
+  // Ensure selectedColumnForListView is always valid
+  useEffect(() => {
+    if (
+      !selectedColumnForListView ||
+      !board.columns.find((col) => col.id === selectedColumnForListView)
+    ) {
+      setSelectedColumnForListView(board.columns[0]?.id || "");
+    }
+  }, [board.columns, selectedColumnForListView]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const id = String(event.active.id);
+    if (isCardId(id)) {
+      setActiveCardId(toCardId(id));
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveCardId(null);
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (!isCardId(activeId)) return;
+
+    const movingCardId = toCardId(activeId);
+    const sourceColumnId = columnByCardId.get(movingCardId);
+    if (!sourceColumnId) return;
+
+    let targetColumnId = sourceColumnId;
+    let targetCardId: string | null = null;
+
+    if (isCardId(overId)) {
+      targetCardId = toCardId(overId);
+      targetColumnId = columnByCardId.get(targetCardId) || sourceColumnId;
+    } else if (isColumnId(overId)) {
+      targetColumnId = toColumnId(overId);
+    }
+
+    if (!targetColumnId) return;
+
+    setBoard((prev) => {
+      // Deep-copy cardIds to prevent mutating the previous state arrays,
+      // which would cause cards to be duplicated when the updater runs twice
+      // (React Strict Mode) or when Convex triggers a re-render mid-drag.
+      const columns = prev.columns.map((col) => ({
+        ...col,
+        cardIds: [...col.cardIds],
+      }));
+      const sourceColumn = columns.find((col) => col.id === sourceColumnId);
+      const targetColumn = columns.find((col) => col.id === targetColumnId);
+      if (!sourceColumn || !targetColumn) return prev;
+
+      if (sourceColumnId === targetColumnId && targetCardId) {
+        const oldIndex = sourceColumn.cardIds.indexOf(movingCardId);
+        const newIndex = sourceColumn.cardIds.indexOf(targetCardId);
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          sourceColumn.cardIds = arrayMove(
+            sourceColumn.cardIds,
+            oldIndex,
+            newIndex,
+          );
+        }
+        return { ...prev, columns };
+      }
+
+      sourceColumn.cardIds = sourceColumn.cardIds.filter(
+        (id) => id !== movingCardId,
+      );
+
+      if (targetCardId) {
+        const insertIndex = targetColumn.cardIds.indexOf(targetCardId);
+        if (insertIndex === -1) {
+          targetColumn.cardIds.push(movingCardId);
+        } else {
+          targetColumn.cardIds.splice(insertIndex, 0, movingCardId);
+        }
+      } else {
+        targetColumn.cardIds.push(movingCardId);
+      }
+
+      return { ...prev, columns };
+    });
+  };
+
+  const handleAddColumn = () => {
+    const title = newColumnTitle.trim();
+    if (!title) return;
+    const id = `col-${Date.now()}`;
+    setBoard((prev) => ({
+      ...prev,
+      columns: [...prev.columns, { id, title, cardIds: [] }],
+    }));
+    setNewColumnTitle("");
+  };
+
+  const handleRenameColumn = (columnId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    setBoard((prev) => ({
+      ...prev,
+      columns: prev.columns.map((col) =>
+        col.id === columnId ? { ...col, title: trimmed } : col,
+      ),
+    }));
+  };
+
+  const handleDeleteColumn = (columnId: string) => {
+    if (!confirm("Delete this column and its cards?")) return;
+    setBoard((prev) => {
+      const remainingColumns = prev.columns.filter((c) => c.id !== columnId);
+      const removedColumn = prev.columns.find((c) => c.id === columnId);
+      const cards = { ...prev.cards };
+      if (removedColumn) {
+        for (const id of removedColumn.cardIds) {
+          delete cards[id];
+        }
+      }
+      return { ...prev, columns: remainingColumns, cards };
+    });
+  };
+
+  const handleAddCard = (columnId: string) => {
+    // Check both board view and list view inputs
+    const title = (
+      newCardTitleByColumn[columnId] ||
+      newTaskTitleListView ||
+      ""
+    ).trim();
+    if (!title) return;
+    const id = `card-${Date.now()}`;
+    const now = Date.now();
+    setBoard((prev) => ({
+      ...prev,
+      cards: {
+        ...prev.cards,
+        [id]: {
+          id,
+          title,
+          createdAt: now,
+          updatedAt: now,
+        },
+      },
+      columns: prev.columns.map((col) =>
+        col.id === columnId
+          ? { ...col, cardIds: [...col.cardIds, id] }
+          : col,
+      ),
+    }));
+    setNewCardTitleByColumn((prev) => ({ ...prev, [columnId]: "" }));
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    if (!confirm("Delete this card?")) return;
+    setBoard((prev) => {
+      const cards = { ...prev.cards };
+      delete cards[cardId];
+      const columns = prev.columns.map((col) => ({
+        ...col,
+        cardIds: col.cardIds.filter((id) => id !== cardId),
+      }));
+      return { ...prev, cards, columns };
+    });
+  };
+
+  const openEditCard = (cardId: string) => {
+    const card = board.cards[cardId];
+    if (!card) return;
+    setEditingCardId(cardId);
+    setEditingTitle(card.title);
+    setEditingDescription(card.description || "");
+  };
+
+  const saveEditCard = () => {
+    if (!editingCardId) return;
+    const title = editingTitle.trim();
+    if (!title) return;
+    setBoard((prev) => ({
+      ...prev,
+      cards: {
+        ...prev.cards,
+        [editingCardId]: {
+          ...prev.cards[editingCardId],
+          title,
+          description: editingDescription.trim() || undefined,
+          updatedAt: Date.now(),
+        },
+      },
+    }));
+    setEditingCardId(null);
+    setEditingTitle("");
+    setEditingDescription("");
+  };
+
+  const [isListView, setIsListView] = useState(false);
+
+  const toggleView = () => {
+    setIsListView((prev) => !prev);
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-background">
+      {/* View Toggle & Info Banner */}
+      <div className="flex-shrink-0 bg-[var(--background-secondary)] border-b border-border px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
+              <button
+                onClick={() => setIsListView(false)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
+                  !isListView
+                    ? "bg-emerald-500 text-white"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="text-sm font-medium">Board</span>
+              </button>
+              <button
+                onClick={() => setIsListView(true)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
+                  isListView
+                    ? "bg-emerald-500 text-white"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <List className="w-4 h-4" />
+                <span className="text-sm font-medium">List</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isListView ? (
+        /* List View */
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Task</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Description</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Column</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {board.columns.map((column) =>
+                  column.cardIds.map((cardId) => {
+                    const card = board.cards[cardId];
+                    if (!card) return null;
+                    return (
+                      <tr
+                        key={card.id}
+                        className="border-b border-border/50 hover:bg-muted transition-colors"
+                      >
+                        <td className="py-3 px-4 text-foreground font-medium">{card.title}</td>
+                        <td className="py-3 px-4 text-muted-foreground text-sm">
+                          {card.description || "No description"}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            {column.title}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openEditCard(card.id)}
+                              className="text-muted-foreground hover:text-emerald-400 transition-colors"
+                              title="Edit card"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCard(card.id)}
+                              className="text-muted-foreground hover:text-red-400 transition-colors"
+                              title="Delete card"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            
+            {/* Add New Task Form */}
+            <div className="mt-6 bg-card border border-border rounded-xl p-4">
+              <h3 className="text-foreground font-semibold text-sm mb-3">Add New Task</h3>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newTaskTitleListView}
+                  onChange={(e) => setNewTaskTitleListView(e.target.value)}
+                  placeholder="Task title"
+                  className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newTaskTitleListView.trim()) {
+                      handleAddCard(selectedColumnForListView);
+                      setNewTaskTitleListView("");
+                    }
+                  }}
+                />
+                <select
+                  value={selectedColumnForListView}
+                  onChange={(e) => setSelectedColumnForListView(e.target.value)}
+                  className="px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                >
+                  {board.columns.map((col) => (
+                    <option key={col.id} value={col.id} className="bg-background text-foreground">
+                      {col.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    if (newTaskTitleListView.trim()) {
+                      handleAddCard(selectedColumnForListView);
+                      setNewTaskTitleListView("");
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Task
+                </button>
+              </div>
+            </div>
+            
+            {board.columns.every((col) => col.cardIds.length === 0) && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-sm">No tasks yet. Use the form above to add your first task.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Board View */
+        <>
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex gap-4 p-6 min-h-full">
+            {board.columns.map((column) => (
+              <KanbanColumnView
+                key={column.id}
+                column={column}
+                cards={column.cardIds.map((id) => board.cards[id]).filter(Boolean)}
+                onRename={handleRenameColumn}
+                onDelete={handleDeleteColumn}
+                onAddCard={handleAddCard}
+                onEditCard={openEditCard}
+                onDeleteCard={handleDeleteCard}
+                newCardTitle={newCardTitleByColumn[column.id] || ""}
+                setNewCardTitle={(value) =>
+                  setNewCardTitleByColumn((prev) => ({
+                    ...prev,
+                    [column.id]: value,
+                  }))
+                }
+              />
+            ))}
+
+            <div className="w-72 flex-shrink-0">
+              <div className="bg-card border border-border rounded-xl p-4">
+                <div className="text-sm text-muted-foreground mb-2">New column</div>
+                <input
+                  type="text"
+                  value={newColumnTitle}
+                  onChange={(e) => setNewColumnTitle(e.target.value)}
+                  placeholder="Column title"
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleAddColumn}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Column
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DragOverlay>
+          {activeCardId ? (
+            <div className="bg-card border border-border rounded-lg p-3 w-64 shadow-xl">
+              <div className="text-sm text-foreground font-medium">
+                {board.cards[activeCardId]?.title || "Card"}
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+        </>
+      )}
+
+      {editingCardId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[var(--background-secondary)] border border-border rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Edit card</h3>
+              <button
+                onClick={() => setEditingCardId(null)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Title
+                </label>
+                <input
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={editingDescription}
+                  onChange={(e) => setEditingDescription(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditingCardId(null)}
+                className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEditCard}
+                className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KanbanColumnView({
+  column,
+  cards,
+  onRename,
+  onDelete,
+  onAddCard,
+  onEditCard,
+  onDeleteCard,
+  newCardTitle,
+  setNewCardTitle,
+}: {
+  column: KanbanColumn;
+  cards: KanbanCard[];
+  onRename: (columnId: string, title: string) => void;
+  onDelete: (columnId: string) => void;
+  onAddCard: (columnId: string) => void;
+  onEditCard: (cardId: string) => void;
+  onDeleteCard: (cardId: string) => void;
+  newCardTitle: string;
+  setNewCardTitle: (value: string) => void;
+}) {
+  const { setNodeRef } = useDroppable({
+    id: columnDndId(column.id),
+    data: { type: "column", columnId: column.id },
+  });
+
+  return (
+    <div ref={setNodeRef} className="w-72 flex-shrink-0">
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <input
+            defaultValue={column.title}
+            onBlur={(e) => onRename(column.id, e.target.value)}
+            className="bg-transparent text-foreground font-semibold text-sm w-full focus:outline-none"
+          />
+          <button
+            onClick={() => onDelete(column.id)}
+            className="text-muted-foreground/50 hover:text-red-400 transition-colors"
+            title="Delete column"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        <SortableContext
+          items={cards.map((card) => cardDndId(card.id))}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3 min-h-[16px]">
+            {cards.map((card) => (
+              <KanbanCardItem
+                key={card.id}
+                card={card}
+                onEdit={() => onEditCard(card.id)}
+                onDelete={() => onDeleteCard(card.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+
+        <div className="mt-4">
+          <input
+            type="text"
+            value={newCardTitle}
+            onChange={(e) => setNewCardTitle(e.target.value)}
+            placeholder="Add a card"
+            className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+          <button
+            onClick={() => onAddCard(column.id)}
+            className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            Add Card
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KanbanCardItem({
+  card,
+  onEdit,
+  onDelete,
+}: {
+  card: KanbanCard;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: cardDndId(card.id),
+      data: { type: "card", cardId: card.id },
+    });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-card border border-border rounded-lg p-3 text-sm text-foreground shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="font-medium">{card.title}</div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onEdit}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title="Edit card"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="text-muted-foreground hover:text-red-400 transition-colors"
+            title="Delete card"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <span
+            className="text-muted-foreground/50 cursor-grab"
+            {...attributes}
+            {...listeners}
+            title="Drag"
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </span>
+        </div>
+      </div>
+      {card.description && (
+        <p className="text-xs text-muted-foreground mt-2">{card.description}</p>
+      )}
+    </div>
+  );
+}

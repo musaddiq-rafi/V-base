@@ -3,17 +3,28 @@
 import { useOthers, useSelf } from "@liveblocks/react/suspense";
 import { motion } from "framer-motion";
 
-const AVATAR_SIZE = 36;
-const AVATAR_OVERLAP = 12;
-const MAX_AVATARS = 5;
+interface ActiveUsersAvatarsProps {
+  variant?: "light" | "dark";
+  label?: "online" | "editing";
+}
 
 interface AvatarProps {
   src?: string;
   name: string;
   className?: string;
+  size: number;
+  isSelf?: boolean;
+  variant: "light" | "dark";
 }
 
-function Avatar({ src, name, className = "" }: AvatarProps) {
+function Avatar({
+  src,
+  name,
+  className = "",
+  size,
+  isSelf,
+  variant,
+}: AvatarProps) {
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -21,10 +32,19 @@ function Avatar({ src, name, className = "" }: AvatarProps) {
     .toUpperCase()
     .slice(0, 2);
 
+  // Green border for self, default dark border for others in dark mode
+  const borderStyle =
+    variant === "dark"
+      ? { border: `2px solid ${isSelf ? "#10b981" : "#3c3c3c"}` }
+      : {};
+
+  const selfRing = variant === "light" && isSelf ? "ring-2 ring-green-400" : "";
+  const lightBorder = variant === "light" ? "border-2 border-white" : "";
+
   return (
     <div
-      className={`relative flex items-center justify-center rounded-full border-2 border-white shadow-sm ${className}`}
-      style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
+      className={`relative flex items-center justify-center rounded-full shadow-sm ${lightBorder} ${selfRing} ${className}`}
+      style={{ width: size, height: size, ...borderStyle }}
       title={name}
     >
       {src ? (
@@ -34,7 +54,13 @@ function Avatar({ src, name, className = "" }: AvatarProps) {
           className="w-full h-full rounded-full object-cover"
         />
       ) : (
-        <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-medium">
+        <div
+          className={`w-full h-full rounded-full flex items-center justify-center text-white font-medium ${
+            variant === "dark"
+              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-[10px]"
+              : "bg-gradient-to-br from-blue-500 to-indigo-600 text-xs"
+          }`}
+        >
           {initials}
         </div>
       )}
@@ -42,9 +68,16 @@ function Avatar({ src, name, className = "" }: AvatarProps) {
   );
 }
 
-export function ActiveUsersAvatars() {
+export function ActiveUsersAvatars({
+  variant = "light",
+  label = "online",
+}: ActiveUsersAvatarsProps) {
   const others = useOthers();
   const self = useSelf();
+
+  const AVATAR_SIZE = variant === "dark" ? 28 : 36;
+  const AVATAR_OVERLAP = variant === "dark" ? 8 : 12;
+  const MAX_AVATARS = 5;
 
   // Get unique users (others + self)
   const allUsers = [
@@ -91,7 +124,9 @@ export function ActiveUsersAvatars() {
             <Avatar
               src={user.avatar}
               name={user.name}
-              className={user.isSelf ? "ring-2 ring-green-400" : ""}
+              size={AVATAR_SIZE}
+              variant={variant}
+              isSelf={user.isSelf}
             />
           </motion.div>
         ))}
@@ -101,7 +136,11 @@ export function ActiveUsersAvatars() {
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center justify-center rounded-full bg-gray-100 border-2 border-white shadow-sm text-xs font-medium text-gray-600"
+          className={`flex items-center justify-center rounded-full shadow-sm font-medium ${
+            variant === "dark"
+              ? "bg-[#3c3c3c] border-2 border-[#252526] text-[10px] text-gray-300"
+              : "bg-gray-100 border-2 border-white text-xs text-gray-600"
+          }`}
           style={{
             width: AVATAR_SIZE,
             height: AVATAR_SIZE,
@@ -112,10 +151,22 @@ export function ActiveUsersAvatars() {
         </motion.div>
       )}
 
-      <div className="ml-3 text-sm text-gray-600">
-        <span className="font-medium">{allUsers.length}</span>
-        <span className="ml-1">
-          {allUsers.length === 1 ? "online" : "online"}
+      <div
+        className={`${variant === "dark" ? "ml-2 text-xs" : "ml-3 text-sm"}`}
+      >
+        <span
+          className={
+            variant === "dark"
+              ? "font-medium text-gray-300"
+              : "font-medium text-gray-600"
+          }
+        >
+          {allUsers.length}
+        </span>
+        <span
+          className={`ml-1 ${variant === "dark" ? "text-gray-400" : "text-gray-600"}`}
+        >
+          {label}
         </span>
       </div>
     </div>

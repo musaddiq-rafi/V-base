@@ -1,16 +1,33 @@
-// Define Liveblocks types for your application
-// https://liveblocks.io/docs/api-reference/liveblocks-react#Typing-your-data
+import { LiveMap, LiveObject } from "@liveblocks/client";
+
+// Define the Cell type outside the global declaration
+export type Cell = {
+  value: string;
+  formula?: string;
+  style?: {
+    bold?: boolean;
+    italic?: boolean;
+    color?: string;
+    align?: "left" | "center" | "right";
+  };
+};
+
 declare global {
   interface Liveblocks {
     // Each user's Presence, for useMyPresence, useOthers, etc.
     Presence: {
-      // Cursor position (optional, for future use)
-      cursor?: { x: number; y: number } | null;
+      cursor: { x: number; y: number } | null;
+      // Spreadsheet: currently selected cell
+      selectedCell: { row: number; col: number } | null;
     };
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
-      // Will be used for room-specific storage later
+      // Empty for Yjs documents - managed by @liveblocks/react-tiptap
+
+      // Collaborative Spreadsheet (optional - only used in spreadsheet rooms)
+      spreadsheet?: LiveMap<string, LiveObject<Cell>>; // Key: "row,col", Value: Cell
+      columnWidths?: LiveMap<string, number>; // Key: "colIndex", Value: width in px
     };
 
     // Custom user info set when authenticating with a secret key
@@ -20,11 +37,15 @@ declare global {
         name: string;
         email: string;
         avatar: string;
+        color: string;
       };
     };
 
-    // Custom events, for useBroadcastEvent, useEventListener
-    RoomEvent: {};
+    // Custom events for broadcasting drawing updates
+    RoomEvent: {
+      type: "DRAW";
+      elements: any[];
+    };
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.
     ThreadMetadata: {};

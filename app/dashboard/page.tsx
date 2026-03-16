@@ -1,284 +1,181 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useOrganizationList } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { motion } from "framer-motion";
-import { Plus, FolderOpen, Users, Crown, Loader2 } from "lucide-react";
+import { useOrganizationList, CreateOrganization, useUser } from "@clerk/nextjs";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useState } from "react";
+import {
+  Plus,
+  Loader2,
+  Users,
+  ArrowRight,
+  Building2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-type FilterType = "all" | "owned" | "joined";
+const MAX_OWNED = 5;
 
 export default function DashboardPage() {
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [workspaceName, setWorkspaceName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-
-  const { userMemberships, isLoaded, createOrganization } = useOrganizationList(
-    {
-      userMemberships: {
-        infinite: true,
-      },
-    }
-  );
-
-  const createWorkspace = useMutation(api.workspaces.createWorkspace);
-
-  // Revalidate memberships when page becomes visible (handles navigation from other pages)
-  const revalidateMemberships = useCallback(() => {
-    if (userMemberships?.revalidate) {
-      userMemberships.revalidate();
-    }
-  }, [userMemberships]);
-
-  useEffect(() => {
-    // Revalidate on mount (handles redirects and navigation)
-    revalidateMemberships();
-
-    // Also revalidate when the page becomes visible again
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        revalidateMemberships();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [revalidateMemberships]);
-
-  const handleCreateWorkspace = async () => {
-    if (!workspaceName.trim() || !createOrganization) return;
-
-    setIsCreating(true);
-    try {
-      // 1. Create Clerk Organization first
-      const org = await createOrganization({ name: workspaceName.trim() });
-
-      // 2. Immediately sync to Convex (don't wait for webhook)
-      await createWorkspace({
-        name: workspaceName.trim(),
-        clerkOrgId: org.id,
-      });
-
-      // 3. Close modal and revalidate the memberships list
-      setWorkspaceName("");
-      setIsCreateModalOpen(false);
-
-      // 4. Revalidate to refresh the workspace list
-      if (userMemberships?.revalidate) {
-        await userMemberships.revalidate();
-      }
-    } catch (error) {
-      console.error("Error creating workspace:", error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // Filter workspaces based on role
-  const filteredMemberships = userMemberships?.data?.filter((membership) => {
-    if (filter === "owned") {
-      return membership.role === "org:admin";
-    }
-    if (filter === "joined") {
-      return membership.role !== "org:admin";
-    }
-    return true;
+  const { user } = useUser();
+  const { userMemberships, isLoaded } = useOrganizationList({
+    userMemberships: { infinite: true },
   });
+  const [showCreate, setShowCreate] = useState(false);
 
-  const workspaceCount = userMemberships?.data?.length || 0;
+  const workspaces = userMemberships?.data ?? [];
+  const ownedCount = workspaces.filter((m) => m.role === "org:admin").length;
+  const atLimit = ownedCount >= MAX_OWNED;
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* Page Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex items-center justify-between mb-8"
+        className="flex items-start justify-between gap-4 flex-wrap"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            My Workspaces
+          <h1 className="text-2xl font-bold text-foreground">
+            Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
           </h1>
-          <p className="text-gray-600">
-            Create, manage, and collaborate in your team workspaces
+          <p className="text-muted-foreground mt-1">
+            {workspaces.length === 0
+              ? "Create your first workspace to get started"
+              : `You are a member of ${workspaces.length} workspace${workspaces.length !== 1 ? "s" : ""}`}
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all"
+        <Button
+          onClick={() => setShowCreate(true)}
+          disabled={atLimit}
+          className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25"
         >
-          <Plus className="w-5 h-5" />
-          Create Workspace
-        </motion.button>
+          <Plus className="w-4 h-4" />
+          New Workspace
+        </Button>
       </motion.div>
 
-      {/* Filter Tabs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
-        className="flex gap-2 mb-6"
-      >
-        {[
-          { key: "all", label: "All" },
-          { key: "owned", label: "Owned" },
-          { key: "joined", label: "Joined" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key as FilterType)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              filter === tab.key
-                ? "bg-blue-100 text-blue-700"
-                : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </motion.div>
+      {atLimit && (
+        <p className="text-sm text-amber-500 dark:text-amber-400">
+          You have reached the {MAX_OWNED} owned workspaces limit.
+        </p>
+      )}
 
-      {/* Workspaces Grid */}
-      {!isLoaded ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-        </div>
-      ) : workspaceCount === 0 ? (
-        /* Empty State */
+      {/* Workspace Grid */}
+      {workspaces.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="flex flex-col items-center justify-center py-20 bg-white/70 rounded-2xl border border-gray-200/50"
+          className="flex flex-col items-center justify-center py-24 rounded-2xl border-2 border-dashed border-border bg-muted/30"
         >
-          <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">
-            <FolderOpen className="w-10 h-10 text-gray-400" />
+          <div className="w-16 h-16 rounded-2xl bg-sky-500/20 flex items-center justify-center mb-4">
+            <Building2 className="w-8 h-8 text-sky-500 dark:text-sky-400" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No workspaces yet
-          </h3>
-          <p className="text-gray-500 mb-6 text-center max-w-md">
-            Create your first workspace to start collaborating with your team
+          <h3 className="text-lg font-semibold text-foreground mb-1">No workspaces yet</h3>
+          <p className="text-muted-foreground text-sm mb-6 text-center max-w-xs">
+            Create a workspace to start collaborating with your team
           </p>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-xl shadow-lg"
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25"
           >
-            <Plus className="w-5 h-5" />
-            Create your first workspace
-          </motion.button>
+            <Plus className="w-4 h-4" />
+            Create Workspace
+          </Button>
         </motion.div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredMemberships?.map((membership, index) => (
-            <motion.div
-              key={membership.organization.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index, duration: 0.4 }}
-            >
-              <Link href={`/workspace/${membership.organization.id}`}>
-                <motion.div
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  transition={{ duration: 0.2 }}
-                  className="group p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-                      {membership.organization.name.charAt(0).toUpperCase()}
-                    </div>
-                    {membership.role === "org:admin" && (
-                      <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
-                        <Crown className="w-3 h-3" />
-                        Admin
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                    {membership.organization.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Users className="w-4 h-4" />
-                    <span>
-                      {membership.organization.membersCount || 1} member
-                      {(membership.organization.membersCount || 1) !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-                </motion.div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {workspaces.map((membership, index) => {
+            const org = membership.organization;
+            const isAdmin = membership.role === "org:admin";
+            return (
+              <motion.div
+                key={org.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Link href={`/workspace/${org.id}`}>
+                  <Card className="group hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-500/10 transition-all cursor-pointer">
+                    <CardContent className="flex items-center gap-4 px-4 py-4">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shadow-md shadow-sky-500/20 flex-shrink-0">
+                        {org.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors truncate">
+                          {org.name}
+                        </h3>
+                        <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                          <Users className="w-3 h-3" />
+                          <span>{org.membersCount ?? "—"} member{(org.membersCount ?? 0) !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={isAdmin
+                            ? "border-amber-500/30 text-amber-500 dark:text-amber-400 bg-amber-500/10"
+                            : "text-muted-foreground"}
+                        >
+                          {isAdmin ? "Admin" : "Member"}
+                        </Badge>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-sky-500 dark:group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
 
       {/* Create Workspace Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setIsCreateModalOpen(false)}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-white rounded-2xl p-8 shadow-2xl w-full max-w-md mx-4"
-          >
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Create Workspace
-            </h2>
-            <p className="text-gray-500 mb-6">
-              Give your workspace a name to get started
-            </p>
-            <input
-              type="text"
-              value={workspaceName}
-              onChange={(e) => setWorkspaceName(e.target.value)}
-              placeholder="Workspace name"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-6"
-              autoFocus
+      <AnimatePresence>
+        {showCreate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowCreate(false)}
             />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateWorkspace}
-                disabled={!workspaceName.trim() || isCreating}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create"
-                )}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="relative z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CreateOrganization
+                afterCreateOrganizationUrl="/workspace/:id"
+                skipInvitationScreen={false}
+                appearance={{
+                  elements: {
+                    rootBox: "shadow-2xl rounded-2xl overflow-hidden",
+                    card: "bg-background border border-border shadow-none",
+                    headerTitle: "text-foreground",
+                    headerSubtitle: "text-muted-foreground",
+                    formButtonPrimary:
+                      "bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500",
+                  },
+                }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

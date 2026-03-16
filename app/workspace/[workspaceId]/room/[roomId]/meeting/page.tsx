@@ -1,0 +1,69 @@
+"use client";
+
+import { useParams } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { PageLoader } from "@/components/shared/page-loader";
+import Link from "next/link";
+import { useOrganization } from "@clerk/nextjs";
+import { MeetingRoom } from "@/components/meeting/meeting-room";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+
+export default function MeetingPage() {
+  const params = useParams();
+  const workspaceId = params.workspaceId as string;
+  const roomId = params.roomId as Id<"rooms">;
+  const { organization } = useOrganization();
+
+  const room = useQuery(api.rooms.getRoomById, { roomId });
+  const workspace = useQuery(
+    api.workspaces.getWorkspaceByClerkOrgId,
+    organization ? { clerkOrgId: organization.id } : "skip"
+  );
+
+  // Presence heartbeat — track user is in a meeting
+  usePresenceHeartbeat(
+    room && workspace
+      ? {
+          workspaceId: workspace._id,
+          location: "meeting",
+          roomId: room._id,
+          roomName: room.name,
+          roomType: "conference",
+          meetingName: room.name,
+          path: `/workspace/${organization?.id || workspaceId}/room/${roomId}/meeting`,
+        }
+      : null,
+  );
+
+  if (!organization || room === undefined || workspace === undefined) {
+    return <PageLoader />;
+  }
+
+  if (room === null || workspace === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Meeting room not found
+          </h1>
+          <Link
+            href={`/workspace/${organization.id}`}
+            className="text-sky-500 dark:text-sky-400 hover:text-sky-400 dark:hover:text-sky-300 font-medium"
+          >
+            Return to Workspace
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <MeetingRoom
+      roomId={roomId}
+      roomName={room.name}
+      workspaceId={workspaceId}
+    />
+  );
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Edit2, Send } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
@@ -24,14 +24,103 @@ interface ChatBubble {
 export function ChatSystem({ workspaceId }: ChatSystemProps) {
   const { user } = useUser();
   const [chatBubbles, setChatBubbles] = useState<ChatBubble[]>([]);
-  const [openChatWindow, setOpenChatWindow] = useState<Id<"channels"> | null>(null);
+  const [openChatWindow, setOpenChatWindow] = useState<Id<"channels"> | null>(
+    null
+  );
   const [showNewDmModal, setShowNewDmModal] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
-  const [messagePreview, setMessagePreview] = useState<{channelId: Id<"channels">, channelName: string, preview: string, avatarUrl?: string} | null>(null);
+  const [fabSide, setFabSide] = useState<"left" | "right">("right");
+  const [fabY, setFabY] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startFabX: number; startFabY: number; moved: boolean } | null>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
+  const [messagePreview, setMessagePreview] = useState<{
+    channelId: Id<"channels">;
+    channelName: string;
+    preview: string;
+    avatarUrl?: string;
+  } | null>(null);
   const hasInitializedGeneral = useRef(false);
-  const lastMessageCountRef = useRef<Map<Id<"channels">, number>>(new Map());
   const closedBubblesRef = useRef<Set<Id<"channels">>>(new Set());
+
+  // Drag handlers for FAB
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startFabX: rect.left,
+      startFabY: rect.top,
+      moved: false,
+    };
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (!dragRef.current.moved && Math.abs(dx) + Math.abs(dy) > 5) {
+      dragRef.current.moved = true;
+      setIsDragging(true);
+      // Capture pointer only once drag starts, so clicks still work normally
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    if (!dragRef.current.moved) return;
+
+    // Follow cursor: compute absolute screen position of the FAB
+    const newX = dragRef.current.startFabX + dx;
+    const newY = dragRef.current.startFabY + dy;
+    setDragPos({
+      x: Math.max(0, Math.min(newX, window.innerWidth - 56)),
+      y: Math.max(24, Math.min(newY, window.innerHeight - 80)),
+    });
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    const wasDrag = dragRef.current?.moved ?? false;
+    dragRef.current = null;
+    if (wasDrag && dragPos) {
+      // Determine which side to snap to
+      const midX = window.innerWidth / 2;
+      const newSide = dragPos.x + 28 < midX ? "left" : "right";
+      setFabSide(newSide);
+      setFabY(dragPos.y);
+      // Clear drag position so it returns to the fixed style (animated via transition)
+      setDragPos(null);
+      // Prevent the click that follows pointerup from toggling bubbles
+      setTimeout(() => setIsDragging(false), 50);
+    } else {
+      setDragPos(null);
+      setIsDragging(false);
+    }
+  }, [dragPos]);
+
+  // Compute FAB styles — always use `left` so CSS can animate between any two positions
+  const restLeft = fabSide === "right"
+    ? `calc(100vw - ${56 + 24}px)` // 56px button + 24px margin
+    : "24px";
+
+  const fabStyle: React.CSSProperties = dragPos
+    ? {
+        // While dragging: follow cursor exactly
+        position: "fixed" as const,
+        left: dragPos.x,
+        top: dragPos.y,
+        zIndex: 50,
+        touchAction: "none",
+        transition: "none",
+      }
+    : {
+        // At rest: snap to side with smooth animation
+        position: "fixed" as const,
+        left: restLeft,
+        ...(fabY !== null ? { top: fabY } : { bottom: 24 }),
+        zIndex: 50,
+        touchAction: "none",
+        transition: "left 0.35s cubic-bezier(0.25, 1, 0.5, 1), top 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+      };
 
   // Get all channels
   const workspaceChannels = useQuery(api.channels.getWorkspaceChannels, {
@@ -46,11 +135,29 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
   // Get organization members for avatars
   const { memberships } = useOrganization({ memberships: { pageSize: 50 } });
 
-  // Track total unread count from individual bubble components
-  const [unreadCounts, setUnreadCounts] = useState<Map<Id<"channels">, number>>(new Map());
-  
-  // Calculate total from the map
-  const totalUnreadCount = Array.from(unreadCounts.values()).reduce((sum, count) => sum + count, 0);
+  // Single query for all unread counts (optimized - replaces N subscriptions)
+  const unreadCountsData = useQuery(api.messages.getUnreadCounts, {
+    workspaceId,
+  });
+
+  // Convert to Maps for easier lookup
+  const unreadCounts = new Map<Id<"channels">, number>(
+    Object.entries(unreadCountsData?.channels || {}).map(([k, v]) => [
+      k as Id<"channels">,
+      v,
+    ])
+  );
+
+  // Previews map from backend (eliminates N getLatestMessage calls)
+  const previews = new Map<Id<"channels">, string>(
+    Object.entries(unreadCountsData?.previews || {}).map(([k, v]) => [
+      k as Id<"channels">,
+      v,
+    ])
+  );
+
+  // Total is now calculated on the backend
+  const totalUnreadCount = unreadCountsData?.total || 0;
 
   // Ensure general channel is always present
   useEffect(() => {
@@ -58,7 +165,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
       setChatBubbles((prev) => {
         const hasGeneral = prev.some((b) => b.channelId === generalChannel._id);
         if (hasGeneral) return prev;
-        
+
         hasInitializedGeneral.current = true;
         return [
           {
@@ -70,7 +177,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
         ];
       });
     }
-    
+
     if (!showBubbles) {
       hasInitializedGeneral.current = false;
     }
@@ -83,19 +190,21 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
         const exists = chatBubbles.some((b) => b.channelId === dm._id);
         const wasClosed = closedBubblesRef.current.has(dm._id);
         const hasUnread = (unreadCounts.get(dm._id) || 0) > 0;
-        
+
         // Add bubble if: 1) doesn't exist, AND 2) either wasn't closed OR has new unread messages
         if (!exists && (!wasClosed || hasUnread) && dm.otherUserId) {
           // If it was closed but has unread, remove from closed set
           if (wasClosed && hasUnread) {
             closedBubblesRef.current.delete(dm._id);
           }
-          
+
           // Find user avatar
           const member = memberships?.data?.find(
-            (m: any) => m.publicUserData?.userId === dm.otherUserId
+            (m: { publicUserData?: { userId?: string } }) =>
+              m.publicUserData?.userId === dm.otherUserId
           );
-          const avatarUrl = member?.publicUserData?.imageUrl;
+          const avatarUrl = (member?.publicUserData as { imageUrl?: string })
+            ?.imageUrl;
 
           setChatBubbles((prev) => [
             ...prev,
@@ -111,6 +220,69 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
       });
     }
   }, [directChannels, chatBubbles, memberships, unreadCounts]);
+
+  // Track previous unread counts to detect new messages
+  const prevUnreadCountsRef = useRef<Map<Id<"channels">, number>>(new Map());
+
+  // Show message preview popup when new messages arrive and bubbles are collapsed
+  useEffect(() => {
+    if (showBubbles || openChatWindow) {
+      // Don't show preview if bubbles are open or a chat window is open
+      prevUnreadCountsRef.current = new Map(unreadCounts);
+      return;
+    }
+
+    // Check for new unread messages
+    for (const [channelId, count] of unreadCounts) {
+      const prevCount = prevUnreadCountsRef.current.get(channelId) || 0;
+      
+      if (count > prevCount) {
+        // New message arrived! Show preview
+        const preview = previews.get(channelId);
+        if (preview) {
+          // Find channel info (from general or DM channels)
+          const generalCh = workspaceChannels?.find((ch) => ch._id === channelId);
+          const dmCh = directChannels?.find((ch) => ch._id === channelId);
+          
+          let channelName = "Unknown";
+          let avatarUrl: string | undefined;
+          
+          if (generalCh) {
+            channelName = generalCh.type === "general" ? "General" : generalCh.name;
+          } else if (dmCh) {
+            channelName = dmCh.otherUserName || "Unknown";
+            // Find avatar for DM
+            const member = memberships?.data?.find(
+              (m: { publicUserData?: { userId?: string } }) =>
+                m.publicUserData?.userId === dmCh.otherUserId
+            );
+            avatarUrl = (member?.publicUserData as { imageUrl?: string })?.imageUrl;
+          }
+          
+          setMessagePreview({
+            channelId,
+            channelName,
+            preview: preview.length > 100 ? preview.substring(0, 100) + "..." : preview,
+            avatarUrl,
+          });
+          
+          // Auto-hide preview after 5 seconds
+          const timer = setTimeout(() => {
+            setMessagePreview((current) => 
+              current?.channelId === channelId ? null : current
+            );
+          }, 5000);
+          
+          // Update ref and return early (only show one preview at a time)
+          prevUnreadCountsRef.current = new Map(unreadCounts);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+    
+    // Update ref for next comparison
+    prevUnreadCountsRef.current = new Map(unreadCounts);
+  }, [unreadCounts, previews, showBubbles, openChatWindow, workspaceChannels, directChannels, memberships]);
 
   const toggleBubbles = () => {
     setShowBubbles(!showBubbles);
@@ -128,7 +300,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
   const removeBubble = (channelId: Id<"channels">) => {
     // Mark this bubble as closed by the user
     closedBubblesRef.current.add(channelId);
-    
+
     setChatBubbles((prev) => prev.filter((b) => b.channelId !== channelId));
     // If the removed bubble's chat was open, close it
     if (openChatWindow === channelId) {
@@ -159,6 +331,7 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
           chat={currentChat}
           onClose={closeChat}
           workspaceId={workspaceId}
+          side={fabSide}
         />
       )}
 
@@ -169,21 +342,36 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-24 right-6 bg-white rounded-xl shadow-2xl p-4 w-80 cursor-pointer z-50 border border-gray-200"
+            className={`fixed bg-background-secondary rounded-xl shadow-2xl p-4 w-80 cursor-pointer z-50 border border-border backdrop-blur-xl ${fabSide === "right" ? "right-6" : "left-6"}`}
+            style={{ bottom: fabY !== null ? `calc(100vh - ${fabY}px + 16px)` : 96 }}
             onClick={() => {
-              const bubble = chatBubbles.find((b) => b.channelId === messagePreview.channelId);
+              const bubble = chatBubbles.find(
+                (b) => b.channelId === messagePreview.channelId
+              );
               if (bubble) {
                 handleBubbleClick(bubble);
               } else {
-                // If bubble doesn't exist yet, create it
-                setShowBubbles(true);
+                // If bubble doesn't exist yet, create it and open chat
+                const generalCh = workspaceChannels?.find((ch) => ch._id === messagePreview.channelId);
+                const dmCh = directChannels?.find((ch) => ch._id === messagePreview.channelId);
+                
+                const newBubble: ChatBubble = {
+                  channelId: messagePreview.channelId,
+                  name: messagePreview.channelName,
+                  type: generalCh?.type === "general" ? "general" : "direct",
+                  otherUserId: dmCh?.otherUserId,
+                  avatarUrl: messagePreview.avatarUrl,
+                };
+                
+                setChatBubbles((prev) => [...prev, newBubble]);
+                setOpenChatWindow(messagePreview.channelId);
               }
               setMessagePreview(null);
             }}
           >
             <div className="flex items-start gap-3">
               {messagePreview.avatarUrl ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0">
+                <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ring-border">
                   <Image
                     src={messagePreview.avatarUrl}
                     alt={messagePreview.channelName}
@@ -192,20 +380,24 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
                   />
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
                   {messagePreview.channelName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{messagePreview.channelName}</p>
-                <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{messagePreview.preview}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {messagePreview.channelName}
+                </p>
+                <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                  {messagePreview.preview}
+                </p>
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setMessagePreview(null);
                 }}
-                className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                className="text-muted-foreground hover:text-foreground flex-shrink-0 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -214,81 +406,15 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
         )}
       </AnimatePresence>
 
-      {/* Hidden trackers for all channels to calculate total unread count */}
-      {workspaceChannels?.map((channel) => (
-        <UnreadCountTracker
-          key={`workspace-${channel._id}`}
-          channelId={channel._id}
-          currentUserId={user?.id || ""}
-          onUnreadCountChange={(count) => {
-            setUnreadCounts((prev) => {
-              const newMap = new Map(prev);
-              newMap.set(channel._id, count);
-              return newMap;
-            });
-          }}
-          onNewMessage={(msg) => {
-            // Show preview when bubbles menu is closed and this chat is not open
-            if (!showBubbles && openChatWindow !== channel._id) {
-              setMessagePreview({
-                channelId: channel._id,
-                channelName: channel.name,
-                preview: `${msg.authorName}: ${msg.content}`,
-              });
-              setTimeout(() => {
-                setMessagePreview((prev) => 
-                  prev?.channelId === channel._id ? null : prev
-                );
-              }, 5000);
-            }
-          }}
-          isChatOpen={openChatWindow === channel._id}
-        />
-      ))}
-      {directChannels?.map((channel) => {
-        const member = memberships?.data?.find(
-          (m: any) => m.publicUserData?.userId === channel.otherUserId
-        );
-        const avatarUrl = member?.publicUserData?.imageUrl;
-        
-        return (
-          <UnreadCountTracker
-            key={`direct-${channel._id}`}
-            channelId={channel._id}
-            currentUserId={user?.id || ""}
-            onUnreadCountChange={(count) => {
-              setUnreadCounts((prev) => {
-                const newMap = new Map(prev);
-                newMap.set(channel._id, count);
-                return newMap;
-              });
-            }}
-            onNewMessage={(msg) => {
-              // Show preview when bubbles menu is closed and this chat is not open
-              if (!showBubbles && openChatWindow !== channel._id) {
-                setMessagePreview({
-                  channelId: channel._id,
-                  channelName: channel.otherUserName || "Unknown",
-                  preview: `${msg.authorName}: ${msg.content}`,
-                  avatarUrl,
-                });
-                setTimeout(() => {
-                  setMessagePreview((prev) => 
-                    prev?.channelId === channel._id ? null : prev
-                  );
-                }, 5000);
-              }
-            }}
-            isChatOpen={openChatWindow === channel._id}
-          />
-        );
-      })}
+      {/* Hidden trackers removed - now using single getUnreadCounts query */}
 
       {/* Chat Bubbles */}
       <AnimatePresence>
         {showBubbles && (
-          <div className="fixed bottom-24 right-6 flex flex-col-reverse gap-2 z-50">
-            {/* New DM Bubble */}
+          <div
+            className={`fixed flex flex-col-reverse gap-2 z-50 ${fabSide === "right" ? "right-6" : "left-6"}`}
+            style={{ bottom: fabY !== null ? `calc(100vh - ${fabY}px + 16px)` : 96 }}
+          >            {/* New DM Bubble */}
             <ChatBubbleComponent
               type="new-dm"
               onMouseEnter={() => setHoveredBubble("new-dm")}
@@ -306,45 +432,47 @@ export function ChatSystem({ workspaceId }: ChatSystemProps) {
                 key={bubble.channelId}
                 bubble={bubble}
                 index={index}
-                workspaceId={workspaceId}
                 isHovered={hoveredBubble === bubble.channelId}
                 onMouseEnter={() => setHoveredBubble(bubble.channelId)}
                 onMouseLeave={() => setHoveredBubble(null)}
                 onClick={() => handleBubbleClick(bubble)}
                 onRemove={() => removeBubble(bubble.channelId)}
-                currentUserId={user?.id || ""}
                 unreadCount={unreadCounts.get(bubble.channelId) || 0}
-                onNewMessage={(msg) => {
-                  // If bubble was closed, remove it from closed set so it can reappear
-                  if (closedBubblesRef.current.has(bubble.channelId)) {
-                    closedBubblesRef.current.delete(bubble.channelId);
-                  }
-                  // Note: Preview notification is handled by UnreadCountTracker
-                }}
-                isChatOpen={openChatWindow === bubble.channelId}
+                preview={previews.get(bubble.channelId) || ""}
               />
             ))}
           </div>
         )}
       </AnimatePresence>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating Action Button - Draggable */}
+      <div
+        id="chat-fab"
+        ref={fabRef}
+        style={fabStyle}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={toggleBubbles}
-          className="w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-lg flex items-center justify-center relative overflow-visible"
+          whileHover={isDragging ? undefined : { scale: 1.1 }}
+          whileTap={isDragging ? undefined : { scale: 0.9 }}
+          onClick={() => { if (!isDragging) toggleBubbles(); }}
+          className="w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-full shadow-lg shadow-sky-500/25 flex items-center justify-center relative overflow-visible cursor-grab active:cursor-grabbing select-none"
         >
-          {showBubbles ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+          {showBubbles ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <MessageCircle className="w-6 h-6" />
+          )}
         </motion.button>
-        
+
         {/* Total Unread Count Badge */}
         {!showBubbles && totalUnreadCount > 0 && (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-white shadow-sm"
+            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-badge-border shadow-sm"
           >
             {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
           </motion.div>
@@ -413,10 +541,10 @@ function ChatBubbleComponent({
           children
         )}
       </motion.button>
-      
+
       {/* Unread Badge - Outside button to prevent clipping */}
       {unreadCount !== undefined && unreadCount > 0 && (
-        <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white shadow-sm">
+        <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-badge-border shadow-sm">
           {unreadCount > 99 ? "99+" : unreadCount}
         </div>
       )}
@@ -431,7 +559,7 @@ function ChatBubbleComponent({
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute -top-2 -left-2 w-5 h-5 bg-gray-800 hover:bg-gray-900 text-white rounded-full flex items-center justify-center text-xs shadow-lg z-10"
+          className="absolute -top-2 -left-2 w-5 h-5 bg-muted hover:bg-muted/80 text-foreground rounded-full flex items-center justify-center text-xs shadow-lg z-10 border border-border backdrop-blur-sm"
         >
           <X className="w-3 h-3" />
         </motion.button>
@@ -441,7 +569,7 @@ function ChatBubbleComponent({
         <motion.div
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
-          className="absolute right-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap max-w-xs"
+          className="absolute right-14 top-1/2 -translate-y-1/2 bg-background-secondary text-foreground px-3 py-1.5 rounded-lg text-sm whitespace-nowrap max-w-xs border border-border shadow-lg"
         >
           {label}
         </motion.div>
@@ -450,135 +578,34 @@ function ChatBubbleComponent({
   );
 }
 
-// Hidden component to track unread counts without rendering UI
-interface UnreadCountTrackerProps {
-  channelId: Id<"channels">;
-  currentUserId: string;
-  onUnreadCountChange: (count: number) => void;
-  onNewMessage?: (message: { authorName: string; content: string }) => void;
-  isChatOpen?: boolean;
-}
-
-function UnreadCountTracker({
-  channelId,
-  currentUserId,
-  onUnreadCountChange,
-  onNewMessage,
-  isChatOpen,
-}: UnreadCountTrackerProps) {
-  const allMessages = useQuery(api.messages.getChannelMessages, {
-    channelId,
-  });
-
-  const prevUnreadCountRef = useRef(0);
-  const prevMessageCountRef = useRef(0);
-
-  // Calculate unread count
-  const unreadCount = allMessages?.filter((msg) => {
-    if (msg.authorId === currentUserId) return false;
-    return !msg.seenBy?.some((seen) => seen.userId === currentUserId);
-  }).length || 0;
-
-  // Report unread count changes to parent
-  useEffect(() => {
-    if (unreadCount !== prevUnreadCountRef.current) {
-      onUnreadCountChange(unreadCount);
-      prevUnreadCountRef.current = unreadCount;
-    }
-  }, [unreadCount, onUnreadCountChange]);
-
-  // Detect new messages and report to parent
-  useEffect(() => {
-    if (!allMessages || allMessages.length === 0) return;
-
-    const currentCount = allMessages.length;
-    const prevCount = prevMessageCountRef.current;
-
-    // New message detected
-    if (currentCount > prevCount && prevCount > 0) {
-      const latestMsg = allMessages[allMessages.length - 1];
-      
-      // Only notify if message is from someone else and chat is not open
-      if (latestMsg.authorId !== currentUserId && !isChatOpen && onNewMessage) {
-        onNewMessage({
-          authorName: latestMsg.authorName,
-          content: latestMsg.content,
-        });
-      }
-    }
-
-    prevMessageCountRef.current = currentCount;
-  }, [allMessages, currentUserId, isChatOpen, onNewMessage]);
-
-  return null; // This component doesn't render anything
-}
-
-// Chat Bubble with Preview and Unread Count
+// Chat Bubble with Preview and Unread Count (no queries - uses parent data)
 interface ChatBubbleWithPreviewProps {
   bubble: ChatBubble;
   index: number;
-  workspaceId: Id<"workspaces">;
   isHovered: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onClick: () => void;
   onRemove: () => void;
-  currentUserId: string;
   unreadCount: number;
-  onNewMessage?: (message: { authorName: string; content: string }) => void;
-  isChatOpen?: boolean;
+  preview: string;
 }
 
 function ChatBubbleWithPreview({
   bubble,
   index,
-  workspaceId,
   isHovered,
   onMouseEnter,
   onMouseLeave,
   onClick,
   onRemove,
-  currentUserId,
   unreadCount,
-  onNewMessage,
-  isChatOpen,
+  preview,
 }: ChatBubbleWithPreviewProps) {
-  const prevMessageCountRef = useRef(0);
-  const latestMessage = useQuery(api.messages.getLatestMessage, {
-    channelId: bubble.channelId,
-  });
-
-  const allMessages = useQuery(api.messages.getChannelMessages, {
-    channelId: bubble.channelId,
-  });
-
-  // Create preview label
-  const previewLabel = latestMessage
-    ? `${bubble.name}: ${latestMessage.content.substring(0, 50)}${latestMessage.content.length > 50 ? "..." : ""}`
+  // Create preview label from prop (no additional queries!)
+  const previewLabel = preview
+    ? `${bubble.name}: ${preview}${preview.length >= 50 ? "..." : ""}`
     : bubble.name;
-
-  // Detect new messages and report to parent
-  useEffect(() => {
-    if (!allMessages || allMessages.length === 0) return;
-
-    const currentCount = allMessages.length;
-    const prevCount = prevMessageCountRef.current;
-
-    // New message detected
-    if (currentCount > prevCount && prevCount > 0) {
-      const latestMsg = allMessages[allMessages.length - 1];
-      
-      // Only notify if message is from someone else and chat is not open
-      if (latestMsg.authorId !== currentUserId && !isChatOpen && onNewMessage) {
-        onNewMessage({
-          authorName: latestMsg.authorName,
-          content: latestMsg.content,
-        });
-      }
-    }
-
-    prevMessageCountRef.current = currentCount;
-  }, [allMessages, currentUserId, isChatOpen, onNewMessage]);
 
   return (
     <motion.div
@@ -613,28 +640,31 @@ interface ChatWindowProps {
   chat: ChatBubble;
   onClose: () => void;
   workspaceId: Id<"workspaces">;
+  side: "left" | "right";
 }
 
-function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
+function ChatWindow({ chat, onClose, workspaceId, side }: ChatWindowProps) {
   const { user } = useUser();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const messages = useQuery(api.messages.getChannelMessages, {
+  // Use optimized query that resolves author names at query time
+  const messages = useQuery(api.messages.getMessagesWithAuthors, {
     channelId: chat.channelId,
   });
   const sendMessage = useMutation(api.messages.sendMessage);
   const toggleReaction = useMutation(api.messages.toggleReaction);
-  const markAsSeen = useMutation(api.messages.markChannelMessagesAsSeen);
+  const markAsRead = useMutation(api.messages.markChannelAsRead);
 
   // Get all workspace members for seen receipts
   const { memberships } = useOrganization({ memberships: { pageSize: 50 } });
 
-  // Mark messages as seen only when chat window first opens
+  // Mark channel as read when chat window opens AND when new messages arrive
   useEffect(() => {
-    // Mark all messages as seen when the chat window opens
-    markAsSeen({ channelId: chat.channelId });
-  }, []); // Run only once on mount when chat window opens
+    if (messages && messages.length > 0) {
+      markAsRead({ channelId: chat.channelId });
+    }
+  }, [chat.channelId, messages, markAsRead]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -666,18 +696,25 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      className="fixed bottom-6 right-24 w-80 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden z-40"
+      className={`fixed bottom-6 w-80 h-[500px] bg-background-secondary rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden z-40 backdrop-blur-xl ${side === "right" ? "right-24" : "left-24"}`}
     >
       {/* Header */}
-      <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+      <div className="p-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-between">
         <div className="flex items-center gap-2">
           {chat.avatarUrl ? (
-            <div className="w-8 h-8 rounded-full overflow-hidden relative">
-              <Image src={chat.avatarUrl} alt={chat.name} fill className="object-cover" />
+            <div className="w-8 h-8 rounded-full overflow-hidden relative ring-2 ring-white/20">
+              <Image
+                src={chat.avatarUrl}
+                alt={chat.name}
+                fill
+                className="object-cover"
+              />
             </div>
           ) : (
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold">
-              {chat.type === "general" ? "#" : chat.name.charAt(0).toUpperCase()}
+              {chat.type === "general"
+                ? "#"
+                : chat.name.charAt(0).toUpperCase()}
             </div>
           )}
           <span className="font-medium">{chat.name}</span>
@@ -691,27 +728,28 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background">
         {messages?.map((msg) => {
           const isOwn = msg.authorId === user?.id;
-          const seenBy = msg.seenBy || [];
 
           return (
             <div
               key={msg._id}
               className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
             >
-              <div className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
+              <div
+                className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}
+              >
                 {!isOwn && (
-                  <span className="text-xs text-gray-500 mb-1 px-2">
+                  <span className="text-xs text-muted-foreground mb-1 px-2">
                     {msg.authorName}
                   </span>
                 )}
                 <div
                   className={`px-4 py-2 rounded-2xl ${
                     isOwn
-                      ? "bg-blue-600 text-white rounded-br-sm"
-                      : "bg-white text-gray-900 rounded-bl-sm shadow-sm"
+                      ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-br-sm"
+                      : "bg-muted text-foreground rounded-bl-sm border border-border"
                   }`}
                 >
                   <p className="text-sm break-words">{msg.content}</p>
@@ -721,21 +759,21 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
                 <div className="flex items-center gap-1 mt-1">
                   <button
                     onClick={() => handleReaction(msg._id, "like")}
-                    className={`text-xs px-2 py-1 rounded-full ${
+                    className={`text-xs px-2 py-1 rounded-full transition-colors ${
                       msg.reactions?.like?.includes(user?.id || "")
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-600"
-                    } hover:bg-blue-100 transition-colors`}
+                        ? "bg-sky-500/20 text-sky-500 dark:text-sky-400"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
                   >
                     👍 {msg.reactions?.like?.length || 0}
                   </button>
                   <button
                     onClick={() => handleReaction(msg._id, "haha")}
-                    className={`text-xs px-2 py-1 rounded-full ${
+                    className={`text-xs px-2 py-1 rounded-full transition-colors ${
                       msg.reactions?.haha?.includes(user?.id || "")
-                        ? "bg-yellow-100 text-yellow-600"
-                        : "bg-gray-100 text-gray-600"
-                    } hover:bg-yellow-100 transition-colors`}
+                        ? "bg-yellow-500/20 text-yellow-500 dark:text-yellow-400"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
                   >
                     😂 {msg.reactions?.haha?.length || 0}
                   </button>
@@ -745,70 +783,10 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
           );
         })}
         <div ref={messagesEndRef} />
-        
-        {/* Seen Receipts at Bottom - Only show others who have seen */}
-        {(() => {
-          // Get unique users who have seen any message (excluding current user)
-          const allSeenUsers = new Set<string>();
-          messages?.forEach((msg) => {
-            if (msg.authorId === user?.id) {
-              msg.seenBy?.forEach((seen) => {
-                if (seen.userId !== user?.id) {
-                  allSeenUsers.add(seen.userId);
-                }
-              });
-            }
-          });
-          
-          const seenUserIds = Array.from(allSeenUsers);
-          
-          if (seenUserIds.length === 0) return null;
-          
-          return (
-            <div className="flex items-center justify-end gap-2 px-4 pb-2">
-              <span className="text-xs text-gray-400">Seen by</span>
-              <div className="flex -space-x-2">
-                {seenUserIds.slice(0, 3).map((userId) => {
-                  const member = memberships?.data?.find(
-                    (m: any) => m.publicUserData?.userId === userId
-                  );
-                  const avatarUrl = member?.publicUserData?.imageUrl;
-                  const name = member?.publicUserData?.firstName || "Unknown";
-
-                  return avatarUrl ? (
-                    <div
-                      key={userId}
-                      className="w-5 h-5 rounded-full border-2 border-white overflow-hidden relative"
-                      title={name}
-                    >
-                      <Image
-                        src={avatarUrl}
-                        alt={name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      key={userId}
-                      className="w-5 h-5 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-xs text-white"
-                      title={name}
-                    >
-                      {name.charAt(0).toUpperCase()}
-                    </div>
-                  );
-                })}
-              </div>
-              {seenUserIds.length > 3 && (
-                <span className="text-xs text-gray-400">+{seenUserIds.length - 3}</span>
-              )}
-            </div>
-          );
-        })()}
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-gray-200 bg-white">
+      <div className="p-3 border-t border-border bg-background-secondary">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -816,12 +794,12 @@ function ChatWindow({ chat, onClose, workspaceId }: ChatWindowProps) {
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="flex-1 px-3 py-2 bg-muted border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-sm text-foreground placeholder-muted-foreground"
           />
           <button
             onClick={handleSendMessage}
             disabled={!message.trim()}
-            className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full hover:shadow-lg hover:shadow-sky-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -847,12 +825,12 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
   const members = memberships?.data || [];
   const filteredMembers = members.filter((m: any) => {
     if (m.publicUserData?.userId === user?.id) return false;
-    
+
     const firstName = m.publicUserData?.firstName?.toLowerCase() || "";
     const lastName = m.publicUserData?.lastName?.toLowerCase() || "";
     const identifier = m.publicUserData?.identifier?.toLowerCase() || "";
     const search = searchTerm.toLowerCase();
-    
+
     return (
       firstName.includes(search) ||
       lastName.includes(search) ||
@@ -861,7 +839,11 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
     );
   });
 
-  const handleSelectUser = async (userId: string, userName: string, avatarUrl?: string) => {
+  const handleSelectUser = async (
+    userId: string,
+    userName: string,
+    avatarUrl?: string
+  ) => {
     const channelId = await createOrGetDM({
       workspaceId,
       otherUserId: userId,
@@ -878,27 +860,35 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative bg-white rounded-2xl p-6 shadow-2xl w-full max-w-md mx-4"
+        className="relative bg-background-secondary rounded-2xl p-6 shadow-2xl w-full max-w-md mx-4 border border-border"
       >
-        <h2 className="text-xl font-bold text-gray-900 mb-4">New Direct Message</h2>
+        <h2 className="text-xl font-bold text-foreground mb-4">
+          New Direct Message
+        </h2>
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search members..."
-          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+          className="w-full px-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent mb-4 text-foreground placeholder-muted-foreground"
           autoFocus
         />
 
         <div className="max-h-64 overflow-y-auto space-y-2">
           {filteredMembers.map((member: any) => {
-            const userName = `${member.publicUserData?.firstName || ""} ${
-              member.publicUserData?.lastName || ""
-            }`.trim() || member.publicUserData?.identifier || "Unknown";
+            const userName =
+              `${member.publicUserData?.firstName || ""} ${
+                member.publicUserData?.lastName || ""
+              }`.trim() ||
+              member.publicUserData?.identifier ||
+              "Unknown";
 
             const avatarUrl = member.publicUserData?.imageUrl;
 
@@ -912,11 +902,16 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
                     avatarUrl
                   )
                 }
-                className="w-full p-3 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3"
+                className="w-full p-3 hover:bg-muted rounded-lg transition-colors flex items-center gap-3 border border-transparent hover:border-border"
               >
                 {avatarUrl ? (
-                  <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0">
-                    <Image src={avatarUrl} alt={userName} fill className="object-cover" />
+                  <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ring-border">
+                    <Image
+                      src={avatarUrl}
+                      alt={userName}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-semibold">
@@ -924,8 +919,8 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
                   </div>
                 )}
                 <div className="flex-1 text-left">
-                  <div className="font-medium text-gray-900">{userName}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="font-medium text-foreground">{userName}</div>
+                  <div className="text-xs text-muted-foreground">
                     {member.publicUserData?.identifier}
                   </div>
                 </div>
@@ -934,7 +929,7 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
           })}
 
           {filteredMembers.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-muted-foreground">
               <p className="text-sm">No members found</p>
             </div>
           )}
@@ -942,7 +937,7 @@ function NewDmModal({ workspaceId, onClose, onChatCreated }: NewDmModalProps) {
 
         <button
           onClick={onClose}
-          className="mt-4 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+          className="mt-4 w-full px-4 py-2 bg-muted hover:bg-muted/80 text-muted-foreground font-medium rounded-lg transition-colors border border-border"
         >
           Cancel
         </button>
